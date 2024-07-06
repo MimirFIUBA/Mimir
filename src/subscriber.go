@@ -16,7 +16,8 @@ func onMessageReceived(client mqtt.Client, message mqtt.Message) {
 
 func main() {
 	// mqtt topic
-	topic := consts.Topic
+	topicTemp := consts.TopicTemp
+	topicPH := consts.TopicPH
 
 	opts := mqtt.NewClientOptions()
 	opts.AddBroker(consts.Broker)
@@ -26,17 +27,24 @@ func main() {
 		panic(fmt.Sprintf("Error connecting to MQTT broker:", token.Error()))
 	}
 
-	if token := client.Subscribe(topic, 0, onMessageReceived); token.Wait() && token.Error() != nil {
+	if token := client.Subscribe(topicTemp, 0, onMessageReceived); token.Wait() && token.Error() != nil {
 		panic(fmt.Sprintf("Error subscribing to topic:", token.Error()))
 	}
 
-	fmt.Println("Subscribed to topic:", topic)
+	fmt.Println("Subscribed to topic:", topicTemp)
+	
+	if token := client.Subscribe(topicPH, 0, onMessageReceived); token.Wait() && token.Error() != nil {
+		panic(fmt.Sprintf("Error subscribing to topic:", token.Error()))
+	}
+
+	fmt.Println("Subscribed to topic:", topicPH)
 
 	// Wait for a signal to exit the program gracefully
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 	<-sigChan
 
-	client.Unsubscribe(topic)
+	client.Unsubscribe(topicTemp)
+	client.Unsubscribe(topicPH)
 	client.Disconnect(250)
 }
