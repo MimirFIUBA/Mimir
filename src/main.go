@@ -4,6 +4,7 @@ import (
 	"fmt"
 	API "mimir/src/restApi"
 	mqtt "mimir/src/mqtt"
+	mimir "mimir/src/mimir"
 	"os"
 	"os/signal"
 	"syscall"
@@ -13,6 +14,7 @@ func main() {
 	topics := mqtt.GetTopics()
 	client := mqtt.StartMqttClient()
 	
+	go mimir.Run()
 	go mqtt.StartGateway(client, topics)
 	go API.Start()
 
