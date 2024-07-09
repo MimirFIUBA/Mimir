@@ -9,42 +9,13 @@ var (
 	sensorManager = SensorManager{}
 )
 
-type Sensor struct {
-	ID int `json:"id"`
-	Name string `json:"name"`
-	Description string `json:"description"`
-	Data []SensorReading `json:"data"`
-}
-
 type SensorReading struct {
 	SensorID int `json:"sensorId"`
 	Value SensorValue `json:"value"`
 	Time time.Time `json:"time"`
 }
 
-type SensorValue interface {}
-
-type SensorManager struct {
-	sensors []Sensor
-}
-
-func (s SensorManager) getNewSensorId() int {
-	return len(s.sensors)
-}
-
-func (s *Sensor) addReading(reading SensorReading) {
-	s.Data = append(s.Data, reading)
-}
-
-func (s *SensorManager) storeReading(reading SensorReading) {
-	for i := range s.sensors {
-		sensor := &s.sensors[i]
-		if sensor.ID == reading.SensorID {
-			sensor.addReading(reading)
-			break
-		}
-	}
-} 
+type SensorValue interface {} 
 
 func CreateSensor(sensor Sensor) Sensor {
 	sensor.ID = sensorManager.getNewSensorId()
