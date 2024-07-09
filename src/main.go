@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
-	API "mimir/src/restApi"
-	mqtt "mimir/src/mqtt"
 	mimir "mimir/src/mimir"
+	mqtt "mimir/src/mqtt"
+	API "mimir/src/restApi"
 	"os"
 	"os/signal"
 	"syscall"
@@ -13,7 +13,7 @@ import (
 func main() {
 	topics := mqtt.GetTopics()
 	client := mqtt.StartMqttClient()
-	
+
 	go mimir.Run()
 	go mqtt.StartGateway(client, topics)
 	go API.Start()
@@ -25,5 +25,5 @@ func main() {
 	mqtt.CloseConnection(client, topics)
 
 	fmt.Println("Mimir is out of duty, bye!")
-	
+
 }

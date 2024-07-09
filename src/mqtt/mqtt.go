@@ -3,13 +3,40 @@ package mqtt
 
 import (
 	"fmt"
+	"encoding/json"
 	"mimir/src/consts"
+	mimir "mimir/src/mimir"
+	"strings"
+	"io"
+	"time"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
 
 func onMessageReceived(client mqtt.Client, message mqtt.Message) {
 	fmt.Printf("Received message: %s from topic: %s\n", message.Payload(), message.Topic())
+	
+	var payload = string(message.Payload()[:])
+	jsonDataReader := strings.NewReader(payload)
+    decoder := json.NewDecoder(jsonDataReader)
+    var profile map[string]interface{}
+    for {
+        err := decoder.Decode(&profile)
+		if err == io.EOF {
+			break
+		}
+        if err != nil {
+            panic(err)
+        }
+    }
+
+	id := int(profile["sensorId"].(float64))
+	var value mimir.SensorValue
+	value = profile["data"]
+
+	sensorReading := mimir.SensorReading{SensorID: id, Value: value, Time: time.Now()}
+	mimir.StoreReading(sensorReading)
+
 }
 
 func GetTopics() []string {
@@ -27,7 +54,6 @@ func StartMqttClient() mqtt.Client {
 }
 
 func StartGateway(client mqtt.Client, topics []string) {
-	
 	if token := client.Connect(); token.Wait() && token.Error() != nil {
 		panic(fmt.Sprintf("Error connecting to MQTT broker:", token.Error()))
 	}

@@ -2,24 +2,43 @@ package main
 
 import (
 	"fmt"
+	"math/rand/v2"
 	"mimir/src/consts"
 	"time"
-	"math/rand"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
 
-func generateData(n int, client mqtt.Client, topic string, c chan int) {
+type mqttGenerator struct {
+	topic  string
+	client mqtt.Client
+	c      chan int
+}
+
+func (g mqttGenerator) generateIntData(n int, id int) {
 	for i := 1; i <= n; i++ {
-		message := fmt.Sprintf("{data: %.2f, time: %s}", rand.Float64()*40, time.Now())
-		token := client.Publish(topic, 0, false, message)
+		message := fmt.Sprintf(`{"sensorId": %d, "data": %d, "time": "%s"}`, id, rand.IntN(100), time.Now())
+		token := g.client.Publish(g.topic, 0, false, message)
 		token.Wait()
 
-		fmt.Println("Published topic %s: %s", topic, message)
+		fmt.Println("Published topic %s: %s", g.topic, message)
 		time.Sleep(1 * time.Second)
 	}
 
-	c <- 1
+	g.c <- 0
+}
+
+func (g mqttGenerator) generateFloatData(n int, id int) {
+	for i := 1; i <= n; i++ {
+		message := fmt.Sprintf(`{"sensorId": %d, "data": %.2f, "time": "%s"}`, id, rand.Float64()*40, time.Now())
+		token := g.client.Publish(g.topic, 0, false, message)
+		token.Wait()
+
+		fmt.Printf("Published topic %s: %s\n", g.topic, message)
+		time.Sleep(1 * time.Second)
+	}
+
+	g.c <- 0
 }
 
 func main() {
@@ -31,13 +50,15 @@ func main() {
 	if token := client.Connect(); token.Wait() && token.Error() != nil {
 		panic(fmt.Sprintf("Error connecting to MQTT broker:", token.Error()))
 	}
-	
+
 	c := make(chan int)
-	go generateData(10, client, consts.TopicTemp, c)
-	go generateData(10, client, consts.TopicPH, c)
-	temp, ph := <- c, <- c
-	fmt.Println(temp)
-	fmt.Println(ph)
-	
+
+	generatorTemp := mqttGenerator{consts.TopicTemp, client, c}
+	generatorPH := mqttGenerator{consts.TopicPH, client, c}
+
+	go generatorTemp.generateIntData(10, 1)
+	go generatorPH.generateFloatData(10, 2)
+	_, _ = <-c, <-c
+
 	client.Disconnect(250)
 }
