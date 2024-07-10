@@ -25,5 +25,4 @@ func main() {
 	mqtt.CloseConnection(client, topics)
 
 	fmt.Println("Mimir is out of duty, bye!")
-
 }

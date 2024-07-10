@@ -21,7 +21,7 @@ func (g mqttGenerator) generateIntData(n int, id int) {
 		token := g.client.Publish(g.topic, 0, false, message)
 		token.Wait()
 
-		fmt.Println("Published topic %s: %s", g.topic, message)
+		fmt.Printf("Published topic %s: %s\n", g.topic, message)
 		time.Sleep(1 * time.Second)
 	}
 
@@ -56,8 +56,8 @@ func main() {
 	generatorTemp := mqttGenerator{consts.TopicTemp, client, c}
 	generatorPH := mqttGenerator{consts.TopicPH, client, c}
 
-	go generatorTemp.generateIntData(10, 1)
-	go generatorPH.generateFloatData(10, 2)
+	go generatorTemp.generateIntData(10, 2)
+	go generatorPH.generateFloatData(10, 1)
 	_, _ = <-c, <-c
 
 	client.Disconnect(250)

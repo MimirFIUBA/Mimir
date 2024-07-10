@@ -1,13 +1,12 @@
-
 package mqtt
 
 import (
-	"fmt"
 	"encoding/json"
+	"fmt"
+	"io"
 	"mimir/src/consts"
 	mimir "mimir/src/mimir"
 	"strings"
-	"io"
 	"time"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
@@ -15,20 +14,20 @@ import (
 
 func onMessageReceived(client mqtt.Client, message mqtt.Message) {
 	fmt.Printf("Received message: %s from topic: %s\n", message.Payload(), message.Topic())
-	
+
 	var payload = string(message.Payload()[:])
 	jsonDataReader := strings.NewReader(payload)
-    decoder := json.NewDecoder(jsonDataReader)
-    var profile map[string]interface{}
-    for {
-        err := decoder.Decode(&profile)
+	decoder := json.NewDecoder(jsonDataReader)
+	var profile map[string]interface{}
+	for {
+		err := decoder.Decode(&profile)
 		if err == io.EOF {
 			break
 		}
-        if err != nil {
-            panic(err)
-        }
-    }
+		if err != nil {
+			panic(err)
+		}
+	}
 
 	id := int(profile["sensorId"].(float64))
 	var value mimir.SensorValue
@@ -55,12 +54,12 @@ func StartMqttClient() mqtt.Client {
 
 func StartGateway(client mqtt.Client, topics []string) {
 	if token := client.Connect(); token.Wait() && token.Error() != nil {
-		panic(fmt.Sprintf("Error connecting to MQTT broker:", token.Error()))
+		panic(fmt.Sprintf("Error connecting to MQTT broker: %s", token.Error()))
 	}
 
 	for _, topic := range topics {
 		if token := client.Subscribe(topic, 0, onMessageReceived); token.Wait() && token.Error() != nil {
-			panic(fmt.Sprintf("Error subscribing to topic:", token.Error()))
+			panic(fmt.Sprintf("Error subscribing to topic: %s", token.Error()))
 		}
 	}
 }
