@@ -4,9 +4,10 @@ import (
 	"encoding/json"
 	"log"
 	"math/rand"
+	mimir "mimir/internal/mimir"
 	"net/http"
+
 	"github.com/gorilla/mux"
-	mimir "mimir/src/mimir"
 )
 
 type response struct {

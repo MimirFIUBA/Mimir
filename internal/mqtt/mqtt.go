@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"mimir/src/consts"
-	mimir "mimir/src/mimir"
+	"mimir/internal/consts"
+	mimir "mimir/internal/mimir"
 	"strings"
 	"time"
 

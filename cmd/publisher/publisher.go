@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"math/rand/v2"
-	"mimir/src/consts"
+	"mimir/internal/consts"
 	"time"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
