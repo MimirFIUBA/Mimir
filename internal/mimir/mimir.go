@@ -7,19 +7,12 @@ import (
 
 var (
 	sensorManager = SensorManager{}
+	dataManager   = DataManager{}
 )
 
-type SensorReading struct {
-	SensorID int         `json:"sensorId"`
-	Value    SensorValue `json:"value"`
-	Time     time.Time   `json:"time"`
-}
-
-type SensorValue interface{}
-
-func CreateSensor(sensor Sensor) Sensor {
+func AddSensor(sensor *Sensor) *Sensor {
 	sensor.ID = sensorManager.getNewSensorId()
-	sensorManager.sensors = append(sensorManager.sensors, sensor)
+	sensorManager.sensors = append(sensorManager.sensors, *sensor)
 	fmt.Printf("New sensor created: %+v\n", sensor)
 	return sensor
 }
@@ -44,7 +37,7 @@ func StoreReading(reding SensorReading) {
 func Run() {
 	// Load Config
 	//Test Sensor
-	sensor := Sensor{0, "fede", "this is a helpful sensor", nil}
+	sensor := NewSensor("test sensor 1")
 
 	var value1 SensorValue
 	value1 = 1
@@ -67,9 +60,9 @@ func Run() {
 	sensor.Data = append(sensor.Data, data4)
 
 	fmt.Printf("sensorData: %+v\n", len(sensor.Data))
-	CreateSensor(sensor)
+	AddSensor(sensor)
 	//End test sensor
 
-	CreateSensor(Sensor{0, "sensorPH", "this is a ph sensor", nil})
+	AddSensor(NewSensor("sensorPH"))
 	// CreateSensor(Sensor{0, "sensorTemp", "this is a temp sensor", nil})
 }

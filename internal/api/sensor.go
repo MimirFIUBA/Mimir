@@ -42,14 +42,14 @@ func getSensor(w http.ResponseWriter, r *http.Request) {
 
 func createSensor(w http.ResponseWriter, r *http.Request) {
 
-	var sensor mimir.Sensor
+	var sensor *mimir.Sensor
 	err := json.NewDecoder(r.Body).Decode(&sensor)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	sensor = mimir.CreateSensor(sensor)
+	sensor = mimir.AddSensor(sensor)
 
 	json.NewEncoder(w).Encode(sensor)
 }

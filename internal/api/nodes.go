@@ -26,16 +26,7 @@ func getNode(w http.ResponseWriter, r *http.Request) {
 
 func createNode(w http.ResponseWriter, r *http.Request) {
 
-	var sensor mimir.Sensor
-	err := json.NewDecoder(r.Body).Decode(&sensor)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	sensor = mimir.CreateSensor(sensor)
-
-	json.NewEncoder(w).Encode(sensor)
+	json.NewEncoder(w).Encode(nil)
 }
 
 func updateNode(w http.ResponseWriter, r *http.Request) {

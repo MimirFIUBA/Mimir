@@ -26,16 +26,7 @@ func getGroup(w http.ResponseWriter, r *http.Request) {
 
 func createGroup(w http.ResponseWriter, r *http.Request) {
 
-	var sensor mimir.Sensor
-	err := json.NewDecoder(r.Body).Decode(&sensor)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	sensor = mimir.CreateSensor(sensor)
-
-	json.NewEncoder(w).Encode(sensor)
+	json.NewEncoder(w).Encode(nil)
 }
 
 func updateGroup(w http.ResponseWriter, r *http.Request) {
