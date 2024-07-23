@@ -38,8 +38,8 @@ func Start() {
 	router.HandleFunc("/nodes/{key}", updateNode).Methods("PUT")
 	router.HandleFunc("/nodes/{key}", deleteNode).Methods("DELETE")
 
-	router.HandleFunc("/groups", getGroup).Methods("GET")
-	router.HandleFunc("/groups/{key}", getSensor).Methods("GET")
+	router.HandleFunc("/groups", getGroups).Methods("GET")
+	router.HandleFunc("/groups/{key}", getGroup).Methods("GET")
 	router.HandleFunc("/groups", createGroup).Methods("POST")
 	router.HandleFunc("/groups/{key}", updateGroup).Methods("PUT")
 	router.HandleFunc("/groups/{key}", deleteGroup).Methods("DELETE")

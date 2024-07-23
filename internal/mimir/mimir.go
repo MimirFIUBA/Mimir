@@ -7,34 +7,14 @@ import (
 
 var (
 	sensorManager = SensorManager{}
-	dataManager   = DataManager{}
+	Data          = DataManager{}
 )
 
-func AddSensor(sensor *Sensor) *Sensor {
-	sensor.ID = sensorManager.getNewSensorId()
-	sensorManager.sensors = append(sensorManager.sensors, *sensor)
-	fmt.Printf("New sensor created: %+v\n", sensor)
-	return sensor
-}
-
-func GetSensors() []Sensor {
-	return sensorManager.sensors
-}
-
-func GetSensor(id int) *Sensor {
-	for _, sensor := range sensorManager.sensors {
-		if sensor.ID == id {
-			return &sensor
-		}
-	}
-	return nil
-}
-
-func StoreReading(reding SensorReading) {
-	sensorManager.storeReading(reding)
-}
-
 func Run() {
+
+	group := NewGroup("group 1")
+	Data.AddGroup(group)
+
 	// Load Config
 	//Test Sensor
 	sensor := NewSensor("test sensor 1")

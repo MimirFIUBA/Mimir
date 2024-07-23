@@ -7,26 +7,30 @@ import (
 )
 
 func getGroups(w http.ResponseWriter, _ *http.Request) {
-	var sensors = sensorsResponse{
-		Sensors: mimir.GetSensors(),
-	}
+	var groups = mimir.Data.GetGroups()
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(sensors)
+	json.NewEncoder(w).Encode(groups)
 }
 
 func getGroup(w http.ResponseWriter, r *http.Request) {
-	var sensors = sensorsResponse{
-		Sensors: mimir.GetSensors(),
-	}
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(sensors)
+	json.NewEncoder(w).Encode(nil)
 }
 
 func createGroup(w http.ResponseWriter, r *http.Request) {
 
-	json.NewEncoder(w).Encode(nil)
+	var group *mimir.Group
+	err := json.NewDecoder(r.Body).Decode(&group)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	group = mimir.Data.AddGroup(group)
+
+	json.NewEncoder(w).Encode(group)
 }
 
 func updateGroup(w http.ResponseWriter, r *http.Request) {

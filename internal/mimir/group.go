@@ -7,3 +7,7 @@ type Group struct {
 	Type        string `json:"type"`
 	Nodes       []Node `json:"data"`
 }
+
+func NewGroup(name string) *Group {
+	return &Group{0, name, "", "crop", nil}
+}
