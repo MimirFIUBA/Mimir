@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
+	API "mimir/internal/api"
 	mimir "mimir/internal/mimir"
 	mqtt "mimir/internal/mqtt"
-	API "mimir/internal/restApi"
 	"os"
 	"os/signal"
 	"syscall"

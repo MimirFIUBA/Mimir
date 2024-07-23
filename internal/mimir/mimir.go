@@ -28,6 +28,15 @@ func GetSensors() []Sensor {
 	return sensorManager.sensors
 }
 
+func GetSensor(id int) *Sensor {
+	for _, sensor := range sensorManager.sensors {
+		if sensor.ID == id {
+			return &sensor
+		}
+	}
+	return nil
+}
+
 func StoreReading(reding SensorReading) {
 	sensorManager.storeReading(reding)
 }
