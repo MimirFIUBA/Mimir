@@ -2,12 +2,15 @@ package mimir
 
 import (
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type Sensor struct {
 	ID          int             `json:"id"`
 	Name        string          `json:"name"`
-	NodeID      int             `json:"nodeId"`
+	DataName    string          `json:"dataName"`
+	NodeID      uuid.UUID       `json:"nodeId"`
 	Description string          `json:"description"`
 	Data        []SensorReading `json:"data"`
 }
@@ -21,7 +24,7 @@ type SensorReading struct {
 type SensorValue interface{}
 
 func NewSensor(name string) *Sensor {
-	return &Sensor{0, name, 0, "", nil}
+	return &Sensor{0, name, "", uuid.Nil, "", nil}
 }
 
 func (s *Sensor) addReading(reading SensorReading) {

@@ -49,7 +49,7 @@ func createSensor(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sensor = mimir.AddSensor(sensor)
+	sensor = mimir.Data.AddSensor(sensor)
 
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(sensor)

@@ -53,12 +53,15 @@ func main() {
 
 	c := make(chan int)
 
-	generatorTemp := mqttGenerator{consts.TopicTemp, client, c}
-	generatorPH := mqttGenerator{consts.TopicPH, client, c}
+	generator := mqttGenerator{"topic/node tomates/ph", client, c}
+	generator.generateFloatData(10, 2)
+	_ = <-c
+	// generatorTemp := mqttGenerator{consts.TopicTemp, client, c}
+	// generatorPH := mqttGenerator{consts.TopicPH, client, c}
 
-	go generatorTemp.generateIntData(10, 2)
-	go generatorPH.generateFloatData(10, 1)
-	_, _ = <-c, <-c
+	// go generatorTemp.generateIntData(10, 2)
+	// go generatorPH.generateFloatData(10, 1)
+	// _, _ = <-c, <-c
 
 	client.Disconnect(250)
 }

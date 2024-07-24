@@ -66,7 +66,7 @@ func (d *DataManager) getNewSensorId() int {
 	return len(d.sensors)
 }
 
-func (d *DataManager) storeReading(reading SensorReading) {
+func (d *DataManager) StoreReading(reading SensorReading) {
 	for i := range d.sensors {
 		sensor := &d.sensors[i]
 		if sensor.ID == reading.SensorID {
@@ -76,9 +76,22 @@ func (d *DataManager) storeReading(reading SensorReading) {
 	}
 }
 
-func AddSensor(sensor *Sensor) *Sensor {
+func (d *DataManager) AddSensor(sensor *Sensor) *Sensor {
 	sensor.ID = Data.getNewSensorId()
-	Data.sensors = append(Data.sensors, *sensor)
+	topicName := "topic/"
+
+	node := d.GetNode(sensor.NodeID)
+	if node != nil {
+		node.Sensors = append(node.Sensors, *sensor)
+		topicName += node.Name + "/"
+	}
+	d.sensors = append(d.sensors, *sensor)
+
+	topicName += sensor.DataName
+
+	fmt.Printf("New topic: %+v\n", topicName)
+	Topics.AddTopic(topicName)
+
 	fmt.Printf("New sensor created: %+v\n", sensor)
 	return sensor
 }
@@ -94,8 +107,4 @@ func GetSensor(id int) *Sensor {
 		}
 	}
 	return nil
-}
-
-func StoreReading(reding SensorReading) {
-	Data.storeReading(reding)
 }
