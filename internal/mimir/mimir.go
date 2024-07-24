@@ -6,8 +6,8 @@ import (
 )
 
 var (
-	sensorManager = SensorManager{}
-	Data          = DataManager{}
+	// sensorManager = SensorManager{}
+	Data = DataManager{}
 )
 
 func Run() {

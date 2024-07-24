@@ -25,7 +25,7 @@ func getSensors(w http.ResponseWriter, r *http.Request) {
 func getSensor(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
-	key := vars["key"]
+	key := vars["id"]
 
 	id, err := strconv.Atoi(key)
 
@@ -51,6 +51,7 @@ func createSensor(w http.ResponseWriter, r *http.Request) {
 
 	sensor = mimir.AddSensor(sensor)
 
+	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(sensor)
 }
 

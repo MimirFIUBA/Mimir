@@ -1,13 +1,16 @@
 package mimir
 
+import "github.com/google/uuid"
+
 type Group struct {
-	ID          int    `json:"id"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Type        string `json:"type"`
-	Nodes       []Node `json:"data"`
+	ID          uuid.UUID `json:"id"`
+	Name        string    `json:"name"`
+	Description string    `json:"description"`
+	Type        string    `json:"type"`
+	Nodes       []Node    `json:"nodes"`
 }
 
 func NewGroup(name string) *Group {
-	return &Group{0, name, "", "crop", nil}
+	id := uuid.New()
+	return &Group{id, name, "", "crop", nil}
 }
