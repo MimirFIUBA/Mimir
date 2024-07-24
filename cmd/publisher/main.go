@@ -48,14 +48,14 @@ func main() {
 
 	client := mqtt.NewClient(opts)
 	if token := client.Connect(); token.Wait() && token.Error() != nil {
-		panic(fmt.Sprintf("Error connecting to MQTT broker:", token.Error()))
+		panic(fmt.Sprintf("Error connecting to MQTT broker: %s", token.Error()))
 	}
 
 	c := make(chan int)
 
 	generator := mqttGenerator{"topic/node tomates/ph", client, c}
 	generator.generateFloatData(10, 2)
-	_ = <-c
+	<-c
 	// generatorTemp := mqttGenerator{consts.TopicTemp, client, c}
 	// generatorPH := mqttGenerator{consts.TopicPH, client, c}
 

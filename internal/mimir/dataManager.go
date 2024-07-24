@@ -7,9 +7,10 @@ import (
 )
 
 type DataManager struct {
-	groups  []Group
-	nodes   []Node
-	sensors []Sensor
+	groups       []Group
+	nodes        []Node
+	sensors      []Sensor
+	topicChannel chan string
 }
 
 func (d *DataManager) AddGroup(group *Group) *Group {
@@ -90,7 +91,8 @@ func (d *DataManager) AddSensor(sensor *Sensor) *Sensor {
 	topicName += sensor.DataName
 
 	fmt.Printf("New topic: %+v\n", topicName)
-	Topics.AddTopic(topicName)
+	// Topics.AddTopic(topicName)
+	d.topicChannel <- topicName
 
 	fmt.Printf("New sensor created: %+v\n", sensor)
 	return sensor

@@ -6,11 +6,11 @@ import (
 )
 
 var (
-	// sensorManager = SensorManager{}
 	Data = DataManager{}
 )
 
-func Run() {
+func Run(topicChannel chan string) {
+	Data.topicChannel = topicChannel
 
 	group := NewGroup("group 1")
 	Data.AddGroup(group)

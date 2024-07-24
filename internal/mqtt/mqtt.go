@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"mimir/internal/consts"
+	mimir "mimir/internal/mimir"
 	"strings"
 	"time"
 
@@ -35,9 +36,8 @@ func onMessageReceived(client mqtt.Client, message mqtt.Message) {
 	id := int(profile["sensorId"].(float64))
 	value := profile["data"]
 
-	sensorReading := SensorReading{SensorID: id, Value: value, Time: time.Now()}
-	Data.StoreReading(sensorReading)
-
+	sensorReading := mimir.SensorReading{SensorID: id, Value: value, Time: time.Now()}
+	mimir.Data.StoreReading(sensorReading)
 }
 
 func GetTopics() []string {
@@ -54,8 +54,8 @@ func StartMqttClient() mqtt.Client {
 	return mqtt.NewClient(opts)
 }
 
-func StartGateway(client mqtt.Client, topics []string) {
-	Topics = *NewTopicManager(client)
+func StartGateway(client mqtt.Client, topics []string, topicChannel chan string) {
+	Topics = *NewTopicManager(client, topicChannel)
 	if token := client.Connect(); token.Wait() && token.Error() != nil {
 		panic(fmt.Sprintf("Error connecting to MQTT broker: %s", token.Error()))
 	}
@@ -65,6 +65,12 @@ func StartGateway(client mqtt.Client, topics []string) {
 			panic(fmt.Sprintf("Error subscribing to topic: %s", token.Error()))
 		}
 	}
+
+	for {
+		newTopicName := <-topicChannel
+		Topics.AddTopic(newTopicName)
+	}
+
 }
 
 func CloseConnection(client mqtt.Client, topics []string) {

@@ -12,12 +12,13 @@ type Topic struct {
 }
 
 type TopicManager struct {
-	Topics     map[string]Topic
-	MQTTClient mqtt.Client
+	Topics          map[string]Topic
+	MQTTClient      mqtt.Client
+	newTopicChannel chan string
 }
 
-func NewTopicManager(mqttClient mqtt.Client) *TopicManager {
-	return &TopicManager{make(map[string]Topic), mqttClient}
+func NewTopicManager(mqttClient mqtt.Client, topicChannel chan string) *TopicManager {
+	return &TopicManager{make(map[string]Topic), mqttClient, topicChannel}
 }
 
 func (tm *TopicManager) AddTopic(name string) {
