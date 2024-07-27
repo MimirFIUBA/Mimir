@@ -1,16 +1,19 @@
 package mimir
 
-import "github.com/google/uuid"
-
 type Node struct {
-	ID          uuid.UUID `json:"id"`
-	Name        string    `json:"name"`
-	Description string    `json:"description"`
-	GroupID     uuid.UUID `json:"groupId"`
-	Sensors     []Sensor  `json:"data"`
+	ID          string   `json:"id"`
+	Name        string   `json:"name"`
+	Description string   `json:"description"`
+	GroupID     string   `json:"groupId"`
+	Sensors     []Sensor `json:"data"`
 }
 
 func NewNode(name string) *Node {
-	id := uuid.New()
-	return &Node{id, name, "", uuid.Nil, nil}
+	return &Node{"", name, "", "", nil}
+}
+
+func (n *Node) Update(updatedNode *Node) {
+	n.Name = updatedNode.Name
+	n.Description = updatedNode.Description
+	n.GroupID = updatedNode.GroupID
 }

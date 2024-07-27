@@ -33,7 +33,7 @@ func onMessageReceived(client mqtt.Client, message mqtt.Message) {
 		}
 	}
 
-	id := int(profile["sensorId"].(float64))
+	id := profile["sensorId"].(string)
 	value := profile["data"]
 
 	sensorReading := mimir.SensorReading{SensorID: id, Value: value, Time: time.Now()}

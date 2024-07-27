@@ -2,42 +2,71 @@ package mimir
 
 import (
 	"fmt"
+	"slices"
+	"strconv"
+
+	dh "mimir/internal/dataHandler"
 
 	"github.com/google/uuid"
 )
 
 type DataManager struct {
-	groups       []Group
+	groups       []dh.Data
 	nodes        []Node
 	sensors      []Sensor
 	topicChannel chan string
 }
 
 func (d *DataManager) AddGroup(group *Group) *Group {
-	if group.ID == uuid.Nil {
-		group.ID = uuid.New()
+	if group.ID == "" {
+		group.ID = uuid.New().String()
 	}
-	d.groups = append(d.groups, *group)
+	d.groups = append(d.groups, group)
 	return group
 }
 
-func (d *DataManager) GetGroups() []Group {
+func (d *DataManager) GetGroups() []dh.Data {
 	return d.groups
 }
 
-func (d *DataManager) GetGroup(ID uuid.UUID) *Group {
+func (d *DataManager) GetGroup(ID string) *Group {
 	for i := range d.groups {
-		group := &d.groups[i]
-		if group.ID == ID {
-			return group
+		data := d.groups[i]
+		if data.GetId() == ID {
+			group, ok := (data).(*Group)
+			if ok {
+				return group
+			}
 		}
 	}
 	return nil
 }
 
+func (d *DataManager) UpdateGroup(group *Group) *Group {
+	existingGroup := d.GetGroup(group.ID)
+	if existingGroup != nil {
+		existingGroup.Update(group)
+	}
+	return existingGroup
+}
+
+func (d *DataManager) DeleteGroup(id string) {
+	var nodeIndex int
+	for i := range d.nodes {
+		node := d.groups[i]
+		if node.GetId() == id {
+			nodeIndex = i
+			break
+		}
+	}
+
+	d.nodes[nodeIndex] = d.nodes[len(d.nodes)-1]
+	d.nodes = d.nodes[:len(d.nodes)-1]
+}
+
 func (d *DataManager) AddNode(node *Node) *Node {
-	if node.ID == uuid.Nil {
-		node.ID = uuid.New()
+	if node.ID == "" {
+		node.ID = uuid.New().String()
 	}
 
 	group := d.GetGroup(node.GroupID)
@@ -53,60 +82,116 @@ func (d *DataManager) GetNodes() []Node {
 	return d.nodes
 }
 
-func (d *DataManager) GetNode(ID uuid.UUID) *Node {
-	for i := range d.nodes {
-		node := &d.nodes[i]
-		if node.ID == ID {
-			return node
-		}
+func (d *DataManager) GetNode(ID string) *Node {
+	idx := slices.IndexFunc(d.nodes, func(n Node) bool {
+		return n.ID == ID
+	})
+	if idx > 0 {
+		node := &d.nodes[idx]
+		return node
 	}
 	return nil
+
+	// for i := range d.nodes {
+	// 	node := &d.nodes[i]
+	// 	if node.ID == ID {
+	// 		return node
+	// 	}
+	// }
+	// return nil
 }
 
-func (d *DataManager) getNewSensorId() int {
-	return len(d.sensors)
+func (d *DataManager) UpdateNode(node *Node) *Node {
+	existingNode := d.GetNode(node.ID)
+	if existingNode != nil {
+		existingNode.Update(node)
+	}
+	return existingNode
+}
+
+func (d *DataManager) DeleteNode(id string) {
+	var nodeIndex int
+	for i := range d.nodes {
+		node := &d.nodes[i]
+		if node.ID == id {
+			nodeIndex = i
+			break
+		}
+	}
+
+	d.nodes[nodeIndex] = d.nodes[len(d.nodes)-1]
+	d.nodes = d.nodes[:len(d.nodes)-1]
+}
+
+func (d *DataManager) getNewSensorId() string {
+	return strconv.Itoa(len(d.sensors))
 }
 
 func (d *DataManager) StoreReading(reading SensorReading) {
 	for i := range d.sensors {
-		sensor := &d.sensors[i]
-		if sensor.ID == reading.SensorID {
+		sensor := d.sensors[i]
+		if sensor.GetId() == reading.SensorID {
 			sensor.addReading(reading)
 			break
 		}
 	}
 }
 
+func (d *DataManager) GetSensors() []Sensor {
+	return d.sensors
+}
+
+func (d *DataManager) GetSensor(id string) *Sensor {
+	for i := range d.sensors {
+		sensor := &d.sensors[i]
+		if sensor.ID == id {
+			return sensor
+		}
+	}
+	return nil
+}
+
 func (d *DataManager) AddSensor(sensor *Sensor) *Sensor {
 	sensor.ID = Data.getNewSensorId()
-	topicName := "topic/"
+	sensor.Topic = "topic/"
 
 	node := d.GetNode(sensor.NodeID)
+
 	if node != nil {
+		sensor.Topic += node.Name + "/" + sensor.DataName
 		node.Sensors = append(node.Sensors, *sensor)
-		topicName += node.Name + "/"
+	} else {
+		sensor.Topic += sensor.DataName
 	}
+
 	d.sensors = append(d.sensors, *sensor)
 
-	topicName += sensor.DataName
+	fmt.Printf("New topic: %+v\n", sensor.Topic)
 
-	fmt.Printf("New topic: %+v\n", topicName)
-	// Topics.AddTopic(topicName)
-	d.topicChannel <- topicName
+	d.topicChannel <- sensor.Topic
 
 	fmt.Printf("New sensor created: %+v\n", sensor)
 	return sensor
 }
 
-func GetSensors() []Sensor {
-	return Data.sensors
+func (d *DataManager) UpdateSensor(sensor *Sensor) *Sensor {
+	existingSensor := d.GetSensor(sensor.ID)
+	if existingSensor != nil {
+		existingSensor.Update(sensor)
+	}
+	return existingSensor
 }
 
-func GetSensor(id int) *Sensor {
-	for _, sensor := range Data.sensors {
+func (d *DataManager) DeleteSensor(id string) {
+	var sensorIndex int
+	for i := range d.sensors {
+		sensor := &d.sensors[i]
 		if sensor.ID == id {
-			return &sensor
+			sensorIndex = i
+			break
 		}
 	}
-	return nil
+
+	d.sensors[sensorIndex] = d.sensors[len(d.sensors)-1]
+	d.sensors = d.sensors[:len(d.sensors)-1]
 }
