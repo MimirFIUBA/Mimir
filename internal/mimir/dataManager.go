@@ -51,17 +51,17 @@ func (d *DataManager) UpdateGroup(group *Group) *Group {
 }
 
 func (d *DataManager) DeleteGroup(id string) {
-	var nodeIndex int
-	for i := range d.nodes {
-		node := d.groups[i]
-		if node.GetId() == id {
-			nodeIndex = i
+	var groupIndex int
+	for i := range d.groups {
+		group := d.groups[i]
+		if group.GetId() == id {
+			groupIndex = i
 			break
 		}
 	}
 
-	d.nodes[nodeIndex] = d.nodes[len(d.nodes)-1]
-	d.nodes = d.nodes[:len(d.nodes)-1]
+	d.groups[groupIndex] = d.groups[len(d.groups)-1]
+	d.groups = d.groups[:len(d.groups)-1]
 }
 
 func (d *DataManager) AddNode(node *Node) *Node {
@@ -86,19 +86,11 @@ func (d *DataManager) GetNode(ID string) *Node {
 	idx := slices.IndexFunc(d.nodes, func(n Node) bool {
 		return n.ID == ID
 	})
-	if idx > 0 {
+	if idx >= 0 {
 		node := &d.nodes[idx]
 		return node
 	}
 	return nil
-
-	// for i := range d.nodes {
-	// 	node := &d.nodes[i]
-	// 	if node.ID == ID {
-	// 		return node
-	// 	}
-	// }
-	// return nil
 }
 
 func (d *DataManager) UpdateNode(node *Node) *Node {
@@ -152,8 +144,10 @@ func (d *DataManager) GetSensor(id string) *Sensor {
 }
 
 func (d *DataManager) AddSensor(sensor *Sensor) *Sensor {
+	fmt.Println("Add sensor")
 	sensor.ID = Data.getNewSensorId()
 	sensor.Topic = "topic/"
+	nodeId := sensor.NodeID
 
 	node := d.GetNode(sensor.NodeID)
 
@@ -162,6 +156,16 @@ func (d *DataManager) AddSensor(sensor *Sensor) *Sensor {
 		node.Sensors = append(node.Sensors, *sensor)
 	} else {
 		sensor.Topic += sensor.DataName
+	}
+
+	for _, data := range d.groups {
+		group := data.(*Group)
+		for i := range group.Nodes {
+			node := &group.Nodes[i]
+			if node.ID == nodeId {
+				node.Sensors = append(node.Sensors, *sensor)
+			}
+		}
 	}
 
 	d.sensors = append(d.sensors, *sensor)

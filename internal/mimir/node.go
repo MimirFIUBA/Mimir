@@ -5,7 +5,7 @@ type Node struct {
 	Name        string   `json:"name"`
 	Description string   `json:"description"`
 	GroupID     string   `json:"groupId"`
-	Sensors     []Sensor `json:"data"`
+	Sensors     []Sensor `json:"sensors"`
 }
 
 func NewNode(name string) *Node {
