@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io"
 	"mimir/internal/consts"
-	mimir "mimir/internal/mimir"
+	"mimir/internal/mimir"
 	"strings"
 	"time"
 
@@ -13,8 +13,18 @@ import (
 )
 
 var (
-	Topics TopicManager
+	Topics  TopicManager
+	Manager MQTTManager
 )
+
+type MQTTManager struct {
+	MQTTClient      mqtt.Client
+	readingsChannel chan mimir.SensorReading
+}
+
+func NewMQTTManager(mqttClient mqtt.Client, readingsChannel chan mimir.SensorReading) *MQTTManager {
+	return &MQTTManager{mqttClient, readingsChannel}
+}
 
 func onMessageReceived(client mqtt.Client, message mqtt.Message) {
 	fmt.Printf("Received message: %s from topic: %s\n", message.Payload(), message.Topic())
@@ -33,11 +43,18 @@ func onMessageReceived(client mqtt.Client, message mqtt.Message) {
 		}
 	}
 
+	fmt.Println("Before Reading")
+
 	id := profile["sensorId"].(string)
 	value := profile["data"]
 
 	sensorReading := mimir.SensorReading{SensorID: id, Value: value, Time: time.Now()}
-	mimir.Data.StoreReading(sensorReading)
+	Manager.readingsChannel <- sensorReading
+	fmt.Println("reading sent")
+	// sensorReading := mimir.SensorReading{SensorID: id, Value: value, Time: time.Now()}
+	// mimir.Data.StoreReading(sensorReading)
+	//TODO: send through channel
+
 }
 
 func GetTopics() []string {
@@ -54,8 +71,10 @@ func StartMqttClient() mqtt.Client {
 	return mqtt.NewClient(opts)
 }
 
-func StartGateway(client mqtt.Client, topics []string, topicChannel chan string) {
+func StartGateway(client mqtt.Client, topics []string, topicChannel chan string, readingsChannel chan mimir.SensorReading, outgoingMessagesChannel chan string) {
 	Topics = *NewTopicManager(client, topicChannel)
+	Manager = *NewMQTTManager(client, readingsChannel)
+
 	if token := client.Connect(); token.Wait() && token.Error() != nil {
 		panic(fmt.Sprintf("Error connecting to MQTT broker: %s", token.Error()))
 	}
@@ -66,10 +85,23 @@ func StartGateway(client mqtt.Client, topics []string, topicChannel chan string)
 		}
 	}
 
-	for {
-		newTopicName := <-topicChannel
-		Topics.AddTopic(newTopicName)
-	}
+	go func() {
+		for {
+			newTopicName := <-topicChannel
+			Topics.AddTopic(newTopicName)
+		}
+	}()
+
+	go func() {
+		for {
+			outgoingMessage := <-outgoingMessagesChannel
+			topic := "alert/ph"
+			token := client.Publish(topic, 0, false, outgoingMessage)
+			token.Wait()
+
+			fmt.Printf("Published topic %s: %s\n", topic, outgoingMessage)
+		}
+	}()
 
 }
 

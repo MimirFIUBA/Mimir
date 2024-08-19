@@ -11,9 +11,10 @@ import (
 )
 
 type DataManager struct {
-	groups       []dh.Data
-	nodes        []Node
-	sensors      []Sensor
+	groups  []dh.Data
+	nodes   []Node
+	sensors []Sensor
+
 	topicChannel chan string
 }
 
@@ -145,7 +146,7 @@ func (d *DataManager) GetSensor(id string) *Sensor {
 
 func (d *DataManager) AddSensor(sensor *Sensor) *Sensor {
 	fmt.Println("Add sensor")
-	sensor.ID = Data.getNewSensorId()
+	sensor.ID = d.getNewSensorId()
 	sensor.Topic = "topic/"
 	nodeId := sensor.NodeID
 

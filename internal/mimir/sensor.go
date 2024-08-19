@@ -12,6 +12,7 @@ type Sensor struct {
 	NodeID      string          `json:"nodeId"`
 	Description string          `json:"description"`
 	Data        []SensorReading `json:"data"`
+	Triggers    []Trigger       `json:"triggers"`
 }
 
 type SensorReading struct {
@@ -23,7 +24,7 @@ type SensorReading struct {
 type SensorValue interface{}
 
 func NewSensor(name string) *Sensor {
-	return &Sensor{"", name, "", "", "", "", nil}
+	return &Sensor{"", name, "", "", "", "", nil, nil}
 }
 
 func (s *Sensor) addReading(reading SensorReading) {

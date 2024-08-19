@@ -13,10 +13,16 @@ import (
 func main() {
 	topics := mqtt.GetTopics()
 	client := mqtt.StartMqttClient()
-	topicChannel := make(chan string)
 
-	go mqtt.StartGateway(client, topics, topicChannel)
-	go mimir.Run(topicChannel)
+	topicsChannel := make(chan string)
+	readingsChannel := make(chan mimir.SensorReading)
+	outgoingMessagesChannel := make(chan string)
+
+	mimirProcessor := mimir.NewMimirProcessor(topicsChannel, readingsChannel, outgoingMessagesChannel)
+
+	go mimirProcessor.Run()
+	go mqtt.StartGateway(client, topics, topicsChannel, readingsChannel, outgoingMessagesChannel)
+	// go mimir.Run(topicChannel)
 	go API.Start()
 
 	sigChan := make(chan os.Signal, 1)

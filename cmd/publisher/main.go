@@ -28,9 +28,9 @@ func (g mqttGenerator) generateIntData(n int, id int) {
 	g.c <- 0
 }
 
-func (g mqttGenerator) generateFloatData(n int, id int) {
+func (g mqttGenerator) generateFloatData(n int, id string) {
 	for i := 1; i <= n; i++ {
-		message := fmt.Sprintf(`{"sensorId": %d, "data": %.2f, "time": "%s"}`, id, rand.Float64()*40, time.Now())
+		message := fmt.Sprintf(`{"sensorId": "%s", "data": %.2f, "time": "%s"}`, id, rand.Float64()*40, time.Now())
 		token := g.client.Publish(g.topic, 0, false, message)
 		token.Wait()
 
@@ -53,8 +53,8 @@ func main() {
 
 	c := make(chan int)
 
-	generator := mqttGenerator{"topic/node tomates/ph", client, c}
-	generator.generateFloatData(10, 2)
+	generator := mqttGenerator{"topic/ph", client, c}
+	go generator.generateFloatData(10, "0")
 	<-c
 	// generatorTemp := mqttGenerator{consts.TopicTemp, client, c}
 	// generatorPH := mqttGenerator{consts.TopicPH, client, c}
