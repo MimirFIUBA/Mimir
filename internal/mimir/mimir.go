@@ -1,6 +1,9 @@
 package mimir
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
 
 var (
 	Data = DataManager{}
@@ -19,16 +22,25 @@ func NewMimirProcessor(topicChannel chan string, readingChannel chan SensorReadi
 }
 
 func setInitialData(outgoingMessagesChannel chan string) {
-	sensor := NewSensor("sensorPH")
-	sensor.DataName = "ph"
+	sensor := NewSensor("sensorTest")
+	sensor.DataName = "mimirTest"
 
-	condition := MaxValueCondition{10.0, nil}
-	printAction := PrintAction{}
+	// Test Data
+	condition := GenericCondition{10.0, nil, "<"}
+	printAction := PrintAction{"Action executed"}
 	sendMQTTMessageAction := SendMQTTMessageAction{"Alert test!", outgoingMessagesChannel}
 
 	actions := []Action{&printAction, &sendMQTTMessageAction}
 	trigger := Trigger{&condition, actions}
 	sensor.Triggers = append(sensor.Triggers, trigger)
+
+	receiveValueCondition := ReceiveValueCondition{}
+	timeTriggerActions := []Action{&printAction}
+
+	timeTrigger := NewTimeTrigger(&receiveValueCondition, timeTriggerActions, 5*time.Second)
+	timeTrigger.Start()
+
+	sensor.TimeTriggers = append(sensor.TimeTriggers, *timeTrigger)
 
 	Data.AddSensor(sensor)
 }
@@ -39,7 +51,6 @@ func (mp *MimirProcessor) Run() {
 	for {
 		reading := <-mp.readingChannel
 
-		//TODO: processReading
 		processReading(reading)
 
 		Data.StoreReading(reading)
@@ -49,42 +60,12 @@ func (mp *MimirProcessor) Run() {
 func processReading(reading SensorReading) {
 	fmt.Printf("Processing reading: %v \n", reading.Value)
 	sensor := Data.GetSensor(reading.SensorID)
+	for _, timeTrigger := range sensor.TimeTriggers {
+		timeTrigger.Evaluate(reading)
+	}
+
 	for _, trigger := range sensor.Triggers {
 		trigger.Execute(reading)
 	}
+
 }
-
-// func Run(topicChannel chan string) {
-// 	Data.topicChannel = topicChannel
-
-// 	group := NewGroup("group 1")
-// 	Data.AddGroup(group)
-
-// 	// Load Config
-// 	//Test Sensor
-// 	sensor := NewSensor("test sensor 1")
-
-// 	value1 := 1
-// 	data := SensorReading{Value: value1, Time: time.Now()}
-// 	sensor.Data = append(sensor.Data, data)
-
-// 	value2 := 1.3
-// 	data2 := SensorReading{Value: value2, Time: time.Now()}
-// 	sensor.Data = append(sensor.Data, data2)
-
-// 	value3 := true
-// 	data3 := SensorReading{Value: value3, Time: time.Now()}
-// 	sensor.Data = append(sensor.Data, data3)
-
-// 	valueString := "too high"
-// 	data4 := SensorReading{Value: valueString, Time: time.Now()}
-// 	sensor.Data = append(sensor.Data, data4)
-
-// 	fmt.Printf("sensorData: %+v\n", len(sensor.Data))
-// 	Data.AddSensor(sensor)
-// 	//End test sensor
-
-// 	Data.AddSensor(NewSensor("sensorPH"))
-// 	// CreateSensor(Sensor{0, "sensorTemp", "this is a temp sensor", nil})
-
-// }

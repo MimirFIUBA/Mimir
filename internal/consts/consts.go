@@ -5,5 +5,5 @@ const (
 	TopicPH    = "topic/ph"
 	TopicTemp  = "topic/temp"
 	TopicAll   = "topic/All"
-	AlertTopic = "alert/ph"
+	AlertTopic = "alert/#"
 )

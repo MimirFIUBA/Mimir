@@ -53,7 +53,7 @@ func main() {
 
 	c := make(chan int)
 
-	generator := mqttGenerator{"topic/ph", client, c}
+	generator := mqttGenerator{"topic/mimirTest", client, c}
 	go generator.generateFloatData(10, "0")
 	<-c
 	// generatorTemp := mqttGenerator{consts.TopicTemp, client, c}

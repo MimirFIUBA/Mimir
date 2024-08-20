@@ -5,14 +5,15 @@ import (
 )
 
 type Sensor struct {
-	ID          string          `json:"id"`
-	Name        string          `json:"name"`
-	DataName    string          `json:"dataName"`
-	Topic       string          `json:"topic"`
-	NodeID      string          `json:"nodeId"`
-	Description string          `json:"description"`
-	Data        []SensorReading `json:"data"`
-	Triggers    []Trigger       `json:"triggers"`
+	ID           string          `json:"id"`
+	Name         string          `json:"name"`
+	DataName     string          `json:"dataName"`
+	Topic        string          `json:"topic"`
+	NodeID       string          `json:"nodeId"`
+	Description  string          `json:"description"`
+	Data         []SensorReading `json:"data"`
+	Triggers     []Trigger       `json:"triggers"`
+	TimeTriggers []TimeTrigger   `json:"timeTriggers"`
 }
 
 type SensorReading struct {
@@ -24,7 +25,7 @@ type SensorReading struct {
 type SensorValue interface{}
 
 func NewSensor(name string) *Sensor {
-	return &Sensor{"", name, "", "", "", "", nil, nil}
+	return &Sensor{"", name, "", "", "", "", nil, nil, nil}
 }
 
 func (s *Sensor) addReading(reading SensorReading) {

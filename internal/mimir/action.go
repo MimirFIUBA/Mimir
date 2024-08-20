@@ -6,10 +6,12 @@ type Action interface {
 	Execute()
 }
 
-type PrintAction struct{}
+type PrintAction struct {
+	Message string
+}
 
 func (action *PrintAction) Execute() {
-	fmt.Println("Action executed")
+	fmt.Println(action.Message)
 }
 
 type SendMQTTMessageAction struct {
