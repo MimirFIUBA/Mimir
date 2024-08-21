@@ -2,6 +2,7 @@ package mimir
 
 import (
 	"fmt"
+	"mimir/internal/trigger"
 	"time"
 )
 
@@ -21,30 +22,6 @@ func NewMimirProcessor(topicChannel chan string, readingChannel chan SensorReadi
 	return &mp
 }
 
-func setInitialData(outgoingMessagesChannel chan string) {
-	sensor := NewSensor("sensorTest")
-	sensor.DataName = "mimirTest"
-
-	// Test Data
-	condition := GenericCondition{10.0, nil, "<"}
-	printAction := PrintAction{"Action executed"}
-	sendMQTTMessageAction := SendMQTTMessageAction{"Alert test!", outgoingMessagesChannel}
-
-	actions := []Action{&printAction, &sendMQTTMessageAction}
-	trigger := Trigger{&condition, actions}
-	sensor.Triggers = append(sensor.Triggers, trigger)
-
-	receiveValueCondition := ReceiveValueCondition{}
-	timeTriggerActions := []Action{&printAction}
-
-	timeTrigger := NewTimeTrigger(&receiveValueCondition, timeTriggerActions, 5*time.Second)
-	timeTrigger.Start()
-
-	sensor.TimeTriggers = append(sensor.TimeTriggers, *timeTrigger)
-
-	Data.AddSensor(sensor)
-}
-
 func (mp *MimirProcessor) Run() {
 	setInitialData(mp.outgoingMessagesChannel)
 
@@ -59,13 +36,42 @@ func (mp *MimirProcessor) Run() {
 
 func processReading(reading SensorReading) {
 	fmt.Printf("Processing reading: %v \n", reading.Value)
-	sensor := Data.GetSensor(reading.SensorID)
-	for _, timeTrigger := range sensor.TimeTriggers {
-		timeTrigger.Evaluate(reading)
-	}
+	// sensor := Data.GetSensor(reading.SensorID)
+	// for _, timeTrigger := range sensor.TimeTriggers {
+	// 	timeTrigger.Evaluate(reading)
+	// }
 
-	for _, trigger := range sensor.Triggers {
-		trigger.Execute(reading)
-	}
+	// for _, trigger := range sensor.Triggers {
+	// 	trigger.Execute(reading)
+	// }
+}
 
+func setInitialData(outgoingMessagesChannel chan string) {
+	sensor := NewSensor("test")
+	sensor.DataName = "mimirTest"
+
+	// Trigger construction
+	printAction := trigger.PrintAction{Message: "Action executed"}
+	sendMQTTMessageAction := trigger.SendMQTTMessageAction{
+		Message:                 "Temperature too low on sensor 1",
+		OutgoingMessagesChannel: outgoingMessagesChannel}
+	condition := trigger.GenericCondition{Operator: "<", ReferenceValue: 10.0, TestValue: 0.0}
+
+	sensorTestTrigger := trigger.NewTrigger("sensor test trigger")
+	sensorTestTrigger.Condition = &condition
+	sensorTestTrigger.Actions = append(sensorTestTrigger.Actions, &printAction)
+	sensorTestTrigger.Actions = append(sensorTestTrigger.Actions, &sendMQTTMessageAction)
+
+	sensor.register(sensorTestTrigger)
+
+	printActionTimeTrigger := trigger.PrintAction{Message: "Time Trigger executed"}
+	receiveValueCondition := trigger.ReceiveValueCondition{}
+	sensorTimeTrigger := trigger.NewTimeTrigger("sensor time trigger", 10*time.Second)
+	sensorTimeTrigger.Condition = &receiveValueCondition
+	sensorTimeTrigger.Actions = append(sensorTimeTrigger.Actions, &printActionTimeTrigger)
+
+	sensor.register(sensorTimeTrigger)
+	sensorTimeTrigger.Start()
+
+	Data.AddSensor(sensor)
 }

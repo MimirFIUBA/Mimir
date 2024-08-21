@@ -1,15 +1,15 @@
-package mimir
+package trigger
 
 type Condition interface {
 	Evaluate() bool
-	SetNewValue(newValue SensorValue)
+	SetNewValue(newValue interface{})
 }
 
 type ReceiveValueCondition struct {
 	hasReceivedValue bool
 }
 
-func (c *ReceiveValueCondition) SetNewValue(newValue SensorValue) {
+func (c *ReceiveValueCondition) SetNewValue(newValue interface{}) {
 	c.hasReceivedValue = true
 }
 
@@ -18,9 +18,9 @@ func (c *ReceiveValueCondition) Evaluate() bool {
 }
 
 type GenericCondition struct {
-	ReferenceValue SensorValue
-	TestValue      SensorValue
 	Operator       string
+	ReferenceValue interface{}
+	TestValue      interface{}
 }
 
 func (c *GenericCondition) Evaluate() bool {
@@ -88,6 +88,6 @@ func compareString(leftValue, rightValue string, operator string) bool {
 	}
 }
 
-func (c *GenericCondition) SetNewValue(newValue SensorValue) {
+func (c *GenericCondition) SetNewValue(newValue interface{}) {
 	c.TestValue = newValue
 }
