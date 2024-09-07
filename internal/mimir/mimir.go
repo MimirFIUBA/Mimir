@@ -12,23 +12,28 @@ var (
 )
 
 type MimirProcessor struct {
-	outgoingMessagesChannel chan string
-	readingChannel          chan SensorReading
-	topicChannel            chan string
-	wsChannel               chan string
+	OutgoingMessagesChannel chan string
+	ReadingChannel          chan SensorReading
+	TopicChannel            chan string
+	WsChannel               chan string
 }
 
-func NewMimirProcessor(topicChannel chan string, readingChannel chan SensorReading, outgoingMessagesChannel chan string, wsChannel chan string) *MimirProcessor {
+func NewMimirProcessor() *MimirProcessor {
+	topicChannel := make(chan string)
+	readingsChannel := make(chan SensorReading)
+	outgoingMessagesChannel := make(chan string)
+	webSocketMessageChannel := make(chan string)
+
 	Data.topicChannel = topicChannel
-	mp := MimirProcessor{outgoingMessagesChannel, readingChannel, topicChannel, wsChannel}
+	mp := MimirProcessor{outgoingMessagesChannel, readingsChannel, topicChannel, webSocketMessageChannel}
 	return &mp
 }
 
 func (mp *MimirProcessor) Run() {
-	setInitialData(mp.outgoingMessagesChannel, mp.wsChannel)
+	setInitialData(mp.OutgoingMessagesChannel, mp.WsChannel)
 
 	for {
-		reading := <-mp.readingChannel
+		reading := <-mp.ReadingChannel
 
 		processReading(reading)
 

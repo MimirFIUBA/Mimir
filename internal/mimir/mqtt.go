@@ -49,9 +49,9 @@ func StartMqttClient() mqtt.Client {
 	return mqtt.NewClient(opts)
 }
 
-func StartGateway(client mqtt.Client, topics []string, topicChannel chan string, readingsChannel chan SensorReading, outgoingMessagesChannel chan string) {
-	Topics = *NewTopicManager(client, topicChannel)
-	Manager = *NewMQTTManager(client, readingsChannel)
+func (mp *MimirProcessor) StartGateway(client mqtt.Client, topics []string) {
+	Topics = *NewTopicManager(client, mp.TopicChannel)
+	Manager = *NewMQTTManager(client, mp.ReadingChannel)
 	MessageProcessors = NewProcessorRegistry()
 
 	if token := client.Connect(); token.Wait() && token.Error() != nil {
@@ -66,14 +66,14 @@ func StartGateway(client mqtt.Client, topics []string, topicChannel chan string,
 
 	go func() {
 		for {
-			newTopicName := <-topicChannel
+			newTopicName := <-mp.TopicChannel
 			Topics.AddTopic(newTopicName)
 		}
 	}()
 
 	go func() {
 		for {
-			outgoingMessage := <-outgoingMessagesChannel
+			outgoingMessage := <-mp.OutgoingMessagesChannel
 			topic := "alert/ph"
 			token := client.Publish(topic, 0, false, outgoingMessage)
 			token.Wait()

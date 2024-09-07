@@ -16,16 +16,11 @@ func main() {
 	topics := mimir.GetTopics()
 	client := mimir.StartMqttClient()
 
-	topicsChannel := make(chan string)
-	readingsChannel := make(chan mimir.SensorReading)
-	outgoingMessagesChannel := make(chan string)
-	webSocketMessageChannel := make(chan string)
+	mimirProcessor := mimir.NewMimirProcessor()
 
-	mimirProcessor := mimir.NewMimirProcessor(topicsChannel, readingsChannel, outgoingMessagesChannel, webSocketMessageChannel)
-
-	mimir.StartGateway(client, topics, topicsChannel, readingsChannel, outgoingMessagesChannel)
+	mimirProcessor.StartGateway(client, topics)
 	go mimirProcessor.Run()
-	go API.Start(webSocketMessageChannel)
+	go API.Start(mimirProcessor.WsChannel)
 	go API.StartWebSocket()
 
 	sigChan := make(chan os.Signal, 1)
