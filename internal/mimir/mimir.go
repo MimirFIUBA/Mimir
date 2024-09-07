@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"mimir/internal/triggers"
+	"time"
 )
 
 var (
@@ -14,16 +15,17 @@ type MimirProcessor struct {
 	outgoingMessagesChannel chan string
 	readingChannel          chan SensorReading
 	topicChannel            chan string
+	wsChannel               chan string
 }
 
-func NewMimirProcessor(topicChannel chan string, readingChannel chan SensorReading, outgoingMessagesChannel chan string) *MimirProcessor {
+func NewMimirProcessor(topicChannel chan string, readingChannel chan SensorReading, outgoingMessagesChannel chan string, wsChannel chan string) *MimirProcessor {
 	Data.topicChannel = topicChannel
-	mp := MimirProcessor{outgoingMessagesChannel, readingChannel, topicChannel}
+	mp := MimirProcessor{outgoingMessagesChannel, readingChannel, topicChannel, wsChannel}
 	return &mp
 }
 
 func (mp *MimirProcessor) Run() {
-	setInitialData(mp.outgoingMessagesChannel)
+	setInitialData(mp.outgoingMessagesChannel, mp.wsChannel)
 
 	for {
 		reading := <-mp.readingChannel
@@ -39,7 +41,7 @@ func processReading(reading SensorReading) {
 	fmt.Printf("Processing reading: %v \n", reading.Value)
 }
 
-func setInitialData(outgoingMessagesChannel chan string) {
+func setInitialData(outgoingMessagesChannel chan string, wsMsgChan chan string) {
 	testSensor := NewSensor("test")
 	testSensor.DataName = "mimirTest"
 	Data.AddSensor(testSensor)
@@ -86,14 +88,18 @@ func setInitialData(outgoingMessagesChannel chan string) {
 
 	dhtTemperatureSensor.register(sensorTestTrigger)
 
-	// printActionTimeTrigger := triggers.PrintAction{Message: "ALERT!!! Time Trigger executed"}
-	// receiveValueCondition := triggers.ReceiveValueCondition{}
-	// sensorTimeTrigger := triggers.NewTimeTrigger("sensor time trigger", 10*time.Second)
-	// sensorTimeTrigger.Condition = &receiveValueCondition
-	// sensorTimeTrigger.Actions = append(sensorTimeTrigger.Actions, &printActionTimeTrigger)
+	printActionTimeTrigger := triggers.PrintAction{Message: "ALERT!!! Time Trigger executed"}
+	sendWSAction := triggers.SendMQTTMessageAction{
+		Message:                 "{Hello}",
+		OutgoingMessagesChannel: wsMsgChan}
+	receiveValueCondition := triggers.ReceiveValueCondition{}
+	sensorTimeTrigger := triggers.NewTimeTrigger("sensor time trigger", 10*time.Second)
+	sensorTimeTrigger.Condition = &receiveValueCondition
+	sensorTimeTrigger.Actions = append(sensorTimeTrigger.Actions, &printActionTimeTrigger)
+	sensorTimeTrigger.Actions = append(sensorTimeTrigger.Actions, &sendWSAction)
 
-	// sensor.register(sensorTimeTrigger)
-	// sensorTimeTrigger.Start()
+	dhtTemperatureSensor.register(sensorTimeTrigger)
+	sensorTimeTrigger.Start()
 
 	Data.AddSensor(dhtTemperatureSensor)
 	Data.AddSensor(dhtHumiditySensor)

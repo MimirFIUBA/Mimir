@@ -5,9 +5,27 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/gorilla/websocket"
 )
 
-func Start() {
+// TODO: add security check (only for production use)
+var upgrader = websocket.Upgrader{
+	CheckOrigin: func(r *http.Request) bool {
+		return true
+	},
+}
+
+type WSMessage struct {
+	Username string `json:"username"`
+	Message  string `json:"message"`
+}
+
+var clients = make(map[*websocket.Conn]bool)
+
+var broadcast chan string
+
+func Start(broadcastChan chan string) {
+	broadcast = broadcastChan
 	router := mux.NewRouter()
 
 	router.HandleFunc("/sensors", getSensors).Methods("GET")
@@ -40,5 +58,14 @@ func Start() {
 	router.HandleFunc("/processors/{id}", updateProcessor).Methods("PUT")
 	router.HandleFunc("/processors/{id}", deleteProcessor).Methods("DELETE")
 
+	router.HandleFunc("/ws", handleConnections)
+
+	go handleMessages()
+
 	log.Fatal(http.ListenAndServe(":8080", router))
+}
+
+func StartWebSocket() {
+	// http.HandleFunc("/reverse", reverse)
+	// log.Fatal(http.ListenAndServe(":5555", nil))
 }
