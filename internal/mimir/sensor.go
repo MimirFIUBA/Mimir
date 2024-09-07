@@ -1,7 +1,7 @@
 package mimir
 
 import (
-	"mimir/internal/trigger"
+	"mimir/internal/triggers"
 	"time"
 )
 
@@ -13,9 +13,7 @@ type Sensor struct {
 	NodeID      string          `json:"nodeId"`
 	Description string          `json:"description"`
 	Data        []SensorReading `json:"data"`
-	// Triggers     []Trigger       `json:"triggers"`
-	// TimeTriggers []TimeTrigger   `json:"timeTriggers"`
-	observerList []trigger.Observer
+	triggerList []triggers.TriggerObserver
 }
 
 type SensorReading struct {
@@ -48,8 +46,8 @@ func (s *Sensor) GetId() string {
 	return s.ID
 }
 
-func (s *Sensor) register(observer trigger.Observer) {
-	s.observerList = append(s.observerList, observer)
+func (s *Sensor) register(observer triggers.TriggerObserver) {
+	s.triggerList = append(s.triggerList, observer)
 }
 
 // func (s *Sensor) deregister(observer trigger.Observer) {
@@ -57,8 +55,8 @@ func (s *Sensor) register(observer trigger.Observer) {
 // }
 
 func (s *Sensor) notifyAll() {
-	for _, observer := range s.observerList {
-		event := trigger.Event{
+	for _, observer := range s.triggerList {
+		event := triggers.Event{
 			Name:      "new reading event",
 			Timestamp: time.Now(),
 			Data:      s.Data[len(s.Data)-1].Value}

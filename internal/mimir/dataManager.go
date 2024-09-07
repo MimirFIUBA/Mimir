@@ -5,7 +5,9 @@ import (
 	"slices"
 	"strconv"
 
+	"mimir/internal/consts"
 	dh "mimir/internal/dataHandler"
+	"mimir/internal/triggers"
 
 	"github.com/google/uuid"
 )
@@ -121,9 +123,12 @@ func (d *DataManager) getNewSensorId() string {
 }
 
 func (d *DataManager) StoreReading(reading SensorReading) {
+	fmt.Println("Store reading")
+	fmt.Printf("reading: %v\n", reading)
 	for i := range d.sensors {
-		sensor := d.sensors[i]
+		sensor := &d.sensors[i]
 		if sensor.GetId() == reading.SensorID {
+			fmt.Println("sensor add reading")
 			sensor.addReading(reading)
 			break
 		}
@@ -147,7 +152,7 @@ func (d *DataManager) GetSensor(id string) *Sensor {
 func (d *DataManager) AddSensor(sensor *Sensor) *Sensor {
 	fmt.Println("Add sensor")
 	sensor.ID = d.getNewSensorId()
-	sensor.Topic = "topic/"
+	sensor.Topic = consts.TopicPrefix + "/"
 	nodeId := sensor.NodeID
 
 	node := d.GetNode(sensor.NodeID)
@@ -199,4 +204,15 @@ func (d *DataManager) DeleteSensor(id string) {
 
 	d.sensors[sensorIndex] = d.sensors[len(d.sensors)-1]
 	d.sensors = d.sensors[:len(d.sensors)-1]
+}
+
+func (d *DataManager) GetTriggersBySensorId() map[string][]triggers.TriggerObserver {
+	var triggersBySensorId = make(map[string][]triggers.TriggerObserver)
+	for _, sensor := range d.sensors {
+		if len(sensor.triggerList) > 0 {
+			var triggerList = sensor.triggerList
+			triggersBySensorId[sensor.ID] = triggerList
+		}
+	}
+	return triggersBySensorId
 }

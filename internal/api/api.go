@@ -28,5 +28,17 @@ func Start() {
 	router.HandleFunc("/groups/{id}", updateGroup).Methods("PUT")
 	router.HandleFunc("/groups/{id}", deleteGroup).Methods("DELETE")
 
+	router.HandleFunc("/triggers", getTriggers).Methods("GET")
+	router.HandleFunc("/triggers/{id}", getTrigger).Methods("GET")
+	router.HandleFunc("/triggers", createTrigger).Methods("POST")
+	router.HandleFunc("/triggers/{id}", updateTrigger).Methods("PUT")
+	router.HandleFunc("/triggers/{id}", deleteTrigger).Methods("DELETE")
+
+	router.HandleFunc("/processors", getProcessors).Methods("GET")
+	router.HandleFunc("/processors/{id}", getProcessor).Methods("GET")
+	router.HandleFunc("/processors", createProcessor).Methods("POST")
+	router.HandleFunc("/processors/{id}", updateProcessor).Methods("PUT")
+	router.HandleFunc("/processors/{id}", deleteProcessor).Methods("DELETE")
+
 	log.Fatal(http.ListenAndServe(":8080", router))
 }

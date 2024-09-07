@@ -1,9 +1,9 @@
 package mimir
 
 import (
+	"encoding/binary"
 	"fmt"
-	"mimir/internal/trigger"
-	"time"
+	"mimir/internal/triggers"
 )
 
 var (
@@ -35,43 +35,66 @@ func (mp *MimirProcessor) Run() {
 }
 
 func processReading(reading SensorReading) {
+	//TODO: ver si necesitamos hacer algo aca
 	fmt.Printf("Processing reading: %v \n", reading.Value)
-	// sensor := Data.GetSensor(reading.SensorID)
-	// for _, timeTrigger := range sensor.TimeTriggers {
-	// 	timeTrigger.Evaluate(reading)
-	// }
-
-	// for _, trigger := range sensor.Triggers {
-	// 	trigger.Execute(reading)
-	// }
 }
 
 func setInitialData(outgoingMessagesChannel chan string) {
-	sensor := NewSensor("test")
-	sensor.DataName = "mimirTest"
+	testSensor := NewSensor("test")
+	testSensor.DataName = "mimirTest"
+	Data.AddSensor(testSensor)
+
+	// processor := &JsonProcessor{"id", "value"}
+
+	processor := NewBytesProcessor()
+	idConfiguration := NewBytesConfiguration("id", binary.BigEndian, 1)
+	dataConfiguration := NewBytesConfiguration("bool", binary.BigEndian, 1)
+	processor.AddBytesConfiguration(*idConfiguration)
+	processor.AddBytesConfiguration(*dataConfiguration)
+	processor.AddBytesConfiguration(*NewBytesConfiguration("id", binary.BigEndian, 1))
+	processor.AddBytesConfiguration(*NewBytesConfiguration("float", binary.BigEndian, 4))
+
+	MessageProcessors.RegisterProcessor("mimir/mimirTest", processor)
+
+	node := NewNode("esp32")
+	node = Data.AddNode(node)
+
+	dhtTemperatureSensor := NewSensor("dht temp")
+	dhtTemperatureSensor.DataName = "temperature"
+	dhtTemperatureSensor.NodeID = node.ID
+
+	processorTemp := NewJSONProcessor()
+	configuration1 := JSONValueConfiguration{"id", "value"}
+	processorTemp.jsonValueConfigurations = append(processorTemp.jsonValueConfigurations, configuration1)
+	MessageProcessors.RegisterProcessor("mimir/esp32/temperature", processorTemp)
+
+	dhtHumiditySensor := NewSensor("dht humidity")
+	dhtHumiditySensor.DataName = "humidity"
+	dhtHumiditySensor.NodeID = node.ID
 
 	// Trigger construction
-	printAction := trigger.PrintAction{Message: "Action executed"}
-	sendMQTTMessageAction := trigger.SendMQTTMessageAction{
+	printAction := triggers.PrintAction{Message: "TRIGGER EXECUTED - Temperature too low"}
+	sendMQTTMessageAction := triggers.SendMQTTMessageAction{
 		Message:                 "Temperature too low on sensor 1",
 		OutgoingMessagesChannel: outgoingMessagesChannel}
-	condition := trigger.GenericCondition{Operator: "<", ReferenceValue: 10.0, TestValue: 0.0}
+	condition := triggers.GenericCondition{Operator: "<", ReferenceValue: 10.0, TestValue: 0.0}
 
-	sensorTestTrigger := trigger.NewTrigger("sensor test trigger")
+	sensorTestTrigger := triggers.NewTrigger("sensor test trigger")
 	sensorTestTrigger.Condition = &condition
 	sensorTestTrigger.Actions = append(sensorTestTrigger.Actions, &printAction)
 	sensorTestTrigger.Actions = append(sensorTestTrigger.Actions, &sendMQTTMessageAction)
 
-	sensor.register(sensorTestTrigger)
+	dhtTemperatureSensor.register(sensorTestTrigger)
 
-	printActionTimeTrigger := trigger.PrintAction{Message: "Time Trigger executed"}
-	receiveValueCondition := trigger.ReceiveValueCondition{}
-	sensorTimeTrigger := trigger.NewTimeTrigger("sensor time trigger", 10*time.Second)
-	sensorTimeTrigger.Condition = &receiveValueCondition
-	sensorTimeTrigger.Actions = append(sensorTimeTrigger.Actions, &printActionTimeTrigger)
+	// printActionTimeTrigger := triggers.PrintAction{Message: "ALERT!!! Time Trigger executed"}
+	// receiveValueCondition := triggers.ReceiveValueCondition{}
+	// sensorTimeTrigger := triggers.NewTimeTrigger("sensor time trigger", 10*time.Second)
+	// sensorTimeTrigger.Condition = &receiveValueCondition
+	// sensorTimeTrigger.Actions = append(sensorTimeTrigger.Actions, &printActionTimeTrigger)
 
-	sensor.register(sensorTimeTrigger)
-	sensorTimeTrigger.Start()
+	// sensor.register(sensorTimeTrigger)
+	// sensorTimeTrigger.Start()
 
-	Data.AddSensor(sensor)
+	Data.AddSensor(dhtTemperatureSensor)
+	Data.AddSensor(dhtHumiditySensor)
 }

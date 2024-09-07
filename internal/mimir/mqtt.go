@@ -1,60 +1,38 @@
 package mimir
 
 import (
-	"encoding/json"
 	"fmt"
-	"io"
 	"mimir/internal/consts"
-	"mimir/internal/mimir"
-	"strings"
-	"time"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
 
 var (
-	Topics  TopicManager
-	Manager MQTTManager
+	Topics            TopicManager
+	Manager           MQTTManager
+	MessageProcessors *ProcessorRegistry
 )
 
 type MQTTManager struct {
 	MQTTClient      mqtt.Client
-	readingsChannel chan mimir.SensorReading
+	readingsChannel chan SensorReading
 }
 
-func NewMQTTManager(mqttClient mqtt.Client, readingsChannel chan mimir.SensorReading) *MQTTManager {
+func NewMQTTManager(mqttClient mqtt.Client, readingsChannel chan SensorReading) *MQTTManager {
 	return &MQTTManager{mqttClient, readingsChannel}
 }
 
 func onMessageReceived(client mqtt.Client, message mqtt.Message) {
 	fmt.Printf("Received message: %s from topic: %s\n", message.Payload(), message.Topic())
+	// fmt.Printf("binary: %08b\n", message.Payload())
 
-	var payload = string(message.Payload()[:])
-	jsonDataReader := strings.NewReader(payload)
-	decoder := json.NewDecoder(jsonDataReader)
-	var profile map[string]interface{}
-	for {
-		err := decoder.Decode(&profile)
-		if err == io.EOF {
-			break
-		}
+	processor, exists := MessageProcessors.GetProcessor(message.Topic())
+	if exists {
+		err := processor.ProcessMessage(message.Topic(), message.Payload())
 		if err != nil {
-			panic(err)
+			fmt.Println("Error Process Message") //TODO: log error
 		}
 	}
-
-	fmt.Println("Before Reading")
-
-	id := profile["sensorId"].(string)
-	value := profile["data"]
-
-	sensorReading := mimir.SensorReading{SensorID: id, Value: value, Time: time.Now()}
-	Manager.readingsChannel <- sensorReading
-	fmt.Println("reading sent")
-	// sensorReading := mimir.SensorReading{SensorID: id, Value: value, Time: time.Now()}
-	// mimir.Data.StoreReading(sensorReading)
-	//TODO: send through channel
-
 }
 
 func GetTopics() []string {
@@ -71,9 +49,10 @@ func StartMqttClient() mqtt.Client {
 	return mqtt.NewClient(opts)
 }
 
-func StartGateway(client mqtt.Client, topics []string, topicChannel chan string, readingsChannel chan mimir.SensorReading, outgoingMessagesChannel chan string) {
+func StartGateway(client mqtt.Client, topics []string, topicChannel chan string, readingsChannel chan SensorReading, outgoingMessagesChannel chan string) {
 	Topics = *NewTopicManager(client, topicChannel)
 	Manager = *NewMQTTManager(client, readingsChannel)
+	MessageProcessors = NewProcessorRegistry()
 
 	if token := client.Connect(); token.Wait() && token.Error() != nil {
 		panic(fmt.Sprintf("Error connecting to MQTT broker: %s", token.Error()))
@@ -102,7 +81,6 @@ func StartGateway(client mqtt.Client, topics []string, topicChannel chan string,
 			fmt.Printf("Published topic %s: %s\n", topic, outgoingMessage)
 		}
 	}()
-
 }
 
 func CloseConnection(client mqtt.Client, topics []string) {

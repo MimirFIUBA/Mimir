@@ -1,4 +1,4 @@
-package trigger
+package triggers
 
 import (
 	"github.com/google/uuid"
