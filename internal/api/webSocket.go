@@ -23,9 +23,6 @@ func handleConnections(w http.ResponseWriter, r *http.Request) {
 			delete(clients, conn)
 			return
 		}
-
-		fmt.Sprintf("%#v", msg)
-
 		broadcast <- fmt.Sprintf("%#v", msg)
 	}
 }
