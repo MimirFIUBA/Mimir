@@ -4,26 +4,32 @@ import (
 	"fmt"
 	API "mimir/internal/api"
 	mimir "mimir/internal/mimir"
-	mqtt "mimir/internal/mqtt"
+
+	// mqtt "mimir/internal/mqtt"
 	"os"
 	"os/signal"
 	"syscall"
 )
 
 func main() {
-	topics := mqtt.GetTopics()
-	client := mqtt.StartMqttClient()
-	topicChannel := make(chan string)
+	topics := mimir.GetTopics()
+	client := mimir.StartMqttClient()
 
-	go mqtt.StartGateway(client, topics, topicChannel)
-	go mimir.Run(topicChannel)
+	topicsChannel := make(chan string)
+	readingsChannel := make(chan mimir.SensorReading)
+	outgoingMessagesChannel := make(chan string)
+
+	mimirProcessor := mimir.NewMimirProcessor(topicsChannel, readingsChannel, outgoingMessagesChannel)
+
+	mimir.StartGateway(client, topics, topicsChannel, readingsChannel, outgoingMessagesChannel)
+	go mimirProcessor.Run()
 	go API.Start()
 
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 	<-sigChan
 
-	mqtt.CloseConnection(client, topics)
+	mimir.CloseConnection(client, topics)
 
 	fmt.Println("Mimir is out of duty, bye!")
 }
