@@ -46,7 +46,7 @@ func (s *Sensor) GetId() string {
 	return s.ID
 }
 
-func (s *Sensor) register(observer triggers.TriggerObserver) {
+func (s *Sensor) Register(observer triggers.TriggerObserver) {
 	s.triggerList = append(s.triggerList, observer)
 }
 

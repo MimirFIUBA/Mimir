@@ -44,8 +44,16 @@ type JSONValueConfiguration struct {
 	valuePosition string
 }
 
+func NewJSONValueConfiguration(idPath, valuePath string) *JSONValueConfiguration {
+	return &JSONValueConfiguration{idPath, valuePath}
+}
+
 func NewJSONProcessor() *JSONProcessor {
 	return &JSONProcessor{}
+}
+
+func (p *JSONProcessor) AddValueConfiguration(configuration *JSONValueConfiguration) {
+	p.jsonValueConfigurations = append(p.jsonValueConfigurations, *configuration)
 }
 
 func (p *JSONProcessor) ProcessMessage(topic string, payload []byte) error {

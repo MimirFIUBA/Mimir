@@ -14,11 +14,11 @@ func (action *PrintAction) Execute() {
 	fmt.Println(action.Message)
 }
 
-type SendMQTTMessageAction struct {
+type SendMessageThroughChannel struct {
 	Message                 string
 	OutgoingMessagesChannel chan string
 }
 
-func (action *SendMQTTMessageAction) Execute() {
+func (action *SendMessageThroughChannel) Execute() {
 	action.OutgoingMessagesChannel <- action.Message
 }

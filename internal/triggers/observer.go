@@ -6,7 +6,7 @@ type TriggerObserver interface {
 }
 
 type Subject interface {
-	register(observer TriggerObserver)
-	deregister(observer TriggerObserver)
-	notifyAll()
+	Register(observer TriggerObserver)
+	Deregister(observer TriggerObserver)
+	NotifyAll()
 }
