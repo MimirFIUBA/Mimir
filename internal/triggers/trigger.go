@@ -18,7 +18,7 @@ func NewTrigger(name string) *Trigger {
 }
 
 func (t *Trigger) Update(event Event) {
-	t.Condition.SetNewValue(event.Data)
+	t.Condition.SetEvent(event)
 	if t.Condition.Evaluate() {
 		for _, action := range t.Actions {
 			action.Execute()

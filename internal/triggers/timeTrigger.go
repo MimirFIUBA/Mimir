@@ -47,7 +47,7 @@ func (t *TimeTrigger) execute() {
 
 func (t *TimeTrigger) evaluate(event Event) {
 	if t.Condition != nil {
-		t.Condition.SetNewValue(event.Data)
+		t.Condition.SetEvent(event)
 		if t.Condition.Evaluate() {
 			t.resetChannel <- true
 		}

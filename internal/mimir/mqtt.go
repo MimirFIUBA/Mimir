@@ -74,7 +74,7 @@ func (mp *MimirProcessor) StartGateway(client mqtt.Client, topics []string) {
 	go func() {
 		for {
 			outgoingMessage := <-mp.OutgoingMessagesChannel
-			topic := "alert/ph"
+			topic := "mimir/alert"
 			token := client.Publish(topic, 0, false, outgoingMessage)
 			token.Wait()
 

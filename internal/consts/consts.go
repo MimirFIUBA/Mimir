@@ -5,6 +5,6 @@ const (
 	TopicPH     = "topic/ph"
 	TopicTemp   = "topic/temp"
 	TopicAll    = "topic/All"
-	AlertTopic  = "alert/#"
+	AlertTopic  = "mimir/alert/#"
 	TopicPrefix = "mimir"
 )
