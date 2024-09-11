@@ -10,4 +10,10 @@ var (
 		},
 		idCounter: 2,
 	}
+	NodesData = NodesManager{
+		nodes: []models.Node{
+			{ID: "1", Name: "Example1", Description: "Example description"},
+		},
+		idCounter: 1,
+	}
 )

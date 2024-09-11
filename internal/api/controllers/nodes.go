@@ -10,88 +10,87 @@ import (
 	"net/http"
 )
 
-func GetSensors(w http.ResponseWriter, r *http.Request) {
-	sensors := db.SensorsData.GetSensors()
+func GetNodes(w http.ResponseWriter, r *http.Request) {
+	nodes := db.NodesData.GetNodes()
 
 	// TODO(#19) - Improve error handling
-	err := utils.RespondWithJSONItems(w, http.StatusOK, sensors)
+	err := utils.RespondWithJSONItems(w, http.StatusOK, nodes)
 	if err != nil {
 		fmt.Printf("Error responding with %s", err)
 		return
 	}
 }
 
-func GetSensorById(w http.ResponseWriter, r *http.Request) {
+func GetNodeById(w http.ResponseWriter, r *http.Request) {
 	// TODO(#20) - Validate Query Params
 	id := mux.Vars(r)["id"]
 	// TODO(#19) - Improve error handling
-	sensor, err := db.SensorsData.GetSensorById(id)
+	node, err := db.NodesData.GetNodeById(id)
 	if err != nil {
-		fmt.Printf("Error searchinf for sensor with id %s: %s", id, err)
+		fmt.Printf("Error searching for node with id %s: %s", id, err)
 		return
 	}
 
 	// TODO(#19) - Improve error handling
-	err = utils.RespondWithJSONItems(w, http.StatusOK, sensor)
+	err = utils.RespondWithJSONItems(w, http.StatusOK, node)
 	if err != nil {
 		fmt.Printf("Error responding with %s", err)
 		return
 	}
 }
 
-func CreateSensor(w http.ResponseWriter, r *http.Request) {
-	var newSensor *models.Sensor
+func CreateNode(w http.ResponseWriter, r *http.Request) {
+	var newNode *models.Node
 	// TODO(#19) - Improve error handling
-	err := json.NewDecoder(r.Body).Decode(&newSensor)
+	err := json.NewDecoder(r.Body).Decode(&newNode)
 	if err != nil {
-		fmt.Printf("Error decoding new sensor: %s", err)
+		fmt.Printf("Error decoding new node: %s", err)
 		return
 	}
 
-	_ = db.SensorsData.CreateSensor(newSensor)
-	err = utils.RespondWithJSONItems(w, http.StatusCreated, newSensor)
+	_ = db.NodesData.CreateNode(newNode)
+	err = utils.RespondWithJSONItems(w, http.StatusCreated, newNode)
 	if err != nil {
 		fmt.Printf("Error responding with %s", err)
 		return
 	}
 }
 
-func UpdateSensor(w http.ResponseWriter, r *http.Request) {
+func UpdateNode(w http.ResponseWriter, r *http.Request) {
 	// TODO(#20) - Validate Query Params
 	id := mux.Vars(r)["id"]
 
-	var sensor *models.Sensor
+	var node *models.Node
 	// TODO(#19) - Improve error handling
-	err := json.NewDecoder(r.Body).Decode(&sensor)
+	err := json.NewDecoder(r.Body).Decode(&node)
 	if err != nil {
 		fmt.Printf("Error decoding body: %s", err)
 		return
 	}
-	sensor.ID = id
+	node.ID = id
 
-	// TODO(#19) - Improve error handling
-	sensor, err = db.SensorsData.UpdateSensor(sensor)
+	node, err = db.NodesData.UpdateNode(node)
 	if err != nil {
-		fmt.Printf("Error updating sensor: %s", err)
+		fmt.Printf("Error updating node with id %s: %s", id, err)
 		return
 	}
 
 	// TODO(#19) - Improve error handling
-	err = utils.RespondWithJSONItems(w, http.StatusOK, sensor)
+	err = utils.RespondWithJSONItems(w, http.StatusOK, node)
 	if err != nil {
 		fmt.Printf("Error responding with %s", err)
 		return
 	}
 }
 
-func DeleteSensor(w http.ResponseWriter, r *http.Request) {
+func DeleteNode(w http.ResponseWriter, r *http.Request) {
 	// TODO(#20) - Validate Query Params
 	id := mux.Vars(r)["id"]
-	err := db.SensorsData.DeleteSensor(id)
+	err := db.NodesData.DeleteNode(id)
 
 	// TODO(#19) - Improve error handling
 	if err != nil {
-		fmt.Printf("Error deleting sensor: %s", err)
+		fmt.Printf("Error deleting node: %s", err)
 	}
 
 	// TODO - Change response

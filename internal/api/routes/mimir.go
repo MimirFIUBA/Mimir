@@ -6,6 +6,7 @@ func CreateRouter() *mux.Router {
 	router := mux.NewRouter()
 
 	AddSensorRoutes(router)
+	AddNodesRoutes(router)
 
 	return router
 }
