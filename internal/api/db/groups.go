@@ -69,3 +69,12 @@ func (g *GroupsManager) DeleteGroup(id string) error {
 	g.groups = g.groups[:len(g.groups)-1]
 	return nil
 }
+
+func (g *GroupsManager) AddNodeToGroupById(id string, node *models.Node) error {
+	oldGroup, err := g.GetGroupById(id)
+	if err != nil {
+		return nil
+	}
+
+	return oldGroup.AddNode(node)
+}

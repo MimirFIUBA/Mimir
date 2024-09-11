@@ -32,10 +32,17 @@ func (n *NodesManager) GetNodeById(id string) (*models.Node, error) {
 }
 
 func (n *NodesManager) CreateNode(node *models.Node) error {
+	// TODO(#19) - Improve error handling
+	// TODO(#20) - Add Body validation
 	newId := n.GetNewId()
 	node.ID = strconv.Itoa(newId)
 
 	n.nodes = append(n.nodes, *node)
+	err := GroupsData.AddNodeToGroupById(node.GroupID, node)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
