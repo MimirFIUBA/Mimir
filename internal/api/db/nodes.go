@@ -21,9 +21,9 @@ func (n *NodesManager) GetNodes() []models.Node {
 }
 
 func (n *NodesManager) GetNodeById(id string) (*models.Node, error) {
-	for _, node := range n.nodes {
+	for index, node := range n.nodes {
 		if node.ID == id {
-			return &node, nil
+			return &n.nodes[index], nil
 		}
 	}
 
@@ -68,4 +68,14 @@ func (n *NodesManager) DeleteNode(id string) error {
 	n.nodes[nodeIndex] = n.nodes[len(n.nodes)-1]
 	n.nodes = n.nodes[:len(n.nodes)-1]
 	return nil
+}
+
+func (n *NodesManager) AddSensorToNodeById(id string, sensor *models.Sensor) error {
+	// TODO(#19) - Improve error handling
+	oldNode, err := n.GetNodeById(id)
+	if err != nil {
+		return nil
+	}
+
+	return oldNode.AddSensor(sensor)
 }

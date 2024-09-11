@@ -7,6 +7,9 @@ import (
 )
 
 // TODO(#19) - Improve error handling
+// TODO - Handle nil cases
+// TODO - Handle empty cases
+// TODO - Handle [] cases
 func RespondWithJSONItems(w http.ResponseWriter, code int, payload interface{}) error {
 	itemsResponse := models.ItemsResponse{
 		Status: code,

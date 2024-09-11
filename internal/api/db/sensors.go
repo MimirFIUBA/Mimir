@@ -21,9 +21,9 @@ func (s *SensorsManager) GetSensors() []models.Sensor {
 }
 
 func (s *SensorsManager) GetSensorById(id string) (*models.Sensor, error) {
-	for _, sensor := range s.sensors {
+	for index, sensor := range s.sensors {
 		if sensor.ID == id {
-			return &sensor, nil
+			return &s.sensors[index], nil
 		}
 	}
 	// TODO(#19) - Improve error handling
@@ -37,6 +37,11 @@ func (s *SensorsManager) CreateSensor(sensor *models.Sensor) error {
 	sensor.ID = strconv.Itoa(newId)
 
 	s.sensors = append(s.sensors, *sensor)
+	err := NodesData.AddSensorToNodeById(sensor.NodeID, sensor)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
