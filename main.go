@@ -97,7 +97,7 @@ func setInitialData(mp *mimir.MimirProcessor) {
 	wtTrigger := triggers.NewTrigger("sensor test trigger")
 	wtTrigger.Condition = &wtHighTemperatureCondition
 	wtTrigger.Actions = append(wtTrigger.Actions, &wtPrintAction)
-	wtTrigger.Actions = append(wtTrigger.Actions, wtSendMQTTMessageAction)
+	wtTrigger.Actions = append(wtTrigger.Actions, &wtSendMQTTMessageAction)
 
 	waterTemperatureSensor.Register(wtTrigger)
 
@@ -108,11 +108,19 @@ func setInitialData(mp *mimir.MimirProcessor) {
 	wtLowTrigger := triggers.NewTrigger("sensor test trigger")
 	wtLowTrigger.Condition = &wtLowTemperatureCondition
 	wtLowTrigger.Actions = append(wtLowTrigger.Actions, &wtLowPrintAction)
-	wtLowTrigger.Actions = append(wtLowTrigger.Actions, wtLowSendMQTTMessageAction)
+	wtLowTrigger.Actions = append(wtLowTrigger.Actions, &wtLowSendMQTTMessageAction)
 
 	waterTemperatureSensor.Register(wtLowTrigger)
-	mimir.Data.AddSensor(waterTemperatureSensor)
 
+	//Send through ws trigger
+	wsTrigger := triggers.NewTrigger("send ws")
+	sendWSAction := mp.NewSendWebSocketMessageAction("")
+	sendWSAction.MessageContructor = func(e triggers.Event) string {
+		return fmt.Sprintf("newReading: %v", e)
+	}
+	wsTrigger.Actions = append(wsTrigger.Actions, &sendWSAction)
+	waterTemperatureSensor.Register(wsTrigger)
+	mimir.Data.AddSensor(waterTemperatureSensor)
 }
 
 func main() {

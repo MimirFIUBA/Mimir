@@ -9,6 +9,10 @@ type Event struct {
 	Id        string
 }
 
+func NewEvent() *Event {
+	return &Event{}
+}
+
 func (e *Event) GetId() string {
 	return e.Id
 }

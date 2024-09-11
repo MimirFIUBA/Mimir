@@ -41,7 +41,7 @@ func (t *TimeTrigger) reset() {
 
 func (t *TimeTrigger) execute() {
 	for _, action := range t.Actions {
-		action.Execute()
+		action.Execute(*NewEvent())
 	}
 }
 

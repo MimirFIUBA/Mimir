@@ -23,7 +23,11 @@ func NewMimirProcessor() *MimirProcessor {
 	webSocketMessageChannel := make(chan string)
 
 	Data.topicChannel = topicChannel
-	mp := MimirProcessor{outgoingMessagesChannel, readingsChannel, topicChannel, webSocketMessageChannel}
+	mp := MimirProcessor{
+		outgoingMessagesChannel,
+		readingsChannel,
+		topicChannel,
+		webSocketMessageChannel}
 	return &mp
 }
 
@@ -44,8 +48,14 @@ func processReading(reading SensorReading) {
 	fmt.Printf("Processing reading: %v \n", reading.Value)
 }
 
-func (m *MimirProcessor) NewSendMQTTMessageAction(message string) *triggers.SendMessageThroughChannel {
-	return &triggers.SendMessageThroughChannel{
+func (m *MimirProcessor) NewSendMQTTMessageAction(message string) triggers.SendMessageThroughChannel {
+	return triggers.SendMessageThroughChannel{
 		Message:                 message,
 		OutgoingMessagesChannel: m.OutgoingMessagesChannel}
+}
+
+func (m *MimirProcessor) NewSendWebSocketMessageAction(message string) triggers.SendMessageThroughChannel {
+	return triggers.SendMessageThroughChannel{
+		Message:                 message,
+		OutgoingMessagesChannel: m.WsChannel}
 }

@@ -13,6 +13,20 @@ type Condition interface {
 	SetEventId(string)
 }
 
+type TrueCondition struct{}
+
+func (c *TrueCondition) GetEventId() string {
+	return ""
+}
+
+func (c *TrueCondition) SetEventId(id string) {}
+
+func (c *TrueCondition) SetEvent(event Event) {}
+
+func (c *TrueCondition) Evaluate() bool {
+	return true
+}
+
 // Receive value condition: activates once it receives a value
 type ReceiveValueCondition struct {
 	valueId          string

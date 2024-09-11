@@ -33,7 +33,7 @@ func (g mqttGenerator) generateIntData(n int, id int) {
 
 func (g mqttGenerator) generateFloatData(n int, id string) {
 	for i := 1; i <= n; i++ {
-		message := fmt.Sprintf(`{"id": "%s", "value": %.2f, "time": "%s"}`, id, rand.Float64()*40, time.Now())
+		message := fmt.Sprintf(`{"id": "%s", "data": %.2f, "time": "%s"}`, id, rand.Float64()*40, time.Now())
 		token := g.client.Publish(g.topic, 0, false, message)
 		token.Wait()
 
@@ -80,7 +80,7 @@ func main() {
 
 	c := make(chan int)
 
-	generator := mqttGenerator{"mimir/mimirTest", client, c}
+	generator := mqttGenerator{"mimir/esp32/waterTemp", client, c}
 	go generator.generateFloatData(10, "0")
 
 	// numbers := []uint8{65, 1, 50, 65, 35, 51, 51}

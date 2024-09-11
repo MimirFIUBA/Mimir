@@ -14,14 +14,14 @@ type Trigger struct {
 }
 
 func NewTrigger(name string) *Trigger {
-	return &Trigger{uuid.New().String(), name, nil, nil}
+	return &Trigger{uuid.New().String(), name, &TrueCondition{}, nil}
 }
 
 func (t *Trigger) Update(event Event) {
 	t.Condition.SetEvent(event)
 	if t.Condition.Evaluate() {
 		for _, action := range t.Actions {
-			action.Execute()
+			action.Execute(event)
 		}
 	}
 }
