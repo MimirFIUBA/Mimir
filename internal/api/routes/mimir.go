@@ -7,6 +7,7 @@ func CreateRouter() *mux.Router {
 
 	AddSensorRoutes(router)
 	AddNodesRoutes(router)
+	AddGroupRoutes(router)
 
 	return router
 }

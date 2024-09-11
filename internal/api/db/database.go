@@ -7,4 +7,7 @@ var (
 	NodesData = NodesManager{
 		idCounter: 0,
 	}
+	GroupsData = GroupsManager{
+		idCounter: 0,
+	}
 )
