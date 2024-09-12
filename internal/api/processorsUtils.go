@@ -2,7 +2,7 @@ package api
 
 import (
 	"encoding/binary"
-	mimir "mimir/internal/mimir"
+	"mimir/internal/mimir"
 )
 
 func jsonToProcessor(processorType string, jsonMap map[string]interface{}) (mimir.MessageProcessor, error) {

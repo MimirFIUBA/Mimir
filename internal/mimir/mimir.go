@@ -2,7 +2,7 @@ package mimir
 
 import (
 	"fmt"
-	"mimir/internal/triggers"
+	"mimir/triggers"
 )
 
 var (

@@ -1,7 +1,7 @@
 package mimir
 
 import (
-	"mimir/internal/triggers"
+	"mimir/triggers"
 	"time"
 )
 

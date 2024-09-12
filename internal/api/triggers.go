@@ -3,8 +3,8 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	mimir "mimir/internal/mimir"
-	"mimir/internal/triggers"
+	"mimir/internal/mimir"
+	"mimir/triggers"
 	"net/http"
 
 	"github.com/gorilla/mux"

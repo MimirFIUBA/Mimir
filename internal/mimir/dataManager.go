@@ -1,19 +1,17 @@
 package mimir
 
 import (
-	"fmt"
 	"slices"
 	"strconv"
 
 	"mimir/internal/consts"
-	dh "mimir/internal/dataHandler"
-	"mimir/internal/triggers"
+	"mimir/triggers"
 
 	"github.com/google/uuid"
 )
 
 type DataManager struct {
-	groups  []dh.Data
+	groups  []Group
 	nodes   []Node
 	sensors []Sensor
 
@@ -24,22 +22,19 @@ func (d *DataManager) AddGroup(group *Group) *Group {
 	if group.ID == "" {
 		group.ID = uuid.New().String()
 	}
-	d.groups = append(d.groups, group)
+	d.groups = append(d.groups, *group)
 	return group
 }
 
-func (d *DataManager) GetGroups() []dh.Data {
+func (d *DataManager) GetGroups() []Group {
 	return d.groups
 }
 
 func (d *DataManager) GetGroup(ID string) *Group {
 	for i := range d.groups {
-		data := d.groups[i]
-		if data.GetId() == ID {
-			group, ok := (data).(*Group)
-			if ok {
-				return group
-			}
+		group := d.groups[i]
+		if group.GetId() == ID {
+			return &group
 		}
 	}
 	return nil
@@ -123,12 +118,9 @@ func (d *DataManager) getNewSensorId() string {
 }
 
 func (d *DataManager) StoreReading(reading SensorReading) {
-	fmt.Println("Store reading")
-	fmt.Printf("reading: %v\n", reading)
 	for i := range d.sensors {
 		sensor := &d.sensors[i]
 		if sensor.GetId() == reading.SensorID {
-			fmt.Println("sensor add reading")
 			sensor.addReading(reading)
 			break
 		}
@@ -150,7 +142,6 @@ func (d *DataManager) GetSensor(id string) *Sensor {
 }
 
 func (d *DataManager) AddSensor(sensor *Sensor) *Sensor {
-	fmt.Println("Add sensor")
 	sensor.ID = d.getNewSensorId()
 	sensor.Topic = consts.TopicPrefix + "/"
 	nodeId := sensor.NodeID
@@ -164,8 +155,7 @@ func (d *DataManager) AddSensor(sensor *Sensor) *Sensor {
 		sensor.Topic += sensor.DataName
 	}
 
-	for _, data := range d.groups {
-		group := data.(*Group)
+	for _, group := range d.groups {
 		for i := range group.Nodes {
 			node := &group.Nodes[i]
 			if node.ID == nodeId {
@@ -175,12 +165,7 @@ func (d *DataManager) AddSensor(sensor *Sensor) *Sensor {
 	}
 
 	d.sensors = append(d.sensors, *sensor)
-
-	fmt.Printf("New topic: %+v\n", sensor.Topic)
-
 	d.topicChannel <- sensor.Topic
-
-	fmt.Printf("New sensor created: %+v\n", sensor)
 	return sensor
 }
 

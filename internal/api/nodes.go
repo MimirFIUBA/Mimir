@@ -3,7 +3,7 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	mimir "mimir/internal/mimir"
+	"mimir/internal/mimir"
 	"net/http"
 
 	"github.com/gorilla/mux"

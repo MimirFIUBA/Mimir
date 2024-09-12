@@ -4,8 +4,6 @@ import (
 	"github.com/google/uuid"
 )
 
-type TriggerEngine struct{}
-
 type Trigger struct {
 	ID        string    `json:"id"`
 	Name      string    `json:"name"`

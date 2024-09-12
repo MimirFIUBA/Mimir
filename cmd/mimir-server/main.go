@@ -3,13 +3,12 @@ package main
 import (
 	"fmt"
 	API "mimir/internal/api"
-	mimir "mimir/internal/mimir"
-	"mimir/internal/triggers"
-
-	// mqtt "mimir/internal/mqtt"
+	"mimir/internal/mimir"
+	"mimir/triggers"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 )
 
 func setInitialData(mp *mimir.MimirProcessor) {
@@ -99,7 +98,7 @@ func setInitialData(mp *mimir.MimirProcessor) {
 	wtTrigger.Actions = append(wtTrigger.Actions, &wtPrintAction)
 	wtTrigger.Actions = append(wtTrigger.Actions, &wtSendMQTTMessageAction)
 
-	waterTemperatureSensor.Register(wtTrigger)
+	// waterTemperatureSensor.Register(wtTrigger)
 
 	wtLowPrintAction := triggers.PrintAction{Message: "TRIGGER EXECUTED - Water temperature low"}
 	wtLowSendMQTTMessageAction := mp.NewSendMQTTMessageAction("off")
@@ -110,7 +109,7 @@ func setInitialData(mp *mimir.MimirProcessor) {
 	wtLowTrigger.Actions = append(wtLowTrigger.Actions, &wtLowPrintAction)
 	wtLowTrigger.Actions = append(wtLowTrigger.Actions, &wtLowSendMQTTMessageAction)
 
-	waterTemperatureSensor.Register(wtLowTrigger)
+	// waterTemperatureSensor.Register(wtLowTrigger)
 
 	//Send through ws trigger
 	wsTrigger := triggers.NewTrigger("send ws")
@@ -119,12 +118,18 @@ func setInitialData(mp *mimir.MimirProcessor) {
 		return fmt.Sprintf("newReading: %v", e)
 	}
 	wsTrigger.Actions = append(wsTrigger.Actions, &sendWSAction)
-	waterTemperatureSensor.Register(wsTrigger)
+	// waterTemperatureSensor.Register(wsTrigger)
+
+	freqTrigger := triggers.NewFrequencyTrigger("freq trigger", 3*time.Second)
+	freqTrigger.Actions = append(freqTrigger.Actions, &wtPrintAction)
+	waterTemperatureSensor.Register(freqTrigger)
+
 	mimir.Data.AddSensor(waterTemperatureSensor)
 }
 
 func main() {
 
+	fmt.Println("MiMiR starting")
 	topics := mimir.GetTopics()
 	client := mimir.StartMqttClient()
 
