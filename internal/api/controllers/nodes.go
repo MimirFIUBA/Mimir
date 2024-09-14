@@ -6,7 +6,7 @@ import (
 	"github.com/gorilla/mux"
 	"mimir/internal/api/db"
 	"mimir/internal/api/models"
-	"mimir/internal/api/utils"
+	"mimir/internal/api/responses"
 	"net/http"
 )
 
@@ -14,7 +14,11 @@ func GetNodes(w http.ResponseWriter, r *http.Request) {
 	nodes := db.NodesData.GetNodes()
 
 	// TODO(#19) - Improve error handling
-	err := utils.RespondWithJSONItems(w, http.StatusOK, nodes)
+	err := responses.SendJSONResponse(w, http.StatusOK, responses.ItemsResponse{
+		Code:    0,
+		Message: "All selected nodes information was returned",
+		Items:   nodes,
+	})
 	if err != nil {
 		fmt.Printf("Error responding with %s", err)
 		return
@@ -32,7 +36,11 @@ func GetNodeById(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// TODO(#19) - Improve error handling
-	err = utils.RespondWithJSONItems(w, http.StatusOK, node)
+	err = responses.SendJSONResponse(w, http.StatusOK, responses.ItemsResponse{
+		Code:    0,
+		Message: "All selected node information was returned",
+		Items:   node,
+	})
 	if err != nil {
 		fmt.Printf("Error responding with %s", err)
 		return
@@ -49,7 +57,11 @@ func CreateNode(w http.ResponseWriter, r *http.Request) {
 	}
 
 	_ = db.NodesData.CreateNode(newNode)
-	err = utils.RespondWithJSONItems(w, http.StatusCreated, newNode)
+	err = responses.SendJSONResponse(w, http.StatusCreated, responses.ItemsResponse{
+		Code:    0,
+		Message: "The new node was created",
+		Items:   newNode,
+	})
 	if err != nil {
 		fmt.Printf("Error responding with %s", err)
 		return
@@ -76,7 +88,11 @@ func UpdateNode(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// TODO(#19) - Improve error handling
-	err = utils.RespondWithJSONItems(w, http.StatusOK, node)
+	err = responses.SendJSONResponse(w, http.StatusOK, responses.ItemsResponse{
+		Code:    0,
+		Message: "The selected node was updated",
+		Items:   node,
+	})
 	if err != nil {
 		fmt.Printf("Error responding with %s", err)
 		return
@@ -93,8 +109,10 @@ func DeleteNode(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("Error deleting node: %s", err)
 	}
 
-	// TODO - Change response
-	err = utils.RespondWithJSONItems(w, http.StatusNoContent, nil)
+	err = responses.SendJSONResponse(w, http.StatusNoContent, responses.MessageResponse{
+		Code:    0,
+		Message: "The node was deleted",
+	})
 	if err != nil {
 		fmt.Printf("Error responding with %s", err)
 		return

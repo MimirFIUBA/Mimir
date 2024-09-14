@@ -6,7 +6,7 @@ import (
 	"github.com/gorilla/mux"
 	"mimir/internal/api/db"
 	"mimir/internal/api/models"
-	"mimir/internal/api/utils"
+	"mimir/internal/api/responses"
 	"net/http"
 )
 
@@ -14,7 +14,11 @@ func GetGroups(w http.ResponseWriter, r *http.Request) {
 	groups := db.GroupsData.GetGroups()
 
 	// TODO(#19) - Improve error handling
-	err := utils.RespondWithJSONItems(w, http.StatusOK, groups)
+	err := responses.SendJSONResponse(w, http.StatusOK, responses.ItemsResponse{
+		Code:    0,
+		Message: "All selected groups information was returned",
+		Items:   groups,
+	})
 	if err != nil {
 		fmt.Printf("Error responding with %s", err)
 		return
@@ -32,7 +36,11 @@ func GetGroupById(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// TODO(#19) - Improve error handling
-	err = utils.RespondWithJSONItems(w, http.StatusOK, group)
+	err = responses.SendJSONResponse(w, http.StatusOK, responses.ItemsResponse{
+		Code:    0,
+		Message: "All selected groups information was returned",
+		Items:   group,
+	})
 	if err != nil {
 		fmt.Printf("Error responding with %s", err)
 		return
@@ -49,7 +57,11 @@ func CreateGroup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	_ = db.GroupsData.CreateGroup(newGroup)
-	err = utils.RespondWithJSONItems(w, http.StatusCreated, newGroup)
+	err = responses.SendJSONResponse(w, http.StatusCreated, responses.ItemsResponse{
+		Code:    0,
+		Message: "The new group was created",
+		Items:   newGroup,
+	})
 	if err != nil {
 		fmt.Printf("Error responding with %s", err)
 		return
@@ -77,7 +89,11 @@ func UpdateGroup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// TODO(#19) - Improve error handling
-	err = utils.RespondWithJSONItems(w, http.StatusOK, group)
+	err = responses.SendJSONResponse(w, http.StatusOK, responses.ItemsResponse{
+		Code:    0,
+		Message: "The selected group was updated",
+		Items:   group,
+	})
 	if err != nil {
 		fmt.Printf("Error responding with %s", err)
 		return
@@ -94,8 +110,10 @@ func DeleteGroup(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("Error deleting group: %s", err)
 	}
 
-	// TODO - Change response
-	err = utils.RespondWithJSONItems(w, http.StatusNoContent, nil)
+	err = responses.SendJSONResponse(w, http.StatusNoContent, responses.MessageResponse{
+		Code:    0,
+		Message: "The group was deleted",
+	})
 	if err != nil {
 		fmt.Printf("Error responding with %s", err)
 		return

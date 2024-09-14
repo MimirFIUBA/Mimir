@@ -6,7 +6,7 @@ import (
 	"github.com/gorilla/mux"
 	"mimir/internal/api/db"
 	"mimir/internal/api/models"
-	"mimir/internal/api/utils"
+	"mimir/internal/api/responses"
 	"net/http"
 )
 
@@ -14,7 +14,11 @@ func GetSensors(w http.ResponseWriter, r *http.Request) {
 	sensors := db.SensorsData.GetSensors()
 
 	// TODO(#19) - Improve error handling
-	err := utils.RespondWithJSONItems(w, http.StatusOK, sensors)
+	err := responses.SendJSONResponse(w, http.StatusOK, responses.ItemsResponse{
+		Code:    0,
+		Message: "All selected sensors information was returned",
+		Items:   sensors,
+	})
 	if err != nil {
 		fmt.Printf("Error responding with %s", err)
 		return
@@ -32,7 +36,11 @@ func GetSensorById(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// TODO(#19) - Improve error handling
-	err = utils.RespondWithJSONItems(w, http.StatusOK, sensor)
+	err = responses.SendJSONResponse(w, http.StatusOK, responses.ItemsResponse{
+		Code:    0,
+		Message: "All selected sensors information was returned",
+		Items:   sensor,
+	})
 	if err != nil {
 		fmt.Printf("Error responding with %s", err)
 		return
@@ -49,7 +57,11 @@ func CreateSensor(w http.ResponseWriter, r *http.Request) {
 	}
 
 	_ = db.SensorsData.CreateSensor(newSensor)
-	err = utils.RespondWithJSONItems(w, http.StatusCreated, newSensor)
+	err = responses.SendJSONResponse(w, http.StatusCreated, responses.ItemsResponse{
+		Code:    0,
+		Message: "The new sensor was created",
+		Items:   newSensor,
+	})
 	if err != nil {
 		fmt.Printf("Error responding with %s", err)
 		return
@@ -77,7 +89,11 @@ func UpdateSensor(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// TODO(#19) - Improve error handling
-	err = utils.RespondWithJSONItems(w, http.StatusOK, sensor)
+	err = responses.SendJSONResponse(w, http.StatusOK, responses.ItemsResponse{
+		Code:    0,
+		Message: "The selected sensor was updated",
+		Items:   sensor,
+	})
 	if err != nil {
 		fmt.Printf("Error responding with %s", err)
 		return
@@ -94,8 +110,10 @@ func DeleteSensor(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("Error deleting sensor: %s", err)
 	}
 
-	// TODO - Change response
-	err = utils.RespondWithJSONItems(w, http.StatusNoContent, nil)
+	err = responses.SendJSONResponse(w, http.StatusNoContent, responses.MessageResponse{
+		Code:    0,
+		Message: "The sensor was deleted",
+	})
 	if err != nil {
 		fmt.Printf("Error responding with %s", err)
 		return
