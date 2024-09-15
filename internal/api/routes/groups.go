@@ -6,7 +6,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func AddGroupRoutes(router *mux.Router) {
+func AddGroupRoutes(router *mux.Router) *mux.Router {
 	groupsRouter := router.PathPrefix("/groups").Subrouter()
 
 	groupsRouter.HandleFunc("/", controllers.GetGroups).Methods("GET")
@@ -14,4 +14,6 @@ func AddGroupRoutes(router *mux.Router) {
 	groupsRouter.HandleFunc("/{id}", controllers.GetGroupById).Methods("GET")
 	groupsRouter.HandleFunc("/{id}", controllers.UpdateGroup).Methods("PUT")
 	groupsRouter.HandleFunc("/{id}", controllers.DeleteGroup).Methods("DELETE")
+
+	return groupsRouter
 }

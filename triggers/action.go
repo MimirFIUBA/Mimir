@@ -1,6 +1,10 @@
 package triggers
 
-import "fmt"
+import (
+	"fmt"
+	"log"
+	"os/exec"
+)
 
 type Action interface {
 	Execute(event Event)
@@ -26,5 +30,18 @@ func (action *SendMessageThroughChannel) Execute(event Event) {
 	} else {
 		action.OutgoingMessagesChannel <- action.Message
 	}
-	// action.OutgoingMessagesChannel <- action.Message
+}
+
+type CommandAction struct {
+	Command     string
+	CommandArgs string
+}
+
+func (a *CommandAction) Execute(event Event) {
+	cmd := exec.Command(a.Command, a.CommandArgs)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("%s\n", out)
 }

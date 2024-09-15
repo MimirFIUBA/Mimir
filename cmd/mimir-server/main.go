@@ -124,6 +124,14 @@ func setInitialData(mp *mimir.MimirProcessor) {
 	freqTrigger.Actions = append(freqTrigger.Actions, &wtPrintAction)
 	waterTemperatureSensor.Register(freqTrigger)
 
+	// timeoutTrigger := triggers.NewTimeTrigger("tt", 1*time.Second)
+	// timeoutTrigger.Condition = &triggers.ReceiveValueCondition{}
+
+	// cmdAction := &triggers.CommandAction{Command: "ls", CommandArgs: "-ltr"}
+	// timeoutTrigger.Actions = append(timeoutTrigger.Actions, cmdAction)
+	// waterTemperatureSensor.Register(timeoutTrigger)
+	// timeoutTrigger.Start()
+
 	mimir.Data.AddSensor(waterTemperatureSensor)
 }
 
@@ -131,15 +139,23 @@ func main() {
 
 	fmt.Println("MiMiR starting")
 	topics := mimir.GetTopics()
+	fmt.Println("Starting mqtt client")
 	client := mimir.StartMqttClient()
+	fmt.Println("Finished setting up mqtt client")
 
+	fmt.Println("Creating processor")
 	mimirProcessor := mimir.NewMimirProcessor()
+	fmt.Println("Finished creating processor")
 
+	fmt.Println("Starting gateway")
 	mimirProcessor.StartGateway(client, topics)
+	fmt.Println("Setting up intial data")
 	setInitialData(mimirProcessor)
+	fmt.Println("Processor start running")
 	go mimirProcessor.Run()
+	fmt.Println("Starting api")
 	go API.Start(mimirProcessor.WsChannel)
-	go API.StartWebSocket()
+	fmt.Println("Everything up and running")
 
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
