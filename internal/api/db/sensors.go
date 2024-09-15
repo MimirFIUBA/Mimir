@@ -26,12 +26,19 @@ func (s *SensorsManager) GetSensorById(id string) (*models.Sensor, error) {
 			return &s.sensors[index], nil
 		}
 	}
-	// TODO(#19) - Improve error handling
 	return nil, fmt.Errorf("sensor %s not found", id)
 }
 
+func (s *SensorsManager) IdExists(id string) bool {
+	_, err := s.GetSensorById(id)
+	if err != nil {
+		return false
+	}
+
+	return true
+}
+
 func (s *SensorsManager) CreateSensor(sensor *models.Sensor) error {
-	// TODO(#19) - Improve error handling
 	// TODO(#20) - Add Body validation
 	newId := s.GetNewId()
 	sensor.ID = strconv.Itoa(newId)
@@ -47,7 +54,6 @@ func (s *SensorsManager) CreateSensor(sensor *models.Sensor) error {
 
 func (s *SensorsManager) UpdateSensor(sensor *models.Sensor) (*models.Sensor, error) {
 	oldSensor, err := s.GetSensorById(sensor.ID)
-	// TODO(#19) - Improve error handling
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +72,6 @@ func (s *SensorsManager) DeleteSensor(id string) error {
 		}
 	}
 
-	// TODO(#19) - Improve error handling
 	if sensorIndex == -1 {
 		return fmt.Errorf("sensor %s not found", id)
 	}

@@ -17,7 +17,6 @@ func (n *Node) Update(updatedNode *Node) {
 }
 
 func (n *Node) AddSensor(sensor *Sensor) error {
-	// TODO(#19) - Improve error handling
 	for _, s := range n.Sensors {
 		if s.ID == sensor.ID {
 			return fmt.Errorf("already exists sensor")

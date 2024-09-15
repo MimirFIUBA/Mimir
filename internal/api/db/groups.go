@@ -27,8 +27,16 @@ func (g *GroupsManager) GetGroupById(id string) (*models.Group, error) {
 		}
 	}
 
-	// TODO(#19) - Improve error handling
 	return nil, fmt.Errorf("group %s not found", id)
+}
+
+func (g *GroupsManager) IdExists(id string) bool {
+	_, err := g.GetGroupById(id)
+	if err != nil {
+		return false
+	}
+
+	return true
 }
 
 func (g *GroupsManager) CreateGroup(group *models.Group) error {
@@ -42,7 +50,6 @@ func (g *GroupsManager) CreateGroup(group *models.Group) error {
 
 func (g *GroupsManager) UpdateGroup(group *models.Group) (*models.Group, error) {
 	oldGroup, err := g.GetGroupById(group.ID)
-	// TODO(#19) - Improve error handling
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +67,6 @@ func (g *GroupsManager) DeleteGroup(id string) error {
 		}
 	}
 
-	// TODO(#19) - Improve error handling
 	if groupIndex == -1 {
 		return fmt.Errorf("group %s not found", id)
 	}
