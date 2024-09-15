@@ -2,12 +2,18 @@ package logging
 
 import (
 	"log/slog"
-	"os"
 )
 
-func CreateAPILogger() *slog.Logger {
-	// TODO - Add options to Handler
-	// TODO - Add file to log
-	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
-	return logger
+func CreateAPILogger(config *LoggerConfiguration) (*slog.Logger, error) {
+	opts := &slog.HandlerOptions{
+		AddSource: config.AddSource(),
+		Level:     config.GetLevel(),
+	}
+
+	file, err := config.GetFile()
+	if err != nil {
+		return nil, err
+	}
+	logger := slog.New(slog.NewTextHandler(file, opts))
+	return logger, nil
 }

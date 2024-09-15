@@ -8,16 +8,23 @@ import (
 )
 
 func main() {
-	apiLogger := logging.CreateAPILogger()
+	// TODO(27) - Replace hardcoded config with real config
+	loggerConfig := logging.LoggerConfiguration{
+		Level:    "debug",
+		Filename: "api.log",
+	}
+
+	apiLogger, err := logging.CreateAPILogger(&loggerConfig)
+	if err != nil {
+		panic(err)
+	}
 
 	router := routes.CreateRouter(apiLogger)
 
-	fmt.Printf("Starting server at port 8080\n")
-	// TODO - Delete hardcoded port
-	err := http.ListenAndServe(":8080", router)
-	// TODO - Improve error handling
+	apiLogger.Info("Starting server at port 8080")
+	// TODO(27) - Delete hardcoded port
+	err = http.ListenAndServe(":8080", router)
 	if err != nil {
-		fmt.Printf("Error starting server: %s\n", err)
-		return
+		panic(fmt.Sprintf("Error starting server: %s\n", err))
 	}
 }
