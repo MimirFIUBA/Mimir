@@ -2,12 +2,16 @@ package main
 
 import (
 	"fmt"
+	"mimir/internal/api/logging"
 	"mimir/internal/api/routes"
 	"net/http"
 )
 
 func main() {
-	router := routes.CreateRouter()
+	apiLogger := logging.CreateAPILogger()
+	requestLogger := logging.CreateRequestLogger()
+
+	router := routes.CreateRouter(apiLogger, requestLogger)
 
 	fmt.Printf("Starting server at port 8080\n")
 	// TODO - Delete hardcoded port
