@@ -14,7 +14,6 @@ func GetGroups(w http.ResponseWriter, r *http.Request) {
 	logger := middlewares.ContextWithLogger(r.Context())
 	groups := db.GroupsData.GetGroups()
 
-	// TODO(#19) - Improve error handling
 	err := responses.SendJSONResponse(w, http.StatusOK, responses.ItemsResponse{
 		Code:    0,
 		Message: "All selected groups information was returned",
@@ -22,6 +21,7 @@ func GetGroups(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		logger.Error("Error sending response", "error", err.Error())
+		responses.SendErrorResponse(w, http.StatusInternalServerError, responses.InternalErrorCodes.ResponseError)
 		return
 	}
 }
@@ -30,14 +30,13 @@ func GetGroupById(w http.ResponseWriter, r *http.Request) {
 	logger := middlewares.ContextWithLogger(r.Context())
 	// TODO(#20) - Validate Query Params
 	id := mux.Vars(r)["id"]
-	// TODO(#19) - Improve error handling
 	group, err := db.GroupsData.GetGroupById(id)
 	if err != nil {
 		logger.Error("Error searching for group", "group_id", id, "error", err.Error())
+		responses.SendErrorResponse(w, http.StatusNotFound, responses.GroupErrorCodes.NotFound)
 		return
 	}
 
-	// TODO(#19) - Improve error handling
 	err = responses.SendJSONResponse(w, http.StatusOK, responses.ItemsResponse{
 		Code:    0,
 		Message: "All selected groups information was returned",
@@ -45,17 +44,19 @@ func GetGroupById(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		logger.Error("Error sending response", "error", err.Error())
+		responses.SendErrorResponse(w, http.StatusInternalServerError, responses.InternalErrorCodes.ResponseError)
 		return
 	}
 }
 
 func CreateGroup(w http.ResponseWriter, r *http.Request) {
 	logger := middlewares.ContextWithLogger(r.Context())
+
 	var newGroup *models.Group
-	// TODO(#19) - Improve error handling
 	err := json.NewDecoder(r.Body).Decode(&newGroup)
 	if err != nil {
 		logger.Error("Error decoding new group", "body", r.Body, "error", err.Error())
+		responses.SendErrorResponse(w, http.StatusBadRequest, responses.GroupErrorCodes.InvalidSchema)
 		return
 	}
 
@@ -67,32 +68,38 @@ func CreateGroup(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		logger.Error("Error sending response", "error", err.Error())
+		responses.SendErrorResponse(w, http.StatusInternalServerError, responses.InternalErrorCodes.ResponseError)
 		return
 	}
 }
 
 func UpdateGroup(w http.ResponseWriter, r *http.Request) {
 	logger := middlewares.ContextWithLogger(r.Context())
+
 	// TODO(#20) - Validate Query Params
 	id := mux.Vars(r)["id"]
+	if !db.GroupsData.IdExists(id) {
+		logger.Error("Error updating group", "group_id", id, "error", "group doesnt exist")
+		responses.SendErrorResponse(w, http.StatusNotFound, responses.GroupErrorCodes.NotFound)
+		return
+	}
 
 	var group *models.Group
-	// TODO(#19) - Improve error handling
 	err := json.NewDecoder(r.Body).Decode(&group)
 	if err != nil {
 		logger.Error("Error decoding new group", "body", r.Body, "error", err.Error())
+		responses.SendErrorResponse(w, http.StatusBadRequest, responses.GroupErrorCodes.InvalidSchema)
 		return
 	}
 	group.ID = id
 
-	// TODO(#19) - Improve error handling
 	group, err = db.GroupsData.UpdateGroup(group)
 	if err != nil {
 		logger.Error("Error updating group", "group_id", id, "error", err.Error())
+		responses.SendErrorResponse(w, http.StatusInternalServerError, responses.GroupErrorCodes.UpdateFailed)
 		return
 	}
 
-	// TODO(#19) - Improve error handling
 	err = responses.SendJSONResponse(w, http.StatusOK, responses.ItemsResponse{
 		Code:    0,
 		Message: "The selected group was updated",
@@ -100,6 +107,7 @@ func UpdateGroup(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		logger.Error("Error sending response", "error", err.Error())
+		responses.SendErrorResponse(w, http.StatusInternalServerError, responses.InternalErrorCodes.ResponseError)
 		return
 	}
 }
@@ -108,11 +116,15 @@ func DeleteGroup(w http.ResponseWriter, r *http.Request) {
 	logger := middlewares.ContextWithLogger(r.Context())
 	// TODO(#20) - Validate Query Params
 	id := mux.Vars(r)["id"]
-	err := db.GroupsData.DeleteGroup(id)
+	if !db.GroupsData.IdExists(id) {
+		logger.Error("Error deleting group", "group_id", id, "error", "group doesnt exist")
+		responses.SendErrorResponse(w, http.StatusNotFound, responses.GroupErrorCodes.NotFound)
+	}
 
-	// TODO(#19) - Improve error handling
+	err := db.GroupsData.DeleteGroup(id)
 	if err != nil {
 		logger.Error("Error deleting group", "group_id", id, "error", err.Error())
+		responses.SendErrorResponse(w, http.StatusInternalServerError, responses.GroupErrorCodes.DeleteFailed)
 		return
 	}
 
@@ -122,6 +134,7 @@ func DeleteGroup(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		logger.Error("Error sending response", "error", err.Error())
+		responses.SendErrorResponse(w, http.StatusInternalServerError, responses.InternalErrorCodes.ResponseError)
 		return
 	}
 }

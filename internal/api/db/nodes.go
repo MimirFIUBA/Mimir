@@ -27,12 +27,19 @@ func (n *NodesManager) GetNodeById(id string) (*models.Node, error) {
 		}
 	}
 
-	// TODO(#19) - Improve error handling
 	return nil, fmt.Errorf("node %s not found", id)
 }
 
+func (n *NodesManager) IdExists(id string) bool {
+	_, err := n.GetNodeById(id)
+	if err != nil {
+		return false
+	}
+
+	return true
+}
+
 func (n *NodesManager) CreateNode(node *models.Node) error {
-	// TODO(#19) - Improve error handling
 	// TODO(#20) - Add Body validation
 	newId := n.GetNewId()
 	node.ID = strconv.Itoa(newId)
@@ -47,7 +54,6 @@ func (n *NodesManager) CreateNode(node *models.Node) error {
 }
 
 func (n *NodesManager) UpdateNode(node *models.Node) (*models.Node, error) {
-	// TODO(#19) - Improve error handling
 	oldNode, err := n.GetNodeById(node.ID)
 	if err != nil {
 		return nil, err
@@ -67,7 +73,6 @@ func (n *NodesManager) DeleteNode(id string) error {
 		}
 	}
 
-	// TODO(#19) - Improve error handling
 	if nodeIndex == -1 {
 		return fmt.Errorf("sensor %s not found", id)
 	}
@@ -78,7 +83,6 @@ func (n *NodesManager) DeleteNode(id string) error {
 }
 
 func (n *NodesManager) AddSensorToNodeById(id string, sensor *models.Sensor) error {
-	// TODO(#19) - Improve error handling
 	oldNode, err := n.GetNodeById(id)
 	if err != nil {
 		return nil
