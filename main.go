@@ -9,9 +9,8 @@ import (
 
 func main() {
 	apiLogger := logging.CreateAPILogger()
-	requestLogger := logging.CreateRequestLogger()
 
-	router := routes.CreateRouter(apiLogger, requestLogger)
+	router := routes.CreateRouter(apiLogger)
 
 	fmt.Printf("Starting server at port 8080\n")
 	// TODO - Delete hardcoded port

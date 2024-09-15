@@ -6,12 +6,12 @@ import (
 	"mimir/internal/api/middlewares"
 )
 
-func CreateRouter(apiLogger *slog.Logger, requestLogger *slog.Logger) *mux.Router {
+func CreateRouter(apiLogger *slog.Logger) *mux.Router {
 	router := mux.NewRouter()
 
 	// Adds Middlewares
 	router.Use(middlewares.CreateAPILoggerMiddleware(apiLogger))
-	router.Use(middlewares.CreateRequestLoggerMiddleware(requestLogger))
+	router.Use(middlewares.CreateRequestLoggerMiddleware(apiLogger))
 
 	// Adds Routes
 	AddSensorRoutes(router)

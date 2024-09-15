@@ -2,15 +2,16 @@ package controllers
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/gorilla/mux"
 	"mimir/internal/api/db"
+	"mimir/internal/api/middlewares"
 	"mimir/internal/api/models"
 	"mimir/internal/api/responses"
 	"net/http"
 )
 
 func GetNodes(w http.ResponseWriter, r *http.Request) {
+	logger := middlewares.ContextWithLogger(r.Context())
 	nodes := db.NodesData.GetNodes()
 
 	// TODO(#19) - Improve error handling
@@ -20,18 +21,19 @@ func GetNodes(w http.ResponseWriter, r *http.Request) {
 		Items:   nodes,
 	})
 	if err != nil {
-		fmt.Printf("Error responding with %s", err)
+		logger.Error("Error sending response", "error", err.Error())
 		return
 	}
 }
 
 func GetNodeById(w http.ResponseWriter, r *http.Request) {
+	logger := middlewares.ContextWithLogger(r.Context())
 	// TODO(#20) - Validate Query Params
 	id := mux.Vars(r)["id"]
 	// TODO(#19) - Improve error handling
 	node, err := db.NodesData.GetNodeById(id)
 	if err != nil {
-		fmt.Printf("Error searching for node with id %s: %s", id, err)
+		logger.Error("Error searching for node", "node_id", id, "error", err.Error())
 		return
 	}
 
@@ -42,17 +44,18 @@ func GetNodeById(w http.ResponseWriter, r *http.Request) {
 		Items:   node,
 	})
 	if err != nil {
-		fmt.Printf("Error responding with %s", err)
+		logger.Error("Error sending response", "error", err.Error())
 		return
 	}
 }
 
 func CreateNode(w http.ResponseWriter, r *http.Request) {
+	logger := middlewares.ContextWithLogger(r.Context())
 	var newNode *models.Node
 	// TODO(#19) - Improve error handling
 	err := json.NewDecoder(r.Body).Decode(&newNode)
 	if err != nil {
-		fmt.Printf("Error decoding new node: %s", err)
+		logger.Error("Error decoding new node", "body", r.Body, "error", err.Error())
 		return
 	}
 
@@ -63,12 +66,13 @@ func CreateNode(w http.ResponseWriter, r *http.Request) {
 		Items:   newNode,
 	})
 	if err != nil {
-		fmt.Printf("Error responding with %s", err)
+		logger.Error("Error sending response", "error", err.Error())
 		return
 	}
 }
 
 func UpdateNode(w http.ResponseWriter, r *http.Request) {
+	logger := middlewares.ContextWithLogger(r.Context())
 	// TODO(#20) - Validate Query Params
 	id := mux.Vars(r)["id"]
 
@@ -76,14 +80,14 @@ func UpdateNode(w http.ResponseWriter, r *http.Request) {
 	// TODO(#19) - Improve error handling
 	err := json.NewDecoder(r.Body).Decode(&node)
 	if err != nil {
-		fmt.Printf("Error decoding body: %s", err)
+		logger.Error("Error decoding new node", "body", r.Body, "error", err.Error())
 		return
 	}
 	node.ID = id
 
 	node, err = db.NodesData.UpdateNode(node)
 	if err != nil {
-		fmt.Printf("Error updating node with id %s: %s", id, err)
+		logger.Error("Error updating nodes", "node_id", id, "error", err.Error())
 		return
 	}
 
@@ -94,19 +98,21 @@ func UpdateNode(w http.ResponseWriter, r *http.Request) {
 		Items:   node,
 	})
 	if err != nil {
-		fmt.Printf("Error responding with %s", err)
+		logger.Error("Error sending response", "error", err.Error())
 		return
 	}
 }
 
 func DeleteNode(w http.ResponseWriter, r *http.Request) {
+	logger := middlewares.ContextWithLogger(r.Context())
 	// TODO(#20) - Validate Query Params
 	id := mux.Vars(r)["id"]
 	err := db.NodesData.DeleteNode(id)
 
 	// TODO(#19) - Improve error handling
 	if err != nil {
-		fmt.Printf("Error deleting node: %s", err)
+		logger.Error("Error deleting group", "group_id", id, "error", err.Error())
+		return
 	}
 
 	err = responses.SendJSONResponse(w, http.StatusNoContent, responses.MessageResponse{
@@ -114,7 +120,7 @@ func DeleteNode(w http.ResponseWriter, r *http.Request) {
 		Message: "The node was deleted",
 	})
 	if err != nil {
-		fmt.Printf("Error responding with %s", err)
+		logger.Error("Error sending response", "error", err.Error())
 		return
 	}
 }
