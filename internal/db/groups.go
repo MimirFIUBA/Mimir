@@ -2,12 +2,12 @@ package db
 
 import (
 	"fmt"
-	"mimir/internal/api/models"
+	"mimir/internal/mimir"
 	"strconv"
 )
 
 type GroupsManager struct {
-	groups    []models.Group
+	groups    []mimir.Group
 	idCounter int
 }
 
@@ -16,22 +16,30 @@ func (g *GroupsManager) GetNewId() int {
 	return g.idCounter
 }
 
-func (g *GroupsManager) GetGroups() []models.Group {
+func (g *GroupsManager) GetGroups() []mimir.Group {
 	return g.groups
 }
 
-func (g *GroupsManager) GetGroupById(id string) (*models.Group, error) {
+func (g *GroupsManager) GetGroupById(id string) (*mimir.Group, error) {
 	for index, group := range g.groups {
 		if group.ID == id {
 			return &g.groups[index], nil
 		}
 	}
 
-	// TODO(#19) - Improve error handling
 	return nil, fmt.Errorf("group %s not found", id)
 }
 
-func (g *GroupsManager) CreateGroup(group *models.Group) error {
+func (g *GroupsManager) IdExists(id string) bool {
+	_, err := g.GetGroupById(id)
+	if err != nil {
+		return false
+	}
+
+	return true
+}
+
+func (g *GroupsManager) CreateGroup(group *mimir.Group) error {
 	newId := g.GetNewId()
 	group.ID = strconv.Itoa(newId)
 
@@ -40,9 +48,8 @@ func (g *GroupsManager) CreateGroup(group *models.Group) error {
 	return nil
 }
 
-func (g *GroupsManager) UpdateGroup(group *models.Group) (*models.Group, error) {
+func (g *GroupsManager) UpdateGroup(group *mimir.Group) (*mimir.Group, error) {
 	oldGroup, err := g.GetGroupById(group.ID)
-	// TODO(#19) - Improve error handling
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +67,6 @@ func (g *GroupsManager) DeleteGroup(id string) error {
 		}
 	}
 
-	// TODO(#19) - Improve error handling
 	if groupIndex == -1 {
 		return fmt.Errorf("group %s not found", id)
 	}
@@ -70,7 +76,7 @@ func (g *GroupsManager) DeleteGroup(id string) error {
 	return nil
 }
 
-func (g *GroupsManager) AddNodeToGroupById(id string, node *models.Node) error {
+func (g *GroupsManager) AddNodeToGroupById(id string, node *mimir.Node) error {
 	oldGroup, err := g.GetGroupById(id)
 	if err != nil {
 		return nil

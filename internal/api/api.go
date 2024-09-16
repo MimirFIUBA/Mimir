@@ -2,7 +2,6 @@ package api
 
 import (
 	"log"
-	"mimir/internal/api/controllers"
 	"mimir/internal/api/routes"
 	"net/http"
 
@@ -14,11 +13,6 @@ var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
 		return true
 	},
-}
-
-type WSMessage struct {
-	Username string `json:"username"`
-	Message  string `json:"message"`
 }
 
 var clients = make(map[*websocket.Conn]bool)
@@ -64,15 +58,6 @@ func Start(broadcastChan chan string) {
 	// go handleMessages()
 
 	router := routes.CreateRouter()
-	sensorRouter := router.PathPrefix("/sensors").Subrouter()
-	sensorRouter.HandleFunc("/", controllers.GetSensors).Methods("GET")
-	sensorRouter.HandleFunc("/", controllers.CreateSensor).Methods("POST")
-	sensorRouter.HandleFunc("/{id}", controllers.GetSensorById).Methods("GET")
-	sensorRouter.HandleFunc("/{id}", controllers.UpdateSensor).Methods("PUT")
-	sensorRouter.HandleFunc("/{id}", controllers.DeleteSensor).Methods("DELETE")
-
-	// router.HandleFunc("/sensors", controllers.GetSensors).Methods("GET")
 
 	log.Fatal(http.ListenAndServe(":8080", router))
-	log.Fatal(http.ListenAndServe(":8080", sensorRouter))
 }

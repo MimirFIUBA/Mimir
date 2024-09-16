@@ -2,103 +2,139 @@ package controllers
 
 import (
 	"encoding/json"
-	"fmt"
-	"mimir/internal/api/db"
-	"mimir/internal/api/models"
-	"mimir/internal/api/utils"
+	"mimir/internal/api/middlewares"
+	"mimir/internal/api/responses"
+	"mimir/internal/db"
+	"mimir/internal/mimir"
 	"net/http"
 
 	"github.com/gorilla/mux"
 )
 
 func GetSensors(w http.ResponseWriter, r *http.Request) {
+	logger := middlewares.ContextWithLogger(r.Context())
 	sensors := db.SensorsData.GetSensors()
 
-	// TODO(#19) - Improve error handling
-	err := utils.RespondWithJSONItems(w, http.StatusOK, sensors)
+	err := responses.SendJSONResponse(w, http.StatusOK, responses.ItemsResponse{
+		Code:    0,
+		Message: "All selected sensors information was returned",
+		Items:   sensors,
+	})
 	if err != nil {
-		fmt.Printf("Error responding with %s", err)
+		logger.Error("Error sending response", "error", err.Error())
+		responses.SendErrorResponse(w, http.StatusInternalServerError, responses.InternalErrorCodes.ResponseError)
 		return
 	}
 }
 
 func GetSensorById(w http.ResponseWriter, r *http.Request) {
+	logger := middlewares.ContextWithLogger(r.Context())
+
 	// TODO(#20) - Validate Query Params
 	id := mux.Vars(r)["id"]
-	// TODO(#19) - Improve error handling
 	sensor, err := db.SensorsData.GetSensorById(id)
 	if err != nil {
-		fmt.Printf("Error searchinf for sensor with id %s: %s", id, err)
+		logger.Error("Error searching for sensors", "sensor_id", id, "error", err.Error())
+		responses.SendErrorResponse(w, http.StatusNotFound, responses.SensorErrorCodes.NotFound)
 		return
 	}
 
-	// TODO(#19) - Improve error handling
-	err = utils.RespondWithJSONItems(w, http.StatusOK, sensor)
+	err = responses.SendJSONResponse(w, http.StatusOK, responses.ItemsResponse{
+		Code:    0,
+		Message: "All selected sensors information was returned",
+		Items:   sensor,
+	})
 	if err != nil {
-		fmt.Printf("Error responding with %s", err)
+		logger.Error("Error sending response", "error", err.Error())
+		responses.SendErrorResponse(w, http.StatusInternalServerError, responses.InternalErrorCodes.ResponseError)
 		return
 	}
 }
 
 func CreateSensor(w http.ResponseWriter, r *http.Request) {
-	var newSensor *models.Sensor
-	// TODO(#19) - Improve error handling
+	logger := middlewares.ContextWithLogger(r.Context())
+
+	var newSensor *mimir.Sensor
 	err := json.NewDecoder(r.Body).Decode(&newSensor)
 	if err != nil {
-		fmt.Printf("Error decoding new sensor: %s", err)
+		logger.Error("Error decoding new sensor", "body", r.Body, "error", err.Error())
+		responses.SendErrorResponse(w, http.StatusBadRequest, responses.SensorErrorCodes.InvalidSchema)
 		return
 	}
 
 	_ = db.SensorsData.CreateSensor(newSensor)
-	err = utils.RespondWithJSONItems(w, http.StatusCreated, newSensor)
+	err = responses.SendJSONResponse(w, http.StatusCreated, responses.ItemsResponse{
+		Code:    0,
+		Message: "The new sensor was created",
+		Items:   newSensor,
+	})
 	if err != nil {
-		fmt.Printf("Error responding with %s", err)
+		logger.Error("Error sending response", "error", err.Error())
+		responses.SendErrorResponse(w, http.StatusInternalServerError, responses.InternalErrorCodes.ResponseError)
 		return
 	}
 }
 
 func UpdateSensor(w http.ResponseWriter, r *http.Request) {
+	logger := middlewares.ContextWithLogger(r.Context())
 	// TODO(#20) - Validate Query Params
 	id := mux.Vars(r)["id"]
+	if !db.SensorsData.IdExists(id) {
+		logger.Error("Error searching for sensors", "sensor_id", id, "error", "sensor doesnt exist")
+		responses.SendErrorResponse(w, http.StatusNotFound, responses.SensorErrorCodes.NotFound)
+		return
+	}
 
-	var sensor *models.Sensor
-	// TODO(#19) - Improve error handling
+	var sensor *mimir.Sensor
 	err := json.NewDecoder(r.Body).Decode(&sensor)
 	if err != nil {
-		fmt.Printf("Error decoding body: %s", err)
+		logger.Error("Error decoding new sensor", "body", r.Body, "error", err.Error())
+		responses.SendErrorResponse(w, http.StatusBadRequest, responses.SensorErrorCodes.InvalidSchema)
 		return
 	}
 	sensor.ID = id
 
-	// TODO(#19) - Improve error handling
 	sensor, err = db.SensorsData.UpdateSensor(sensor)
 	if err != nil {
-		fmt.Printf("Error updating sensor: %s", err)
+		logger.Error("Error updating sensor", "sensor_ud", id, "error", err.Error())
 		return
 	}
 
-	// TODO(#19) - Improve error handling
-	err = utils.RespondWithJSONItems(w, http.StatusOK, sensor)
+	err = responses.SendJSONResponse(w, http.StatusOK, responses.ItemsResponse{
+		Code:    0,
+		Message: "The selected sensor was updated",
+		Items:   sensor,
+	})
 	if err != nil {
-		fmt.Printf("Error responding with %s", err)
+		logger.Error("Error sending response", "error", err.Error())
+		responses.SendErrorResponse(w, http.StatusInternalServerError, responses.InternalErrorCodes.ResponseError)
 		return
 	}
 }
 
 func DeleteSensor(w http.ResponseWriter, r *http.Request) {
+	logger := middlewares.ContextWithLogger(r.Context())
 	// TODO(#20) - Validate Query Params
 	id := mux.Vars(r)["id"]
-	err := db.SensorsData.DeleteSensor(id)
-
-	// TODO(#19) - Improve error handling
-	if err != nil {
-		fmt.Printf("Error deleting sensor: %s", err)
+	if !db.SensorsData.IdExists(id) {
+		logger.Error("Error searching for sensors", "sensor_id", id, "error", "sensor doesnt exist")
+		responses.SendErrorResponse(w, http.StatusNotFound, responses.SensorErrorCodes.NotFound)
+		return
 	}
 
-	// TODO - Change response
-	err = utils.RespondWithJSONItems(w, http.StatusNoContent, nil)
+	err := db.SensorsData.DeleteSensor(id)
 	if err != nil {
-		fmt.Printf("Error responding with %s", err)
+		logger.Error("Error deleting sensor", "sensor_id", id, "error", err.Error())
+		responses.SendErrorResponse(w, http.StatusInternalServerError, responses.SensorErrorCodes.DeleteFailed)
+	}
+
+	err = responses.SendJSONResponse(w, http.StatusNoContent, responses.MessageResponse{
+		Code:    0,
+		Message: "The sensor was deleted",
+	})
+	if err != nil {
+		logger.Error("Error sending response", "error", err.Error())
+		responses.SendErrorResponse(w, http.StatusInternalServerError, responses.InternalErrorCodes.ResponseError)
 		return
 	}
 }

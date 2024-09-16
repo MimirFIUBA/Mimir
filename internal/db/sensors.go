@@ -2,12 +2,12 @@ package db
 
 import (
 	"fmt"
-	"mimir/internal/api/models"
+	"mimir/internal/mimir"
 	"strconv"
 )
 
 type SensorsManager struct {
-	sensors   []models.Sensor
+	sensors   []mimir.Sensor
 	idCounter int
 }
 
@@ -16,22 +16,29 @@ func (s *SensorsManager) GetNewId() int {
 	return s.idCounter
 }
 
-func (s *SensorsManager) GetSensors() []models.Sensor {
+func (s *SensorsManager) GetSensors() []mimir.Sensor {
 	return s.sensors
 }
 
-func (s *SensorsManager) GetSensorById(id string) (*models.Sensor, error) {
+func (s *SensorsManager) GetSensorById(id string) (*mimir.Sensor, error) {
 	for index, sensor := range s.sensors {
 		if sensor.ID == id {
 			return &s.sensors[index], nil
 		}
 	}
-	// TODO(#19) - Improve error handling
 	return nil, fmt.Errorf("sensor %s not found", id)
 }
 
-func (s *SensorsManager) CreateSensor(sensor *models.Sensor) error {
-	// TODO(#19) - Improve error handling
+func (s *SensorsManager) IdExists(id string) bool {
+	_, err := s.GetSensorById(id)
+	if err != nil {
+		return false
+	}
+
+	return true
+}
+
+func (s *SensorsManager) CreateSensor(sensor *mimir.Sensor) error {
 	// TODO(#20) - Add Body validation
 	newId := s.GetNewId()
 	sensor.ID = strconv.Itoa(newId)
@@ -45,9 +52,8 @@ func (s *SensorsManager) CreateSensor(sensor *models.Sensor) error {
 	return nil
 }
 
-func (s *SensorsManager) UpdateSensor(sensor *models.Sensor) (*models.Sensor, error) {
+func (s *SensorsManager) UpdateSensor(sensor *mimir.Sensor) (*mimir.Sensor, error) {
 	oldSensor, err := s.GetSensorById(sensor.ID)
-	// TODO(#19) - Improve error handling
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +72,6 @@ func (s *SensorsManager) DeleteSensor(id string) error {
 		}
 	}
 
-	// TODO(#19) - Improve error handling
 	if sensorIndex == -1 {
 		return fmt.Errorf("sensor %s not found", id)
 	}

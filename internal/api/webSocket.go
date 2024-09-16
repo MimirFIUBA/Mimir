@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"mimir/internal/api/responses"
 	"net/http"
 )
 
@@ -16,7 +17,7 @@ func handleConnections(w http.ResponseWriter, r *http.Request) {
 	clients[conn] = true
 
 	for {
-		var msg WSMessage
+		var msg responses.WSMessage
 		err := conn.ReadJSON(&msg)
 		if err != nil {
 			fmt.Println(err)

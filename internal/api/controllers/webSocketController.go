@@ -2,7 +2,7 @@ package controllers
 
 import (
 	"fmt"
-	"mimir/internal/api/models"
+	"mimir/internal/api/responses"
 	"net/http"
 
 	"github.com/gorilla/websocket"
@@ -30,7 +30,7 @@ func HandleConnections(w http.ResponseWriter, r *http.Request) {
 	clients[conn] = true
 
 	for {
-		var msg models.WSMessage
+		var msg responses.WSMessage
 		err := conn.ReadJSON(&msg)
 		if err != nil {
 			fmt.Println(err)

@@ -11,11 +11,11 @@ func CreateRouter() *mux.Router {
 	fmt.Println("router")
 	router := mux.NewRouter()
 
-	// AddSensorRoutes(router)
-	// AddNodesRoutes(router)
-	// AddGroupRoutes(router)
-	// AddProcessorsRoutes(router)
-	// AddWebSocketRoutes(router)
+	AddSensorRoutes(router)
+	AddNodesRoutes(router)
+	AddGroupRoutes(router)
+	AddProcessorsRoutes(router)
+	AddWebSocketRoutes(router)
 
 	go controllers.HandleWebSocketMessages() //TODO (#26)
 

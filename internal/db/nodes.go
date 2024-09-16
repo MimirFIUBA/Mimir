@@ -2,12 +2,12 @@ package db
 
 import (
 	"fmt"
-	"mimir/internal/api/models"
+	"mimir/internal/mimir"
 	"strconv"
 )
 
 type NodesManager struct {
-	nodes     []models.Node
+	nodes     []mimir.Node
 	idCounter int
 }
 
@@ -16,23 +16,30 @@ func (n *NodesManager) GetNewId() int {
 	return n.idCounter
 }
 
-func (n *NodesManager) GetNodes() []models.Node {
+func (n *NodesManager) GetNodes() []mimir.Node {
 	return n.nodes
 }
 
-func (n *NodesManager) GetNodeById(id string) (*models.Node, error) {
+func (n *NodesManager) GetNodeById(id string) (*mimir.Node, error) {
 	for index, node := range n.nodes {
 		if node.ID == id {
 			return &n.nodes[index], nil
 		}
 	}
 
-	// TODO(#19) - Improve error handling
 	return nil, fmt.Errorf("node %s not found", id)
 }
 
-func (n *NodesManager) CreateNode(node *models.Node) error {
-	// TODO(#19) - Improve error handling
+func (n *NodesManager) IdExists(id string) bool {
+	_, err := n.GetNodeById(id)
+	if err != nil {
+		return false
+	}
+
+	return true
+}
+
+func (n *NodesManager) CreateNode(node *mimir.Node) error {
 	// TODO(#20) - Add Body validation
 	newId := n.GetNewId()
 	node.ID = strconv.Itoa(newId)
@@ -46,8 +53,7 @@ func (n *NodesManager) CreateNode(node *models.Node) error {
 	return nil
 }
 
-func (n *NodesManager) UpdateNode(node *models.Node) (*models.Node, error) {
-	// TODO(#19) - Improve error handling
+func (n *NodesManager) UpdateNode(node *mimir.Node) (*mimir.Node, error) {
 	oldNode, err := n.GetNodeById(node.ID)
 	if err != nil {
 		return nil, err
@@ -67,7 +73,6 @@ func (n *NodesManager) DeleteNode(id string) error {
 		}
 	}
 
-	// TODO(#19) - Improve error handling
 	if nodeIndex == -1 {
 		return fmt.Errorf("sensor %s not found", id)
 	}
@@ -77,8 +82,7 @@ func (n *NodesManager) DeleteNode(id string) error {
 	return nil
 }
 
-func (n *NodesManager) AddSensorToNodeById(id string, sensor *models.Sensor) error {
-	// TODO(#19) - Improve error handling
+func (n *NodesManager) AddSensorToNodeById(id string, sensor *mimir.Sensor) error {
 	oldNode, err := n.GetNodeById(id)
 	if err != nil {
 		return nil
