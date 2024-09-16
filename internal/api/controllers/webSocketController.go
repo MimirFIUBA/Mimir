@@ -3,55 +3,39 @@ package controllers
 import (
 	"fmt"
 	"mimir/internal/api/responses"
+	websocket "mimir/internal/api/webSocket"
 	"net/http"
-
-	"github.com/gorilla/websocket"
 )
 
-// TODO: add security check (only for production use)
-var upgrader = websocket.Upgrader{
-	CheckOrigin: func(r *http.Request) bool {
-		return true
-	},
+var handler = websocket.NewHandler()
+
+func SetWebSocketBroadcastChan(broadcastChan chan string) {
+	handler.BroadcastChan = broadcastChan
 }
 
-var clients = make(map[*websocket.Conn]bool)
-
-var broadcast chan string
-
 func HandleConnections(w http.ResponseWriter, r *http.Request) {
-	conn, err := upgrader.Upgrade(w, r, nil)
+	conn, err := handler.Upgrade(w, r)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 	defer conn.Close()
 
-	clients[conn] = true
+	handler.NewConnection(conn)
 
+	// TODO: solo para testing, broadcasteo los mensajes que recibo
 	for {
 		var msg responses.WSMessage
 		err := conn.ReadJSON(&msg)
 		if err != nil {
 			fmt.Println(err)
-			delete(clients, conn)
+			handler.CloseConnection(conn)
 			return
 		}
-		broadcast <- fmt.Sprintf("%#v", msg)
+		handler.BroadcastMessage(msg)
 	}
 }
 
 func HandleWebSocketMessages() {
-	for {
-		msg := <-broadcast
-
-		for client := range clients {
-			err := client.WriteJSON(msg)
-			if err != nil {
-				fmt.Println(err)
-				client.Close()
-				delete(clients, client)
-			}
-		}
-	}
+	handler.HandleMessages()
 }

@@ -9,7 +9,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func getNodes(w http.ResponseWriter, r *http.Request) {
+func getNodes(w http.ResponseWriter, _ *http.Request) {
 	nodes := mimir.Data.GetNodes()
 
 	w.WriteHeader(http.StatusOK)

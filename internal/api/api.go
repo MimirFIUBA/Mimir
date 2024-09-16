@@ -2,25 +2,24 @@ package api
 
 import (
 	"log"
+	"mimir/internal/api/controllers"
 	"mimir/internal/api/routes"
 	"net/http"
-
-	"github.com/gorilla/websocket"
 )
 
 // TODO: add security check (only for production use)
-var upgrader = websocket.Upgrader{
-	CheckOrigin: func(r *http.Request) bool {
-		return true
-	},
-}
+// var upgrader = websocket.Upgrader{
+// 	CheckOrigin: func(r *http.Request) bool {
+// 		return true
+// 	},
+// }
 
-var clients = make(map[*websocket.Conn]bool)
+// var clients = make(map[*websocket.Conn]bool)
 
-var broadcast chan string
+// var broadcast chan string
 
 func Start(broadcastChan chan string) {
-	broadcast = broadcastChan
+	// broadcast = broadcastChan
 	// router := mux.NewRouter()
 
 	// router.HandleFunc("/sensors", getSensors).Methods("GET")
@@ -55,9 +54,8 @@ func Start(broadcastChan chan string) {
 
 	// router.HandleFunc("/ws", handleConnections)
 
-	// go handleMessages()
-
 	router := routes.CreateRouter()
-
+	controllers.SetWebSocketBroadcastChan(broadcastChan)
+	go controllers.HandleWebSocketMessages()
 	log.Fatal(http.ListenAndServe(":8080", router))
 }
