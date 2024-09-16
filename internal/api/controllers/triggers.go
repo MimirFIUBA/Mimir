@@ -1,4 +1,4 @@
-package api
+package controllers
 
 import (
 	"encoding/json"
@@ -19,7 +19,7 @@ type TriggerResponse struct {
 	// Actions     []triggers.Action  `json:"actions"`
 }
 
-func getTriggers(w http.ResponseWriter, r *http.Request) {
+func GetTriggers(w http.ResponseWriter, _ *http.Request) {
 	fmt.Println("Get Triggers")
 	triggersBySensorId := mimir.Data.GetTriggersBySensorId()
 	fmt.Printf("Triggers: %v \n", triggersBySensorId)
@@ -46,7 +46,7 @@ func getTriggers(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(triggerResponseList)
 }
 
-func getTrigger(w http.ResponseWriter, r *http.Request) {
+func GetTrigger(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
 
@@ -55,7 +55,7 @@ func getTrigger(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(sensor)
 }
 
-func createTrigger(w http.ResponseWriter, r *http.Request) {
+func CreateTrigger(w http.ResponseWriter, r *http.Request) {
 
 	var sensor *mimir.Sensor
 	err := json.NewDecoder(r.Body).Decode(&sensor)
@@ -70,7 +70,7 @@ func createTrigger(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(sensor)
 }
 
-func updateTrigger(w http.ResponseWriter, r *http.Request) {
+func UpdateTrigger(w http.ResponseWriter, r *http.Request) {
 	var sensor *mimir.Sensor
 	err := json.NewDecoder(r.Body).Decode(&sensor)
 	if err != nil {
@@ -84,7 +84,7 @@ func updateTrigger(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(sensor)
 }
 
-func deleteTrigger(w http.ResponseWriter, r *http.Request) {
+func DeleteTrigger(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
 
