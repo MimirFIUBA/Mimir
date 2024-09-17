@@ -1,8 +1,6 @@
 package db
 
-import (
-	"mimir/internal/mimir"
-)
+import mimir "mimir/internal/mimir/models"
 
 var (
 	SensorsData = SensorsManager{

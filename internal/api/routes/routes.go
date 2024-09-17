@@ -1,14 +1,12 @@
 package routes
 
 import (
-	"fmt"
 	"mimir/internal/api/controllers"
 
 	"github.com/gorilla/mux"
 )
 
 func CreateRouter() *mux.Router {
-	fmt.Println("router")
 	router := mux.NewRouter()
 
 	AddSensorRoutes(router)

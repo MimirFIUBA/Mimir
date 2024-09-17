@@ -2,7 +2,7 @@ package db
 
 import (
 	"fmt"
-	"mimir/internal/mimir"
+	mimir "mimir/internal/mimir/models"
 	"strconv"
 )
 

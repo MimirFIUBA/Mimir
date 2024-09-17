@@ -2,8 +2,6 @@ package mimir
 
 import (
 	"fmt"
-
-	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
 
 type Topic struct {
@@ -11,23 +9,24 @@ type Topic struct {
 	IsSubscribed bool
 }
 
-type TopicManager struct {
-	Topics          map[string]Topic
-	MQTTClient      mqtt.Client
-	newTopicChannel chan string
-}
-
-func NewTopicManager(mqttClient mqtt.Client, topicChannel chan string) *TopicManager {
-	return &TopicManager{make(map[string]Topic), mqttClient, topicChannel}
-}
-
-func (tm *TopicManager) AddTopic(name string) {
-	topic, ok := tm.Topics[name]
+func (m *MQTTManager) AddTopic(name string) {
+	topic, ok := m.Topics[name]
 	if !ok || !topic.IsSubscribed {
 		topic.Name = name
-		if token := tm.MQTTClient.Subscribe(topic.Name, 0, onMessageReceived); token.Wait() && token.Error() != nil {
+		if token := m.MQTTClient.Subscribe(topic.Name, 0, onMessageReceived); token.Wait() && token.Error() != nil {
 			panic(fmt.Sprintf("Error subscribing to topic: %s", token.Error()))
 		}
-		tm.Topics[name] = topic
+		m.Topics[name] = topic
 	}
+}
+
+func (m *MQTTManager) GetSubscribedTopics() []string {
+	var topics []string
+	for topicName, topic := range m.Topics {
+		if topic.IsSubscribed {
+			topics = append(topics, topicName)
+		}
+	}
+	return topics
+
 }

@@ -1,6 +1,7 @@
-package mimir
+package models
 
 import (
+	"fmt"
 	"mimir/triggers"
 	"time"
 )
@@ -28,7 +29,7 @@ func NewSensor(name string) *Sensor {
 	return &Sensor{"", name, "", "", "", "", nil, nil}
 }
 
-func (s *Sensor) addReading(reading SensorReading) {
+func (s *Sensor) AddReading(reading SensorReading) {
 	s.Data = append(s.Data, reading)
 	s.notifyAll()
 }
@@ -55,6 +56,7 @@ func (s *Sensor) Register(observer triggers.TriggerObserver) {
 // }
 
 func (s *Sensor) notifyAll() {
+	fmt.Println(s.triggerList)
 	for _, observer := range s.triggerList {
 		event := triggers.Event{
 			Name:      "new reading event",

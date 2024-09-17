@@ -1,4 +1,4 @@
-package mimir
+package models
 
 import "fmt"
 
@@ -28,5 +28,8 @@ func (n *Node) AddSensor(sensor *Sensor) error {
 	}
 
 	n.Sensors = append(n.Sensors, *sensor)
+
+	sensor.Topic = "mimir/" + n.Name + "/" + sensor.DataName
+
 	return nil
 }

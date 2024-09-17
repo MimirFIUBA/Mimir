@@ -2,35 +2,38 @@ package mimir
 
 import (
 	"fmt"
+	"log"
 	"mimir/internal/consts"
+	"mimir/internal/mimir/models"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
 
 var (
-	Topics            TopicManager
 	Manager           MQTTManager
 	MessageProcessors *ProcessorRegistry
 )
 
 type MQTTManager struct {
 	MQTTClient      mqtt.Client
-	readingsChannel chan SensorReading
+	Topics          map[string]Topic
+	readingsChannel chan models.SensorReading
+	newTopicChannel chan string
 }
 
-func NewMQTTManager(mqttClient mqtt.Client, readingsChannel chan SensorReading) *MQTTManager {
-	return &MQTTManager{mqttClient, readingsChannel}
+func NewMQTTManager(mqttClient mqtt.Client, readingsChannel chan models.SensorReading, newTopicChannel chan string) *MQTTManager {
+	return &MQTTManager{mqttClient, make(map[string]Topic), readingsChannel, newTopicChannel}
 }
 
 func onMessageReceived(client mqtt.Client, message mqtt.Message) {
 	fmt.Printf("Received message: %s from topic: %s\n", message.Payload(), message.Topic())
-	// fmt.Printf("binary: %08b\n", message.Payload())
 
 	processor, exists := MessageProcessors.GetProcessor(message.Topic())
 	if exists {
 		err := processor.ProcessMessage(message.Topic(), message.Payload())
 		if err != nil {
-			fmt.Println("Error Process Message") //TODO: log error
+			log.Fatal("Error processing message: ", err)
+			fmt.Println("Error Process Message")
 		}
 	}
 }
@@ -49,9 +52,12 @@ func StartMqttClient() mqtt.Client {
 	return mqtt.NewClient(opts)
 }
 
-func (mp *MimirProcessor) StartGateway(client mqtt.Client, topics []string) {
-	Topics = *NewTopicManager(client, mp.TopicChannel)
-	Manager = *NewMQTTManager(client, mp.ReadingChannel)
+func (p *MimirProcessor) StartGateway() {
+
+	client := StartMqttClient()
+	topics := GetTopics()
+
+	Manager = *NewMQTTManager(client, p.ReadingChannel, p.TopicChannel)
 	MessageProcessors = NewProcessorRegistry()
 
 	if token := client.Connect(); token.Wait() && token.Error() != nil {
@@ -66,26 +72,30 @@ func (mp *MimirProcessor) StartGateway(client mqtt.Client, topics []string) {
 
 	go func() {
 		for {
-			newTopicName := <-mp.TopicChannel
-			Topics.AddTopic(newTopicName)
+			newTopicName := <-p.TopicChannel
+			Manager.AddTopic(newTopicName)
 		}
 	}()
 
-	go func() {
-		for {
-			outgoingMessage := <-mp.OutgoingMessagesChannel
-			topic := "mimir/alert"
-			token := client.Publish(topic, 0, false, outgoingMessage)
-			token.Wait()
-
-			fmt.Printf("Published topic %s: %s\n", topic, outgoingMessage)
-		}
-	}()
+	go p.publishOutgoingMessages()
 }
 
-func CloseConnection(client mqtt.Client, topics []string) {
+func (m *MQTTManager) CloseConnection() {
+
+	topics := m.GetSubscribedTopics()
 	for _, topic := range topics {
-		client.Unsubscribe(topic)
+		m.MQTTClient.Unsubscribe(topic)
 	}
-	client.Disconnect(250)
+	m.MQTTClient.Disconnect(250)
+}
+
+func (p *MimirProcessor) publishOutgoingMessages() {
+	for {
+		outgoingMessage := <-p.OutgoingMessagesChannel
+		topic := "mimir/alert"
+		token := Manager.MQTTClient.Publish(topic, 0, false, outgoingMessage)
+		token.Wait()
+
+		fmt.Printf("Published topic %s: %s\n", topic, outgoingMessage)
+	}
 }

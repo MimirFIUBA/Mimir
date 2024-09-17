@@ -78,7 +78,7 @@
                             "operator": ">",
                             "left": "tomTemp2",
                             "right": 10
-                        },
+                        }
                     ]
                 }
             ]

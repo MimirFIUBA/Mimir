@@ -8,6 +8,8 @@ import (
 	"math"
 	"strings"
 	"time"
+
+	mimir "mimir/internal/mimir/models"
 )
 
 type MessageProcessor interface {
@@ -94,7 +96,7 @@ func (p *JSONProcessor) ProcessMessage(topic string, payload []byte) error {
 			return ValueNotFoundError{"sensorId"}
 		}
 
-		sensorReading := SensorReading{SensorID: sensorId, Value: valueInterface, Time: time.Now()}
+		sensorReading := mimir.SensorReading{SensorID: sensorId, Value: valueInterface, Time: time.Now()}
 		Manager.readingsChannel <- sensorReading
 	}
 	return nil
@@ -161,7 +163,7 @@ func (p *BytesProcessor) ProcessMessage(topic string, payload []byte) error {
 		}
 
 		if sensorId != "" && configuration.DataType != "id" {
-			sensorReading := SensorReading{sensorId, data, time.Now()}
+			sensorReading := mimir.SensorReading{SensorID: sensorId, Value: data, Time: time.Now()}
 			Manager.readingsChannel <- sensorReading
 		}
 

@@ -5,7 +5,7 @@ import (
 	"mimir/internal/api/middlewares"
 	"mimir/internal/api/responses"
 	"mimir/internal/db"
-	"mimir/internal/mimir"
+	"mimir/internal/mimir/models"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -54,7 +54,7 @@ func GetSensorById(w http.ResponseWriter, r *http.Request) {
 func CreateSensor(w http.ResponseWriter, r *http.Request) {
 	logger := middlewares.ContextWithLogger(r.Context())
 
-	var newSensor *mimir.Sensor
+	var newSensor *models.Sensor
 	err := json.NewDecoder(r.Body).Decode(&newSensor)
 	if err != nil {
 		logger.Error("Error decoding new sensor", "body", r.Body, "error", err.Error())
@@ -85,7 +85,7 @@ func UpdateSensor(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var sensor *mimir.Sensor
+	var sensor *models.Sensor
 	err := json.NewDecoder(r.Body).Decode(&sensor)
 	if err != nil {
 		logger.Error("Error decoding new sensor", "body", r.Body, "error", err.Error())

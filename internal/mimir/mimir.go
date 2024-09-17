@@ -2,27 +2,29 @@ package mimir
 
 import (
 	"fmt"
+	"mimir/internal/db"
+	mimir "mimir/internal/mimir/models"
 	"mimir/triggers"
 )
 
-var (
-	Data = DataManager{}
-)
+// var (
+// 	Data = DataManager{}
+// )
 
 type MimirProcessor struct {
 	OutgoingMessagesChannel chan string
-	ReadingChannel          chan SensorReading
+	ReadingChannel          chan mimir.SensorReading
 	TopicChannel            chan string
 	WsChannel               chan string
 }
 
 func NewMimirProcessor() *MimirProcessor {
 	topicChannel := make(chan string)
-	readingsChannel := make(chan SensorReading)
+	readingsChannel := make(chan mimir.SensorReading)
 	outgoingMessagesChannel := make(chan string)
 	webSocketMessageChannel := make(chan string)
 
-	Data.topicChannel = topicChannel
+	// Data.topicChannel = topicChannel
 	mp := MimirProcessor{
 		outgoingMessagesChannel,
 		readingsChannel,
@@ -31,31 +33,39 @@ func NewMimirProcessor() *MimirProcessor {
 	return &mp
 }
 
-func (mp *MimirProcessor) Run() {
-	// setInitialData(mp.OutgoingMessagesChannel, mp.WsChannel)
+func (p *MimirProcessor) Run() {
 
 	for {
-		reading := <-mp.ReadingChannel
+		reading := <-p.ReadingChannel
 
 		processReading(reading)
 
-		Data.StoreReading(reading)
+		db.StoreReading(reading)
 	}
 }
 
-func processReading(reading SensorReading) {
+func CloseConnection() {
+	Manager.CloseConnection()
+}
+
+func processReading(reading mimir.SensorReading) {
 	//TODO: ver si necesitamos hacer algo aca
 	fmt.Printf("Processing reading: %v \n", reading.Value)
 }
 
-func (m *MimirProcessor) NewSendMQTTMessageAction(message string) triggers.SendMessageThroughChannel {
+// Action creation for simple use
+func (p *MimirProcessor) NewSendMQTTMessageAction(message string) triggers.SendMessageThroughChannel {
 	return triggers.SendMessageThroughChannel{
 		Message:                 message,
-		OutgoingMessagesChannel: m.OutgoingMessagesChannel}
+		OutgoingMessagesChannel: p.OutgoingMessagesChannel}
 }
 
-func (m *MimirProcessor) NewSendWebSocketMessageAction(message string) triggers.SendMessageThroughChannel {
+func (p *MimirProcessor) NewSendWebSocketMessageAction(message string) triggers.SendMessageThroughChannel {
 	return triggers.SendMessageThroughChannel{
 		Message:                 message,
-		OutgoingMessagesChannel: m.WsChannel}
+		OutgoingMessagesChannel: p.WsChannel}
+}
+
+func (p *MimirProcessor) RegisterSensor(sensor *mimir.Sensor) {
+	p.TopicChannel <- sensor.Topic
 }

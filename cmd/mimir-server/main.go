@@ -3,7 +3,9 @@ package main
 import (
 	"fmt"
 	API "mimir/internal/api"
+	"mimir/internal/db"
 	"mimir/internal/mimir"
+	"mimir/internal/mimir/models"
 	"mimir/triggers"
 	"os"
 	"os/signal"
@@ -11,8 +13,9 @@ import (
 )
 
 func setInitialData(mp *mimir.MimirProcessor) {
-	node := mimir.NewNode("esp32")
-	node = mimir.Data.AddNode(node)
+	node := models.NewNode("esp32")
+	// node = mimir.Data.AddNode(node)
+	db.NodesData.CreateNode(node)
 
 	// testSensor := NewSensor("test")
 	// testSensor.DataName = "mimirTest"
@@ -75,14 +78,14 @@ func setInitialData(mp *mimir.MimirProcessor) {
 
 	// Real use case:
 	// CREATE SENSOR
-	waterTemperatureSensor := mimir.NewSensor("water temperature")
+	waterTemperatureSensor := models.NewSensor("water temperature")
 	waterTemperatureSensor.DataName = "waterTemp"
 	waterTemperatureSensor.NodeID = node.ID
 	// waterTemperatureSensor = Data.AddSensor(waterTemperatureSensor)
 
 	// MESSAGE PROCESSOR
 	processorWaterTemp := mimir.NewJSONProcessor()
-	processorWaterTemp.SensorId = "0"
+	processorWaterTemp.SensorId = "1"
 	waterTempConfiguration := mimir.NewJSONValueConfiguration("", "data")
 	processorWaterTemp.AddValueConfiguration(waterTempConfiguration)
 	mimir.MessageProcessors.RegisterProcessor("mimir/esp32/waterTemp", processorWaterTemp)
@@ -97,7 +100,7 @@ func setInitialData(mp *mimir.MimirProcessor) {
 	wtTrigger.Actions = append(wtTrigger.Actions, &wtPrintAction)
 	wtTrigger.Actions = append(wtTrigger.Actions, &wtSendMQTTMessageAction)
 
-	// waterTemperatureSensor.Register(wtTrigger)
+	waterTemperatureSensor.Register(wtTrigger)
 
 	wtLowPrintAction := triggers.PrintAction{Message: "TRIGGER EXECUTED - Water temperature low"}
 	wtLowSendMQTTMessageAction := mp.NewSendMQTTMessageAction("off")
@@ -108,7 +111,7 @@ func setInitialData(mp *mimir.MimirProcessor) {
 	wtLowTrigger.Actions = append(wtLowTrigger.Actions, &wtLowPrintAction)
 	wtLowTrigger.Actions = append(wtLowTrigger.Actions, &wtLowSendMQTTMessageAction)
 
-	// waterTemperatureSensor.Register(wtLowTrigger)
+	waterTemperatureSensor.Register(wtLowTrigger)
 
 	//Send through ws trigger
 	wsTrigger := triggers.NewTrigger("send ws")
@@ -131,18 +134,17 @@ func setInitialData(mp *mimir.MimirProcessor) {
 	// waterTemperatureSensor.Register(timeoutTrigger)
 	// timeoutTrigger.Start()
 
-	mimir.Data.AddSensor(waterTemperatureSensor)
+	db.SensorsData.CreateSensor(waterTemperatureSensor)
+	mp.RegisterSensor(waterTemperatureSensor)
 }
 
 func main() {
 
 	fmt.Println("MiMiR starting")
-	topics := mimir.GetTopics()
-	client := mimir.StartMqttClient()
 
 	mimirProcessor := mimir.NewMimirProcessor()
+	mimirProcessor.StartGateway()
 
-	mimirProcessor.StartGateway(client, topics)
 	setInitialData(mimirProcessor)
 	go mimirProcessor.Run()
 	go API.Start(mimirProcessor.WsChannel)
@@ -153,7 +155,7 @@ func main() {
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 	<-sigChan
 
-	mimir.CloseConnection(client, topics)
+	mimir.CloseConnection()
 
 	fmt.Println("Mimir is out of duty, bye!")
 }

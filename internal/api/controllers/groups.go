@@ -5,7 +5,7 @@ import (
 	"mimir/internal/api/middlewares"
 	"mimir/internal/api/responses"
 	"mimir/internal/db"
-	"mimir/internal/mimir"
+	mimir "mimir/internal/mimir/models"
 	"net/http"
 
 	"github.com/gorilla/mux"

@@ -5,6 +5,7 @@ import (
 	"io"
 	"mimir/internal/api/utils"
 	"mimir/internal/mimir"
+	"mimir/internal/mimir/models"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -70,23 +71,23 @@ func CreateProcessor(w http.ResponseWriter, r *http.Request) {
 }
 
 func UpdateProcessor(w http.ResponseWriter, r *http.Request) {
-	var sensor *mimir.Sensor
+	var sensor *models.Sensor
 	err := json.NewDecoder(r.Body).Decode(&sensor)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	sensor = mimir.Data.UpdateSensor(sensor)
+	// sensor = mimir.Data.UpdateSensor(sensor)
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(sensor)
 }
 
 func DeleteProcessor(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	id := vars["id"]
+	// vars := mux.Vars(r)
+	// id := vars["id"]
 
-	mimir.Data.DeleteSensor(id)
+	// mimir.Data.DeleteSensor(id)
 	w.WriteHeader(http.StatusOK)
 }
