@@ -12,12 +12,12 @@ type Trigger struct {
 }
 
 func NewTrigger(name string) *Trigger {
-	return &Trigger{uuid.New().String(), name, &TrueCondition{}, nil}
+	defaultCondition := TrueCondition{}
+	return &Trigger{uuid.New().String(), name, &defaultCondition, nil}
 }
 
 func (t *Trigger) Update(event Event) {
-	t.Condition.SetEvent(event)
-	if t.Condition.Evaluate() {
+	if t.Condition.Evaluate(event) {
 		for _, action := range t.Actions {
 			action.Execute(event)
 		}
@@ -26,4 +26,12 @@ func (t *Trigger) Update(event Event) {
 
 func (t *Trigger) GetID() string {
 	return t.ID
+}
+
+func (t *Trigger) SetCondition(c Condition) {
+	t.Condition = c
+}
+
+func (t *Trigger) AddAction(a Action) {
+	t.Actions = append(t.Actions, a)
 }

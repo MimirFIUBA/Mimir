@@ -35,6 +35,8 @@ func onMessageReceived(client mqtt.Client, message mqtt.Message) {
 			log.Fatal("Error processing message: ", err)
 			fmt.Println("Error Process Message")
 		}
+	} else {
+
 	}
 }
 

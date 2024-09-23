@@ -7,10 +7,6 @@ import (
 	"mimir/triggers"
 )
 
-// var (
-// 	Data = DataManager{}
-// )
-
 type MimirProcessor struct {
 	OutgoingMessagesChannel chan string
 	ReadingChannel          chan mimir.SensorReading

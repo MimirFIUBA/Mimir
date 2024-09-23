@@ -12,7 +12,7 @@ type TimeTrigger struct {
 	Condition    Condition     `json:"condition"`
 	Actions      []Action      `json:"actions"`
 	Duration     time.Duration `json:"duration"`
-	timer        *time.Ticker
+	ticker       *time.Ticker
 	resetChannel chan bool
 }
 
@@ -26,7 +26,7 @@ func (t *TimeTrigger) Start() {
 			select {
 			case <-t.resetChannel:
 				t.reset()
-			case <-t.timer.C:
+			case <-t.ticker.C:
 				t.execute()
 			}
 		}
@@ -34,8 +34,8 @@ func (t *TimeTrigger) Start() {
 }
 
 func (t *TimeTrigger) reset() {
-	if t.timer != nil {
-		t.timer.Reset(t.Duration)
+	if t.ticker != nil {
+		t.ticker.Reset(t.Duration)
 	}
 }
 
@@ -47,8 +47,7 @@ func (t *TimeTrigger) execute() {
 
 func (t *TimeTrigger) evaluate(event Event) {
 	if t.Condition != nil {
-		t.Condition.SetEvent(event)
-		if t.Condition.Evaluate() {
+		if t.Condition.Evaluate(event) {
 			t.resetChannel <- true
 		}
 	} else {
