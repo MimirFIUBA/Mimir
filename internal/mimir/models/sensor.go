@@ -51,10 +51,6 @@ func (s *Sensor) Register(observer triggers.TriggerObserver) {
 	s.triggerList = append(s.triggerList, observer)
 }
 
-// func (s *Sensor) deregister(observer trigger.Observer) {
-// 	s.observerList = removeFromslice(s.observerList, observer)
-// }
-
 func (s *Sensor) notifyAll() {
 	fmt.Println(s.triggerList)
 	for _, observer := range s.triggerList {
@@ -65,14 +61,3 @@ func (s *Sensor) notifyAll() {
 		observer.Update(event) //TODO: need to send the last value
 	}
 }
-
-// func removeFromslice(observerList []trigger.Observer, observerToRemove trigger.Observer) []trigger.Observer {
-// 	observerListLength := len(observerList)
-// 	for i, observer := range observerList {
-// 		if observerToRemove.GetID() == observer.GetID() {
-// 			observerList[observerListLength-1], observerList[i] = observerList[i], observerList[observerListLength-1]
-// 			return observerList[:observerListLength-1]
-// 		}
-// 	}
-// 	return observerList
-// }
