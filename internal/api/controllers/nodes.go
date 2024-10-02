@@ -7,6 +7,7 @@ import (
 	"mimir/internal/api/middlewares"
 	"mimir/internal/api/models"
 	"mimir/internal/api/responses"
+	"mimir/internal/api/validators"
 	"net/http"
 )
 
@@ -29,8 +30,14 @@ func GetNodes(w http.ResponseWriter, r *http.Request) {
 func GetNodeById(w http.ResponseWriter, r *http.Request) {
 	logger := middlewares.ContextWithLogger(r.Context())
 
-	// TODO(#20) - Validate Query Params
 	id := mux.Vars(r)["id"]
+	err := validators.CheckIdNotEmpty(id)
+	if err != nil {
+		logger.Error("Error during id validation", "error", err.Error())
+		responses.SendErrorResponse(w, http.StatusBadRequest, responses.NodeErrorCodes.InvalidId)
+		return
+	}
+
 	node, err := db.NodesData.GetNodeById(id)
 	if err != nil {
 		logger.Error("Error searching for node", "node_id", id, "error", err.Error())
@@ -77,8 +84,14 @@ func CreateNode(w http.ResponseWriter, r *http.Request) {
 func UpdateNode(w http.ResponseWriter, r *http.Request) {
 	logger := middlewares.ContextWithLogger(r.Context())
 
-	// TODO(#20) - Validate Query Params
 	id := mux.Vars(r)["id"]
+	err := validators.CheckIdNotEmpty(id)
+	if err != nil {
+		logger.Error("Error during id validation", "error", err.Error())
+		responses.SendErrorResponse(w, http.StatusBadRequest, responses.NodeErrorCodes.InvalidId)
+		return
+	}
+
 	if !db.GroupsData.IdExists(id) {
 		logger.Error("Error updating group", "node_id", id, "error", "group doesnt exist")
 		responses.SendErrorResponse(w, http.StatusNotFound, responses.NodeErrorCodes.NotFound)
@@ -86,7 +99,7 @@ func UpdateNode(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var node *models.Node
-	err := json.NewDecoder(r.Body).Decode(&node)
+	err = json.NewDecoder(r.Body).Decode(&node)
 	if err != nil {
 		logger.Error("Error decoding new node", "body", r.Body, "error", err.Error())
 		responses.SendErrorResponse(w, http.StatusBadRequest, responses.NodeErrorCodes.InvalidSchema)
@@ -115,15 +128,22 @@ func UpdateNode(w http.ResponseWriter, r *http.Request) {
 
 func DeleteNode(w http.ResponseWriter, r *http.Request) {
 	logger := middlewares.ContextWithLogger(r.Context())
-	// TODO(#20) - Validate Query Params
+
 	id := mux.Vars(r)["id"]
+	err := validators.CheckIdNotEmpty(id)
+	if err != nil {
+		logger.Error("Error during id validation", "error", err.Error())
+		responses.SendErrorResponse(w, http.StatusBadRequest, responses.NodeErrorCodes.InvalidId)
+		return
+	}
+
 	if !db.GroupsData.IdExists(id) {
 		logger.Error("Error deleting group", "node_id", id, "error", "group doesnt exist")
 		responses.SendErrorResponse(w, http.StatusNotFound, responses.NodeErrorCodes.NotFound)
 		return
 	}
 
-	err := db.NodesData.DeleteNode(id)
+	err = db.NodesData.DeleteNode(id)
 	if err != nil {
 		logger.Error("Error deleting group", "group_id", id, "error", err.Error())
 		responses.SendErrorResponse(w, http.StatusInternalServerError, responses.NodeErrorCodes.DeleteFailed)

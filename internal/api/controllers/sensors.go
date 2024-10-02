@@ -7,6 +7,7 @@ import (
 	"mimir/internal/api/middlewares"
 	"mimir/internal/api/models"
 	"mimir/internal/api/responses"
+	"mimir/internal/api/validators"
 	"net/http"
 )
 
@@ -29,8 +30,14 @@ func GetSensors(w http.ResponseWriter, r *http.Request) {
 func GetSensorById(w http.ResponseWriter, r *http.Request) {
 	logger := middlewares.ContextWithLogger(r.Context())
 
-	// TODO(#20) - Validate Query Params
 	id := mux.Vars(r)["id"]
+	err := validators.CheckIdNotEmpty(id)
+	if err != nil {
+		logger.Error("Error during id validation", "error", err.Error())
+		responses.SendErrorResponse(w, http.StatusBadRequest, responses.SensorErrorCodes.InvalidId)
+		return
+	}
+
 	sensor, err := db.SensorsData.GetSensorById(id)
 	if err != nil {
 		logger.Error("Error searching for sensors", "sensor_id", id, "error", err.Error())
@@ -76,8 +83,15 @@ func CreateSensor(w http.ResponseWriter, r *http.Request) {
 
 func UpdateSensor(w http.ResponseWriter, r *http.Request) {
 	logger := middlewares.ContextWithLogger(r.Context())
-	// TODO(#20) - Validate Query Params
+
 	id := mux.Vars(r)["id"]
+	err := validators.CheckIdNotEmpty(id)
+	if err != nil {
+		logger.Error("Error during id validation", "error", err.Error())
+		responses.SendErrorResponse(w, http.StatusBadRequest, responses.SensorErrorCodes.InvalidId)
+		return
+	}
+
 	if !db.SensorsData.IdExists(id) {
 		logger.Error("Error searching for sensors", "sensor_id", id, "error", "sensor doesnt exist")
 		responses.SendErrorResponse(w, http.StatusNotFound, responses.SensorErrorCodes.NotFound)
@@ -85,7 +99,7 @@ func UpdateSensor(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var sensor *models.Sensor
-	err := json.NewDecoder(r.Body).Decode(&sensor)
+	err = json.NewDecoder(r.Body).Decode(&sensor)
 	if err != nil {
 		logger.Error("Error decoding new sensor", "body", r.Body, "error", err.Error())
 		responses.SendErrorResponse(w, http.StatusBadRequest, responses.SensorErrorCodes.InvalidSchema)
@@ -113,15 +127,22 @@ func UpdateSensor(w http.ResponseWriter, r *http.Request) {
 
 func DeleteSensor(w http.ResponseWriter, r *http.Request) {
 	logger := middlewares.ContextWithLogger(r.Context())
-	// TODO(#20) - Validate Query Params
+
 	id := mux.Vars(r)["id"]
+	err := validators.CheckIdNotEmpty(id)
+	if err != nil {
+		logger.Error("Error during id validation", "error", err.Error())
+		responses.SendErrorResponse(w, http.StatusBadRequest, responses.SensorErrorCodes.InvalidId)
+		return
+	}
+
 	if !db.SensorsData.IdExists(id) {
 		logger.Error("Error searching for sensors", "sensor_id", id, "error", "sensor doesnt exist")
 		responses.SendErrorResponse(w, http.StatusNotFound, responses.SensorErrorCodes.NotFound)
 		return
 	}
 
-	err := db.SensorsData.DeleteSensor(id)
+	err = db.SensorsData.DeleteSensor(id)
 	if err != nil {
 		logger.Error("Error deleting sensor", "sensor_id", id, "error", err.Error())
 		responses.SendErrorResponse(w, http.StatusInternalServerError, responses.SensorErrorCodes.DeleteFailed)
