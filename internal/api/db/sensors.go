@@ -39,7 +39,6 @@ func (s *SensorsManager) IdExists(id string) bool {
 }
 
 func (s *SensorsManager) CreateSensor(sensor *models.Sensor) error {
-	// TODO(#20) - Add Body validation
 	newId := s.GetNewId()
 	sensor.ID = strconv.Itoa(newId)
 

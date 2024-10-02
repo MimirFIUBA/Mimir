@@ -7,6 +7,7 @@ import (
 	"mimir/internal/api/middlewares"
 	"mimir/internal/api/models"
 	"mimir/internal/api/responses"
+	"mimir/internal/api/validators"
 	"net/http"
 )
 
@@ -28,8 +29,15 @@ func GetGroups(w http.ResponseWriter, r *http.Request) {
 
 func GetGroupById(w http.ResponseWriter, r *http.Request) {
 	logger := middlewares.ContextWithLogger(r.Context())
-	// TODO(#20) - Validate Query Params
+
 	id := mux.Vars(r)["id"]
+	err := validators.CheckIdNotEmpty(id)
+	if err != nil {
+		logger.Error("Error during id validation", "error", err.Error())
+		responses.SendErrorResponse(w, http.StatusBadRequest, responses.GroupErrorCodes.InvalidId)
+		return
+	}
+
 	group, err := db.GroupsData.GetGroupById(id)
 	if err != nil {
 		logger.Error("Error searching for group", "group_id", id, "error", err.Error())
@@ -76,8 +84,14 @@ func CreateGroup(w http.ResponseWriter, r *http.Request) {
 func UpdateGroup(w http.ResponseWriter, r *http.Request) {
 	logger := middlewares.ContextWithLogger(r.Context())
 
-	// TODO(#20) - Validate Query Params
 	id := mux.Vars(r)["id"]
+	err := validators.CheckIdNotEmpty(id)
+	if err != nil {
+		logger.Error("Error during id validation", "error", err.Error())
+		responses.SendErrorResponse(w, http.StatusBadRequest, responses.GroupErrorCodes.InvalidId)
+		return
+	}
+
 	if !db.GroupsData.IdExists(id) {
 		logger.Error("Error updating group", "group_id", id, "error", "group doesnt exist")
 		responses.SendErrorResponse(w, http.StatusNotFound, responses.GroupErrorCodes.NotFound)
@@ -85,7 +99,7 @@ func UpdateGroup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var group *models.Group
-	err := json.NewDecoder(r.Body).Decode(&group)
+	err = json.NewDecoder(r.Body).Decode(&group)
 	if err != nil {
 		logger.Error("Error decoding new group", "body", r.Body, "error", err.Error())
 		responses.SendErrorResponse(w, http.StatusBadRequest, responses.GroupErrorCodes.InvalidSchema)
@@ -114,14 +128,21 @@ func UpdateGroup(w http.ResponseWriter, r *http.Request) {
 
 func DeleteGroup(w http.ResponseWriter, r *http.Request) {
 	logger := middlewares.ContextWithLogger(r.Context())
-	// TODO(#20) - Validate Query Params
+
 	id := mux.Vars(r)["id"]
+	err := validators.CheckIdNotEmpty(id)
+	if err != nil {
+		logger.Error("Error during id validation", "error", err.Error())
+		responses.SendErrorResponse(w, http.StatusBadRequest, responses.GroupErrorCodes.InvalidId)
+		return
+	}
+
 	if !db.GroupsData.IdExists(id) {
 		logger.Error("Error deleting group", "group_id", id, "error", "group doesnt exist")
 		responses.SendErrorResponse(w, http.StatusNotFound, responses.GroupErrorCodes.NotFound)
 	}
 
-	err := db.GroupsData.DeleteGroup(id)
+	err = db.GroupsData.DeleteGroup(id)
 	if err != nil {
 		logger.Error("Error deleting group", "group_id", id, "error", err.Error())
 		responses.SendErrorResponse(w, http.StatusInternalServerError, responses.GroupErrorCodes.DeleteFailed)
