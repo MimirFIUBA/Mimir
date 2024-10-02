@@ -44,7 +44,7 @@ func (g *GroupsManager) CreateGroup(group *models.Group) error {
 	group.ID = strconv.Itoa(newId)
 
 	g.groups = append(g.groups, *group)
-	// TODO - Add node relationship
+	// TODO - Add node relationship (This should be solver when using a db)
 	return nil
 }
 

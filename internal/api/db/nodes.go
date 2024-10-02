@@ -40,7 +40,6 @@ func (n *NodesManager) IdExists(id string) bool {
 }
 
 func (n *NodesManager) CreateNode(node *models.Node) error {
-	// TODO(#20) - Add Body validation
 	newId := n.GetNewId()
 	node.ID = strconv.Itoa(newId)
 
