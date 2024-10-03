@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"mimir/internal/api/configuration"
 	"mimir/internal/api/logging"
@@ -9,7 +10,10 @@ import (
 )
 
 func main() {
-	config, err := configuration.GetConfiguration("./configuration.json")
+	configFile := flag.String("config", "configuration.json", "Path to the configuration file")
+	flag.Parse()
+
+	config, err := configuration.GetConfiguration(*configFile)
 	if err != nil {
 		panic(err)
 	}
