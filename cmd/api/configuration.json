@@ -1,0 +1,10 @@
+{
+  "logging": {
+    "level": "debug",
+    "file": "api.log"
+  },
+
+  "server": {
+    "port": 8080
+  }
+}

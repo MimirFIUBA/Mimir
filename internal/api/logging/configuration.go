@@ -7,8 +7,8 @@ import (
 )
 
 type LoggerConfiguration struct {
-	Filename string
-	Level    string
+	Filename string `json:"file"`
+	Level    string `json:"level"`
 }
 
 func (lc *LoggerConfiguration) GetFile() (io.Writer, error) {
