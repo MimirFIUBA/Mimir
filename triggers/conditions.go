@@ -241,7 +241,6 @@ func (c *AverageCondition) cleanBuffer() {
 		c.eventCount--
 		currentEvent = c.EventBuffer[c.start]
 	}
-
 }
 
 func (c *AverageCondition) SetEvent(e Event) {
