@@ -1,0 +1,25 @@
+{
+    "triggers": [
+        {
+            "name": "trigger1",
+            "condition": "",
+            "topics": [
+                "mimir/test"
+            ],
+            "actions": [
+                {
+                    "type": "print",
+                    "name": "print test",
+                    "message": "test action"
+                }
+            ]
+        },
+        {
+            "name": "trigger2"
+        },
+        {
+            "name": "trigger3"
+        }
+    ]
+
+}

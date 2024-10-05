@@ -19,6 +19,7 @@ type Sensor struct {
 
 type SensorReading struct {
 	SensorID string      `json:"sensorId"`
+	Topic    string      `json:"topic"`
 	Value    SensorValue `json:"value"`
 	Time     time.Time   `json:"time"`
 }
@@ -30,6 +31,7 @@ func NewSensor(name string) *Sensor {
 }
 
 func (s *Sensor) AddReading(reading SensorReading) {
+	fmt.Println("Sensor add reading: ", reading)
 	s.Data = append(s.Data, reading)
 	s.notifyAll()
 }
@@ -56,7 +58,6 @@ func (s *Sensor) Register(observer triggers.TriggerObserver) {
 // }
 
 func (s *Sensor) notifyAll() {
-	fmt.Println(s.triggerList)
 	for _, observer := range s.triggerList {
 		event := triggers.Event{
 			Name:      "new reading event",

@@ -80,8 +80,8 @@ func main() {
 
 	c := make(chan int)
 
-	generator := mqttGenerator{"mimir/esp32/waterTemp", client, c}
-	go generator.generateFloatData(1000, "1", 2)
+	generator := mqttGenerator{"mimir/test", client, c}
+	go generator.generateFloatData(10, "1", 1)
 
 	// numbers := []uint8{65, 1, 50, 65, 35, 51, 51}
 	// go generator.generateBytes("1", numbers)

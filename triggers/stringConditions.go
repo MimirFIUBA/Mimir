@@ -40,7 +40,7 @@ func (c *MatchesCondition) SetEvent(event Event) {
 		case []byte:
 			c.testValue = string(data)
 		default:
-			panic("cannot set value")
+			panic("Wrong value type for matches condition")
 		}
 	}
 }

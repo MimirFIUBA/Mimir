@@ -32,11 +32,7 @@ func (n *NodesManager) GetNodeById(id string) (*mimir.Node, error) {
 
 func (n *NodesManager) IdExists(id string) bool {
 	_, err := n.GetNodeById(id)
-	if err != nil {
-		return false
-	}
-
-	return true
+	return err == nil
 }
 
 func (n *NodesManager) CreateNode(node *mimir.Node) error {

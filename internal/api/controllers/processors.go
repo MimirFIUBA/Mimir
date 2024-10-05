@@ -3,9 +3,9 @@ package controllers
 import (
 	"encoding/json"
 	"io"
-	"mimir/internal/api/utils"
 	"mimir/internal/mimir"
 	"mimir/internal/mimir/models"
+	"mimir/internal/utils"
 	"net/http"
 
 	"github.com/gorilla/mux"

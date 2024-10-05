@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"mimir/internal/mimir"
-	"mimir/triggers"
+	"mimir/internal/mimir/config"
 	"os"
 	"os/signal"
 	"syscall"
@@ -11,17 +11,17 @@ import (
 
 func setInitialData(mp *mimir.MimirProcessor) {
 	// Setup1(mp)
-	cond := triggers.NewMatchesCondition(`foo.*`)
-	trig := triggers.NewTrigger("test")
-	trig.Condition = cond
-	print := triggers.NewPrintAction()
-	print.Message = "Matchescondition"
-	trig.AddAction(print)
+	// cond := triggers.NewMatchesCondition(`foo.*`)
+	// trig := triggers.NewTrigger("test")
+	// trig.Condition = cond
+	// print := triggers.NewPrintAction()
+	// print.Message = "Matchescondition"
+	// trig.AddAction(print)
 
-	event := triggers.NewEvent()
-	event.Data = "seafood"
+	// event := triggers.NewEvent()
+	// event.Data = "seafood"
 
-	trig.Update(*event)
+	// trig.Update(*event)
 
 }
 
@@ -32,8 +32,13 @@ func main() {
 	mimirProcessor := mimir.NewMimirProcessor()
 	mimirProcessor.StartGateway()
 
-	setInitialData(mimirProcessor)
-	// go mimirProcessor.Run()
+	config.LoadConfig("config/processors.json")
+	config.LoadConfig("config/triggers.json")
+	config.BuildProcessors(mimirProcessor)
+	config.BuildTriggers()
+
+	// setInitialData(mimirProcessor)
+	go mimirProcessor.Run()
 	// go api.Start(mimirProcessor.WsChannel)
 
 	fmt.Println("Everything up and running")

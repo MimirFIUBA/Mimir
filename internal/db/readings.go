@@ -6,12 +6,20 @@ import (
 )
 
 func StoreReading(reading mimir.SensorReading) error {
-	fmt.Println("store reading: ", reading.SensorID)
-	sensor, err := SensorsData.GetSensorById(reading.SensorID)
-	if err != nil {
-		return err
+	fmt.Println("store reading: ", reading)
+	if reading.SensorID != "" {
+		sensor, err := SensorsData.GetSensorById(reading.SensorID)
+		if err != nil {
+			return err
+		}
+		sensor.AddReading(reading)
+	} else {
+		sensor, err := SensorsData.GetSensorByTopic(reading.Topic)
+		if err != nil {
+			return err
+		}
+		sensor.AddReading(reading)
 	}
 
-	sensor.AddReading(reading)
 	return nil
 }

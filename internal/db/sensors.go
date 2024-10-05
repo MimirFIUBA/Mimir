@@ -29,13 +29,18 @@ func (s *SensorsManager) GetSensorById(id string) (*mimir.Sensor, error) {
 	return nil, fmt.Errorf("sensor %s not found", id)
 }
 
+func (s *SensorsManager) GetSensorByTopic(topic string) (*mimir.Sensor, error) {
+	for index, sensor := range s.sensors {
+		if sensor.Topic == topic {
+			return &s.sensors[index], nil
+		}
+	}
+	return nil, fmt.Errorf("sensor with topic %s not found", topic)
+}
+
 func (s *SensorsManager) IdExists(id string) bool {
 	_, err := s.GetSensorById(id)
-	if err != nil {
-		return false
-	}
-
-	return true
+	return err == nil
 }
 
 func (s *SensorsManager) CreateSensor(sensor *mimir.Sensor) error {

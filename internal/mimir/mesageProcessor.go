@@ -38,12 +38,12 @@ func (r *ProcessorRegistry) GetProcessors() map[string]MessageProcessor {
 
 type JSONProcessor struct {
 	SensorId                string
-	jsonValueConfigurations []JSONValueConfiguration
+	JsonValueConfigurations []JSONValueConfiguration
 }
 
 type JSONValueConfiguration struct {
-	idPosition    string
-	valuePosition string
+	IdPosition string
+	ValuePath  string
 }
 
 func NewJSONValueConfiguration(idPath, valuePath string) *JSONValueConfiguration {
@@ -55,7 +55,7 @@ func NewJSONProcessor() *JSONProcessor {
 }
 
 func (p *JSONProcessor) AddValueConfiguration(configuration *JSONValueConfiguration) {
-	p.jsonValueConfigurations = append(p.jsonValueConfigurations, *configuration)
+	p.JsonValueConfigurations = append(p.JsonValueConfigurations, *configuration)
 }
 
 func (p *JSONProcessor) ProcessMessage(topic string, payload []byte) error {
@@ -78,9 +78,9 @@ func (p *JSONProcessor) ProcessMessage(topic string, payload []byte) error {
 		sensorId = p.SensorId
 	}
 
-	for _, configuration := range p.jsonValueConfigurations {
-		if configuration.idPosition != "" {
-			idInterface, ok := getValueFromJSON(jsonMap, configuration.idPosition)
+	for _, configuration := range p.JsonValueConfigurations {
+		if configuration.IdPosition != "" {
+			idInterface, ok := getValueFromJSON(jsonMap, configuration.IdPosition)
 			if !ok {
 				return ValueNotFoundError{"sensorId"}
 			}
@@ -91,12 +91,12 @@ func (p *JSONProcessor) ProcessMessage(topic string, payload []byte) error {
 			sensorId = sensorIdValue
 		}
 
-		valueInterface, ok := getValueFromJSON(jsonMap, configuration.valuePosition)
+		valueInterface, ok := getValueFromJSON(jsonMap, configuration.ValuePath)
 		if !ok {
 			return ValueNotFoundError{"sensorId"}
 		}
 
-		sensorReading := mimir.SensorReading{SensorID: sensorId, Value: valueInterface, Time: time.Now()}
+		sensorReading := mimir.SensorReading{SensorID: sensorId, Value: valueInterface, Time: time.Now(), Topic: topic}
 		Manager.readingsChannel <- sensorReading
 	}
 	return nil
@@ -163,7 +163,7 @@ func (p *BytesProcessor) ProcessMessage(topic string, payload []byte) error {
 		}
 
 		if sensorId != "" && configuration.DataType != "id" {
-			sensorReading := mimir.SensorReading{SensorID: sensorId, Value: data, Time: time.Now()}
+			sensorReading := mimir.SensorReading{SensorID: sensorId, Value: data, Time: time.Now(), Topic: topic}
 			Manager.readingsChannel <- sensorReading
 		}
 

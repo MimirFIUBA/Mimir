@@ -10,6 +10,8 @@ require (
 )
 
 require (
+	github.com/gookit/config v1.1.0 // indirect
+	github.com/imdario/mergo v0.3.6 // indirect
 	golang.org/x/net v0.29.0 // indirect
 	golang.org/x/sync v0.8.0 // indirect
 )

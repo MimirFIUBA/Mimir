@@ -32,11 +32,7 @@ func (g *GroupsManager) GetGroupById(id string) (*mimir.Group, error) {
 
 func (g *GroupsManager) IdExists(id string) bool {
 	_, err := g.GetGroupById(id)
-	if err != nil {
-		return false
-	}
-
-	return true
+	return err == nil
 }
 
 func (g *GroupsManager) CreateGroup(group *mimir.Group) error {
