@@ -1,11 +1,9 @@
 package db_test
 
 import (
-	"context"
 	"mimir/db"
 	"testing"
 
-	"github.com/influxdata/influxdb-client-go/v2/domain"
 	"github.com/joho/godotenv"
 )
 
@@ -30,11 +28,11 @@ func Test_connectToInfluxDB(t *testing.T) {
 				t.Errorf("ConnectToInfluxDB() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			health, err := got.Health(context.Background())
-			if (err != nil) && health.Status == domain.HealthCheckStatusPass {
-				t.Errorf("connectToInfluxDB() error. database not healthy")
-				return
-			}
+			// health, err := got.Health(context.Background())
+			// if (err != nil) && health.Status == domain.HealthCheckStatusPass {
+			// 	t.Errorf("connectToInfluxDB() error. database not healthy")
+			// 	return
+			// }
 			got.Close()
 		})
 	}

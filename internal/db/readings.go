@@ -1,12 +1,19 @@
 package db
 
 import (
-	"fmt"
 	mimir "mimir/internal/mimir/models"
+	"time"
 )
 
+type sensorReadingPoint struct {
+	Measurement string    `lp:"measurement"`
+	Sensor      string    `lp:"tag,location"`
+	Temp        float64   `lp:"field,temperature"`
+	Time        time.Time `lp:"timestamp"`
+	Description string    `lp:"-"`
+}
+
 func StoreReading(reading mimir.SensorReading) error {
-	fmt.Println("store reading: ", reading)
 	if reading.SensorID != "" {
 		sensor, err := SensorsData.GetSensorById(reading.SensorID)
 		if err != nil {
@@ -20,6 +27,8 @@ func StoreReading(reading mimir.SensorReading) error {
 		}
 		sensor.AddReading(reading)
 	}
+
+	ReadingsDBBuffer = append(ReadingsDBBuffer, reading)
 
 	return nil
 }

@@ -1,7 +1,6 @@
 package models
 
 import (
-	"fmt"
 	"mimir/triggers"
 	"time"
 )
@@ -31,7 +30,6 @@ func NewSensor(name string) *Sensor {
 }
 
 func (s *Sensor) AddReading(reading SensorReading) {
-	fmt.Println("Sensor add reading: ", reading)
 	s.Data = append(s.Data, reading)
 	s.notifyAll()
 }

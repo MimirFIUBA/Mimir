@@ -2,43 +2,71 @@ package main
 
 import (
 	"fmt"
+	"mimir/db"
+	"mimir/internal/config"
+	mimirDb "mimir/internal/db"
 	"mimir/internal/mimir"
-	"mimir/internal/mimir/config"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/gookit/ini/v2"
+	"github.com/joho/godotenv"
 )
 
-func setInitialData(mp *mimir.MimirProcessor) {
-	// Setup1(mp)
-	// cond := triggers.NewMatchesCondition(`foo.*`)
-	// trig := triggers.NewTrigger("test")
-	// trig.Condition = cond
-	// print := triggers.NewPrintAction()
-	// print.Message = "Matchescondition"
-	// trig.AddAction(print)
+func loadConfigFile() {
+	err := ini.LoadExists("config/config.ini")
+	if err != nil {
+		fmt.Println("Error loading config file, loading default values...")
+		err = ini.LoadStrings(`
+			processors_file = "config/processors.json"
+			triggers_file = "config/triggers.json"
+			influxdb_configuration_file = "db/test_influxdb.env"
+		`)
+		if err != nil {
+			panic("Could not load initial configuration")
+		}
+	}
+}
 
-	// event := triggers.NewEvent()
-	// event.Data = "seafood"
+func loadConfiguration(mimirProcessor *mimir.MimirProcessor) {
+	config.LoadConfig(ini.String("processors_file"))
+	config.LoadConfig(ini.String("triggers_file"))
+	config.BuildProcessors(mimirProcessor)
+	config.BuildTriggers()
+}
 
-	// trig.Update(*event)
+func connectToDB() {
+	godotenv.Load(ini.String("influxdb_configuration_file"))
+	dbClient, err := db.ConnectToInfluxDB()
+	if err != nil {
+		fmt.Println("error connecting to db")
+		fmt.Println(err)
+	} else {
+		defer dbClient.Close()
+		// health, err := dbClient.Health(context.Background())
+		// if (err != nil) && health.Status == domain.HealthCheckStatusPass {
+		// 	fmt.Println("connectToInfluxDB() error. database not healthy")
+		// }
 
+		mimirDb.DBClient = dbClient
+	}
 }
 
 func main() {
-
 	fmt.Println("MiMiR starting")
+
+	loadConfigFile()
 
 	mimirProcessor := mimir.NewMimirProcessor()
 	mimirProcessor.StartGateway()
 
-	config.LoadConfig("config/processors.json")
-	config.LoadConfig("config/triggers.json")
-	config.BuildProcessors(mimirProcessor)
-	config.BuildTriggers()
+	loadConfiguration(mimirProcessor)
 
-	// setInitialData(mimirProcessor)
+	connectToDB()
+
 	go mimirProcessor.Run()
+	mimirDb.Run()
 	// go api.Start(mimirProcessor.WsChannel)
 
 	fmt.Println("Everything up and running")

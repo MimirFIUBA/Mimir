@@ -23,19 +23,16 @@ func BuildTriggers() {
 
 		trigger := buildTrigger(triggerMap)
 
-		fmt.Println("Building conditions for trigger: ", trigger.Name)
 		condition, exists := buildCondition(triggerMap)
 		if exists {
 			trigger.Condition = condition
 		}
 
-		fmt.Println("Building actions for trigger: ", trigger.Name)
 		actions := buildActions(triggerMap)
 		for _, action := range actions {
 			trigger.AddAction(action)
 		}
 
-		fmt.Println("Registering trigger: ", trigger.Name)
 		registerTrigger(trigger, triggerMap)
 	}
 }

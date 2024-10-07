@@ -12,13 +12,21 @@
         },
         {
             "name": "test2",
-            "topic": "mimir/test2",
+            "topic": "mimir/mimirTest",
             "type": "json",
             "configurations": [
                 {
-                    "dataType": "float", 
-                    "endianness": "bigEndian",
-                    "size": 4
+                    "path":"data"
+                }
+            ]
+        },
+        {
+            "name": "test2",
+            "topic": "mimir/esp32/waterTemp",
+            "type": "json",
+            "configurations": [
+                {
+                    "path":"data"
                 }
             ]
         }
