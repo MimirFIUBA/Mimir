@@ -85,7 +85,10 @@ func (c *CompareCondition) SetEvent(event Event) {
 }
 
 func (c *CompareCondition) String() string {
-	return fmt.Sprintf("$(%s) %s %v", c.senderId, c.Operator, c.ReferenceValue)
+	if c.senderId != "" {
+		return fmt.Sprintf("$(%s) %s %v", c.senderId, c.Operator, c.ReferenceValue)
+	}
+	return fmt.Sprintf("%s %v", c.Operator, c.ReferenceValue)
 }
 
 // And condition

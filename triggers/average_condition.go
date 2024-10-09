@@ -94,6 +94,10 @@ func (c *AverageCondition) SetSenderId(id string) {
 	c.senderId = id
 }
 
+func (c *AverageCondition) SetCondition(condition Condition) {
+	c.Condition = condition
+}
+
 func (c *AverageCondition) String() string {
-	return "AverageCondition"
+	return fmt.Sprintf("AVG(%s)[%d, %d, %d] %v", c.senderId, c.MinSize, c.MaxSize, c.timeFrame, c.Condition)
 }
