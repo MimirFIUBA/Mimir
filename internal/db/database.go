@@ -2,7 +2,6 @@ package db
 
 import (
 	"context"
-	"fmt"
 	mimir "mimir/internal/mimir/models"
 	"strings"
 	"time"
@@ -34,7 +33,6 @@ func Run() {
 	go func() {
 		for {
 			if len(ReadingsDBBuffer) > 0 && DBClient != nil {
-				fmt.Println("writing, ", len(ReadingsDBBuffer))
 				b := batching.NewBatcher(batching.WithSize(len(ReadingsDBBuffer)))
 				for _, reading := range ReadingsDBBuffer {
 					splittedTopic := strings.Split(reading.Topic, `/`)

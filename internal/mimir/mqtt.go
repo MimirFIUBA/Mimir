@@ -30,13 +30,13 @@ func onMessageReceived(client mqtt.Client, message mqtt.Message) {
 
 	processor, exists := MessageProcessors.GetProcessor(message.Topic())
 	if exists {
-		err := processor.ProcessMessage(message.Topic(), message.Payload())
-		if err != nil {
-			log.Fatal("Error processing message: ", err)
-			fmt.Println("Error Process Message")
-		}
-	} else {
-
+		go func() {
+			err := processor.ProcessMessage(message.Topic(), message.Payload())
+			if err != nil {
+				log.Fatal("Error processing message: ", err)
+				fmt.Println("Error Process Message")
+			}
+		}()
 	}
 }
 

@@ -16,7 +16,7 @@
         },
         {
             "name": "water too hot",
-            "condition": "$(mimir/esp32/waterTemp) > 50.0",
+            "condition": "$(mimir/esp32/waterTemp) > 50.0 OR $(mimir/esp32/waterTemp) < 10.0 OR $(mimir/esp32/waterTemp) == 15.0",
             "topics": [
                 "mimir/esp32/waterTemp"
             ],

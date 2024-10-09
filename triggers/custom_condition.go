@@ -34,3 +34,7 @@ func (c *CustomCondition) GetSenderId() string {
 func (c *CustomCondition) SetSenderId(senderId string) {
 	c.senderId = senderId
 }
+
+func (c *CustomCondition) String() string {
+	return "CustomCondition"
+}

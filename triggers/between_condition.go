@@ -47,3 +47,7 @@ func (c *BetweenCondition) GetSenderId() string {
 func (c *BetweenCondition) SetSenderId(id string) {
 	c.senderId = id
 }
+
+func (c *BetweenCondition) String() string {
+	return "BetweenCondition"
+}

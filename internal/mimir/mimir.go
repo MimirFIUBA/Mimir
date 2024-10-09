@@ -16,7 +16,7 @@ type MimirProcessor struct {
 
 func NewMimirProcessor() *MimirProcessor {
 	topicChannel := make(chan string)
-	readingsChannel := make(chan mimir.SensorReading)
+	readingsChannel := make(chan mimir.SensorReading, 50)
 	outgoingMessagesChannel := make(chan string)
 	webSocketMessageChannel := make(chan string)
 
@@ -34,9 +34,10 @@ func (p *MimirProcessor) Run() {
 	for {
 		reading := <-p.ReadingChannel
 
-		processReading(reading)
-
-		db.StoreReading(reading)
+		go func() {
+			processReading(reading)
+			db.StoreReading(reading)
+		}()
 	}
 }
 

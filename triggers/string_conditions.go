@@ -50,3 +50,7 @@ func (c *MatchesCondition) Evaluate(event Event) bool {
 	matched := c.Pattern.MatchString(c.testValue)
 	return matched
 }
+
+func (c *MatchesCondition) String() string {
+	return "MatchesCondition"
+}

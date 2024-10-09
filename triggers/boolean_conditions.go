@@ -1,5 +1,7 @@
 package triggers
 
+import "fmt"
+
 type TrueCondition struct{}
 
 func (c *TrueCondition) GetEventId() string {
@@ -18,6 +20,10 @@ func (c *TrueCondition) SetEvent(event Event) {}
 
 func (c *TrueCondition) Evaluate(event Event) bool {
 	return true
+}
+
+func (c *TrueCondition) String() string {
+	return "TrueCondition"
 }
 
 // Compare condition, compare a value from an event to another reference value.
@@ -78,6 +84,10 @@ func (c *CompareCondition) SetEvent(event Event) {
 	}
 }
 
+func (c *CompareCondition) String() string {
+	return fmt.Sprintf("$(%s) %s %v", c.senderId, c.Operator, c.ReferenceValue)
+}
+
 // And condition
 type AndCondition struct {
 	Conditions []Condition
@@ -114,6 +124,10 @@ func (c *AndCondition) SetEvent(event Event) {
 			condition.SetEvent(event)
 		}
 	}
+}
+
+func (c *AndCondition) String() string {
+	return "AndCondition"
 }
 
 // OR Condition
@@ -154,6 +168,15 @@ func (c *OrCondition) SetEvent(event Event) {
 	}
 }
 
+func (c *OrCondition) String() string {
+	a := ""
+	for _, subCondition := range c.Conditions {
+		a += fmt.Sprintf("%v ", subCondition)
+	}
+
+	return fmt.Sprintf("OrCondition: %s", a)
+}
+
 type NotCondition struct {
 	Cond Condition
 }
@@ -176,4 +199,8 @@ func (c *NotCondition) Evaluate(event Event) bool {
 
 func (c *NotCondition) SetEvent(event Event) {
 	c.Cond.SetEvent(event)
+}
+
+func (c *NotCondition) String() string {
+	return "NotCondition"
 }

@@ -83,8 +83,20 @@ func main() {
 	// generator := mqttGenerator{"mimir/test", client, c}
 	// go generator.generateFloatData(10, "1", 1)
 
-	message := fmt.Sprintf(`{"id": "%s", "data": %.2f, "time": "%s"}`, "0", 55.0, time.Now())
+	message := fmt.Sprintf(`{"id": "%s", "data": %.2f, "time": "%s"}`, "0", 15.0, time.Now())
 	token := client.Publish("mimir/esp32/waterTemp", 0, false, message)
+	token.Wait()
+
+	message = fmt.Sprintf(`{"id": "%s", "data": %.2f, "time": "%s"}`, "0", 9.0, time.Now())
+	token = client.Publish("mimir/esp32/waterTemp", 0, false, message)
+	token.Wait()
+
+	message = fmt.Sprintf(`{"id": "%s", "data": %.2f, "time": "%s"}`, "0", 11.0, time.Now())
+	token = client.Publish("mimir/esp32/waterTemp", 0, false, message)
+	token.Wait()
+
+	message = fmt.Sprintf(`{"id": "%s", "data": %.2f, "time": "%s"}`, "0", 55.0, time.Now())
+	token = client.Publish("mimir/esp32/waterTemp", 0, false, message)
 	token.Wait()
 
 	// numbers := []uint8{65, 1, 50, 65, 35, 51, 51}

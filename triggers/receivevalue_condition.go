@@ -33,3 +33,7 @@ func (c *ReceiveValueCondition) Evaluate(event Event) bool {
 	c.SetEvent(event)
 	return c.hasReceivedValue
 }
+
+func (c *ReceiveValueCondition) Stringer() string {
+	return "ReceiveValueCondition"
+}

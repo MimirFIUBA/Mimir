@@ -134,7 +134,6 @@ func parseExpression(state *ParserState) (triggers.Condition, error) {
 		fmt.Println("err ", err)
 		return nil, err
 	}
-	fmt.Println("state.Current().Type ", state.Current().Type)
 
 	for state.Current().Type == TOKEN_AND || state.Current().Type == TOKEN_OR {
 		operator := state.Current()
@@ -144,11 +143,9 @@ func parseExpression(state *ParserState) (triggers.Condition, error) {
 			return nil, err
 		}
 		if operator.Type == TOKEN_AND {
-			left = triggers.NewAndCondition([]triggers.Condition{right})
-			// left = &ASTNode{Type: NODE_AND, Children: []*ASTNode{left, right}}
+			left = triggers.NewAndCondition([]triggers.Condition{left, right})
 		} else if operator.Type == TOKEN_OR {
-			left = triggers.NewOrCondition([]triggers.Condition{right})
-			// left = &ASTNode{Type: NODE_OR, Children: []*ASTNode{left, right}}
+			left = triggers.NewOrCondition([]triggers.Condition{left, right})
 		}
 	}
 	return left, nil

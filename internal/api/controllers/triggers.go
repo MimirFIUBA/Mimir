@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 )
 
@@ -16,7 +15,6 @@ type TriggerResponse struct {
 }
 
 func GetTriggers(w http.ResponseWriter, _ *http.Request) {
-	fmt.Println("Get Triggers")
 	// triggersBySensorId := mimir.Data.GetTriggersBySensorId()
 	// fmt.Printf("Triggers: %v \n", triggersBySensorId)
 	var triggerResponseList []TriggerResponse

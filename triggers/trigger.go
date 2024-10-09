@@ -1,6 +1,8 @@
 package triggers
 
 import (
+	"fmt"
+
 	"github.com/google/uuid"
 )
 
@@ -17,6 +19,8 @@ func NewTrigger(name string) *Trigger {
 }
 
 func (t *Trigger) Update(event Event) {
+	fmt.Println("Update")
+	fmt.Println("t.Condition.Evaluate(event) ", t.Condition.Evaluate(event))
 	if t.Condition.Evaluate(event) {
 		for _, action := range t.Actions {
 			action.Execute(event)

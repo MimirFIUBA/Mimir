@@ -145,7 +145,6 @@ func testAverageTriggerCondition() {
 	trigger.SetCondition(avgCondition)
 
 	for i := range 10 {
-		fmt.Println(i)
 		event := triggers.Event{Name: "", Timestamp: time.Now(), Data: float64(i)}
 		trigger.Update(event)
 		if i == 6 {

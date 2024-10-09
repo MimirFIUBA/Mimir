@@ -82,7 +82,6 @@ func buildConditionFromMap(_ map[string]interface{}) triggers.Condition {
 }
 
 func buildConditionFromString(conditionString string) triggers.Condition {
-	//TODO: implement
 	if conditionString != "" {
 		tokens := Tokenize(conditionString)
 		condition, err := ParseCondition(tokens)

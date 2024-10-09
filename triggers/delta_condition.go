@@ -1,6 +1,8 @@
 package triggers
 
-import "math"
+import (
+	"math"
+)
 
 // Condición de variación (Delta)
 type DeltaCondition struct {
@@ -50,4 +52,8 @@ func (c *DeltaCondition) GetSenderId() string {
 
 func (c *DeltaCondition) SetSenderId(id string) {
 	c.senderId = id
+}
+
+func (c *DeltaCondition) String() string {
+	return "DeltaCondition"
 }

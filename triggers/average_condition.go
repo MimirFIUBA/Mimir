@@ -32,7 +32,6 @@ func (c *AverageCondition) Evaluate(event Event) bool {
 	}
 
 	avg := c.calculateAverage()
-	fmt.Println("average", avg)
 
 	return c.Condition.Evaluate(*NewFloatEvent(avg))
 }
@@ -93,4 +92,8 @@ func (c *AverageCondition) GetSenderId() string {
 
 func (c *AverageCondition) SetSenderId(id string) {
 	c.senderId = id
+}
+
+func (c *AverageCondition) String() string {
+	return "AverageCondition"
 }
