@@ -80,8 +80,12 @@ func main() {
 
 	c := make(chan int)
 
-	generator := mqttGenerator{"mimir/test", client, c}
-	go generator.generateFloatData(10, "1", 1)
+	// generator := mqttGenerator{"mimir/test", client, c}
+	// go generator.generateFloatData(10, "1", 1)
+
+	message := fmt.Sprintf(`{"id": "%s", "data": %.2f, "time": "%s"}`, "0", 55.0, time.Now())
+	token := client.Publish("mimir/esp32/waterTemp", 0, false, message)
+	token.Wait()
 
 	// numbers := []uint8{65, 1, 50, 65, 35, 51, 51}
 	// go generator.generateBytes("1", numbers)

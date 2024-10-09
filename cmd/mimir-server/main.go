@@ -33,7 +33,7 @@ func loadConfiguration(mimirProcessor *mimir.MimirProcessor) {
 	config.LoadConfig(ini.String("processors_file"))
 	config.LoadConfig(ini.String("triggers_file"))
 	config.BuildProcessors(mimirProcessor)
-	config.BuildTriggers()
+	config.BuildTriggers(mimirProcessor)
 }
 
 func connectToDB() {
@@ -63,7 +63,7 @@ func main() {
 
 	loadConfiguration(mimirProcessor)
 
-	connectToDB()
+	// connectToDB()
 
 	go mimirProcessor.Run()
 	mimirDb.Run()

@@ -3,12 +3,13 @@ package config
 import (
 	"fmt"
 	"mimir/internal/db"
+	"mimir/internal/mimir"
 	"mimir/triggers"
 
 	"github.com/gookit/config"
 )
 
-func BuildTriggers() {
+func BuildTriggers(mimirProcessor *mimir.MimirProcessor) {
 	configuration := config.Data()
 	triggersConfiguration, ok := configuration["triggers"].([]interface{})
 	if !ok {
@@ -23,12 +24,13 @@ func BuildTriggers() {
 
 		trigger := buildTrigger(triggerMap)
 
+		fmt.Println("build condition for ", trigger.Name)
 		condition, exists := buildCondition(triggerMap)
 		if exists {
 			trigger.Condition = condition
 		}
 
-		actions := buildActions(triggerMap)
+		actions := buildActions(triggerMap, mimirProcessor)
 		for _, action := range actions {
 			trigger.AddAction(action)
 		}
@@ -59,63 +61,6 @@ func registerTrigger(trigger *triggers.Trigger, triggerMap map[string]interface{
 	}
 }
 
-func buildActions(triggerMap map[string]interface{}) []triggers.Action {
-	actionsInterface, exists := triggerMap["actions"]
-	var actions []triggers.Action
-	if exists {
-		switch actionsValue := actionsInterface.(type) {
-		case []interface{}:
-			for _, actionInterface := range actionsValue {
-				actionMap, ok := actionInterface.(map[string]interface{})
-				if ok {
-					action := buildAction(actionMap)
-					actions = append(actions, action)
-				} else {
-					fmt.Println("error parsing action")
-				}
-			}
-		default:
-			panic("Error parsing configuration for actions")
-		}
-	}
-	return actions
-}
-
-func buildAction(actionMap map[string]interface{}) triggers.Action {
-	actionType, exists := actionMap["type"]
-	if !exists {
-		panic("No type for action")
-	}
-
-	var action triggers.Action
-
-	switch actionType {
-	case "print":
-		action = buildPrintAction(actionMap)
-	default:
-		fmt.Println("Action type not recognized")
-	}
-
-	return action
-}
-
-func buildPrintAction(actionMap map[string]interface{}) triggers.Action {
-	action := triggers.NewPrintAction()
-	messageInterface, exists := actionMap["message"]
-	if !exists {
-		fmt.Println("no message")
-		//TODO should try to look message fmt function
-	}
-
-	message, ok := messageInterface.(string)
-	if !ok {
-		panic("Message is not a string")
-	}
-
-	action.SetMessage(message)
-	return action
-}
-
 func buildCondition(triggerMap map[string]interface{}) (triggers.Condition, bool) {
 	conditionConfiguration, exists := triggerMap["condition"]
 	if exists {
@@ -136,8 +81,20 @@ func buildConditionFromMap(_ map[string]interface{}) triggers.Condition {
 	return &triggers.TrueCondition{}
 }
 
-func buildConditionFromString(_ string) triggers.Condition {
+func buildConditionFromString(conditionString string) triggers.Condition {
 	//TODO: implement
+	if conditionString != "" {
+		tokens := Tokenize(conditionString)
+		condition, err := ParseCondition(tokens)
+		if err != nil {
+			fmt.Println("err")
+			fmt.Println(err)
+		} else {
+			fmt.Println("tokens", tokens)
+			fmt.Println("condition", condition)
+			return condition
+		}
+	}
 	return &triggers.TrueCondition{}
 }
 

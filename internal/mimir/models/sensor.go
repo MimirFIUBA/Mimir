@@ -57,10 +57,13 @@ func (s *Sensor) Register(observer triggers.TriggerObserver) {
 
 func (s *Sensor) notifyAll() {
 	for _, observer := range s.triggerList {
+		reading := s.Data[len(s.Data)-1]
 		event := triggers.Event{
 			Name:      "new reading event",
 			Timestamp: time.Now(),
-			Data:      s.Data[len(s.Data)-1].Value}
+			Data:      reading.Value,
+			SenderId:  reading.Topic,
+		}
 		observer.Update(event) //TODO: need to send the last value
 	}
 }

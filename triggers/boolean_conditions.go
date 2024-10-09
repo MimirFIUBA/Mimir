@@ -27,11 +27,12 @@ type CompareCondition struct {
 	TestValue      interface{}
 	eventId        string
 	senderId       string
+	hasTestValue   bool
 }
 
 func NewCompareCondition(operator string, referenceValue interface{}) *CompareCondition {
 	//TODO: see what to do with first test value (set to reference value)
-	return &CompareCondition{operator, referenceValue, referenceValue, "", ""}
+	return &CompareCondition{operator, referenceValue, referenceValue, "", "", false}
 }
 
 func (c *CompareCondition) GetEventId() string {
@@ -52,23 +53,27 @@ func (c *CompareCondition) SetSenderId(id string) {
 
 func (c *CompareCondition) Evaluate(event Event) bool {
 	c.SetEvent(event)
-	switch rightValue := c.ReferenceValue.(type) {
-	case int:
-		testValue := c.TestValue.(int)
-		return compareInt(testValue, rightValue, c.Operator)
-	case float64:
-		testValue := c.TestValue.(float64)
-		return compareFloat(testValue, rightValue, c.Operator)
-	case string:
-		testValue := c.TestValue.(string)
-		return compareString(testValue, rightValue, c.Operator)
-	default:
-		panic("Bad values to compare")
+	if c.hasTestValue {
+		switch rightValue := c.ReferenceValue.(type) {
+		case int:
+			testValue := c.TestValue.(int)
+			return compareInt(testValue, rightValue, c.Operator)
+		case float64:
+			testValue := c.TestValue.(float64)
+			return compareFloat(testValue, rightValue, c.Operator)
+		case string:
+			testValue := c.TestValue.(string)
+			return compareString(testValue, rightValue, c.Operator)
+		default:
+			panic("Bad values to compare")
+		}
 	}
+	return false
 }
 
 func (c *CompareCondition) SetEvent(event Event) {
 	if event.MatchesCondition(c) {
+		c.hasTestValue = true
 		c.TestValue = event.Data
 	}
 }
@@ -76,6 +81,10 @@ func (c *CompareCondition) SetEvent(event Event) {
 // And condition
 type AndCondition struct {
 	Conditions []Condition
+}
+
+func NewAndCondition(conditions []Condition) *AndCondition {
+	return &AndCondition{conditions}
 }
 
 func (c *AndCondition) GetEventId() string {
@@ -112,6 +121,10 @@ type OrCondition struct {
 	Conditions []Condition
 }
 
+func NewOrCondition(conditions []Condition) *OrCondition {
+	return &OrCondition{conditions}
+}
+
 func (c *OrCondition) GetEventId() string {
 	return ""
 }
@@ -139,4 +152,28 @@ func (c *OrCondition) SetEvent(event Event) {
 			condition.SetEvent(event)
 		}
 	}
+}
+
+type NotCondition struct {
+	Cond Condition
+}
+
+func (c *NotCondition) GetEventId() string {
+	return ""
+}
+
+func (c *NotCondition) SetEventId(id string) {}
+
+func (c *NotCondition) GetSenderId() string {
+	return ""
+}
+
+func (c *NotCondition) SetSenderId(id string) {}
+
+func (c *NotCondition) Evaluate(event Event) bool {
+	return !c.Cond.Evaluate(event)
+}
+
+func (c *NotCondition) SetEvent(event Event) {
+	c.Cond.SetEvent(event)
 }

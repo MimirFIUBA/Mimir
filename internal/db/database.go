@@ -33,7 +33,7 @@ var (
 func Run() {
 	go func() {
 		for {
-			if len(ReadingsDBBuffer) > 0 {
+			if len(ReadingsDBBuffer) > 0 && DBClient != nil {
 				fmt.Println("writing, ", len(ReadingsDBBuffer))
 				b := batching.NewBatcher(batching.WithSize(len(ReadingsDBBuffer)))
 				for _, reading := range ReadingsDBBuffer {

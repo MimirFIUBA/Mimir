@@ -15,7 +15,23 @@
             ]
         },
         {
-            "name": "trigger2"
+            "name": "water too hot",
+            "condition": "$(mimir/esp32/waterTemp) > 50.0",
+            "topics": [
+                "mimir/esp32/waterTemp"
+            ],
+            "actions": [
+                {
+                    "type": "print",
+                    "name": "water too hot print",
+                    "message": "water too hot"
+                },
+                {
+                    "type": "alert",
+                    "name": "water too hot alert",
+                    "message": "on"
+                }
+            ]
         },
         {
             "name": "trigger3"
