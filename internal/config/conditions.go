@@ -122,6 +122,7 @@ type ParserState struct {
 
 // Current returns the current token
 func (p *ParserState) Current() Token {
+	fmt.Println("Current: ", p.pos)
 	if p.pos >= len(p.tokens) {
 		return Token{Type: TOKEN_END}
 	}
@@ -130,6 +131,7 @@ func (p *ParserState) Current() Token {
 
 // Advance moves to the next token
 func (p *ParserState) Advance() {
+	fmt.Println("Advance: ", p.pos)
 	if p.pos < len(p.tokens) {
 		p.pos++
 	}
@@ -149,6 +151,8 @@ func parseExpression(state *ParserState) (triggers.Condition, error) {
 		fmt.Println("err ", err)
 		return nil, err
 	}
+
+	fmt.Println("current ", state.Current())
 
 	for state.Current().Type == TOKEN_AND || state.Current().Type == TOKEN_OR {
 		operator := state.Current()
@@ -170,7 +174,6 @@ func parseExpression(state *ParserState) (triggers.Condition, error) {
 func parsePrimary(state *ParserState) (triggers.Condition, error) {
 	fmt.Println("parsePrimary", state)
 	token := state.Current()
-	fmt.Println("token", token)
 	switch token.Type {
 	case TOKEN_IDENT:
 		//TODO: call parse condition function
@@ -206,8 +209,11 @@ func parsePrimary(state *ParserState) (triggers.Condition, error) {
 		return node, nil
 	case TOKEN_AVG:
 		averageCondition, err := parseAverageCondition(state)
+		if err != nil {
+			return nil, err
+		}
 		state.Advance()
-		return averageCondition, err
+		return averageCondition, nil
 	default:
 		return nil, fmt.Errorf("unexpected token: %v", token)
 	}
@@ -219,14 +225,12 @@ func parseAverageCondition(state *ParserState) (triggers.Condition, error) {
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("params: ", params)
 
 	state.Advance()
 	metadata, err := parseMetadata(state)
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("metadata: ", metadata)
 
 	state.Advance()
 	condition, err := parseConditionForExpression(state)
@@ -239,6 +243,7 @@ func parseAverageCondition(state *ParserState) (triggers.Condition, error) {
 }
 
 func parseConditionForExpression(state *ParserState) (triggers.Condition, error) {
+	fmt.Println("Parse condition")
 	operator := state.Current()
 	switch operator.Type {
 	case TOKEN_OP:
@@ -247,7 +252,6 @@ func parseConditionForExpression(state *ParserState) (triggers.Condition, error)
 		if right.Type != TOKEN_NUMBER {
 			return nil, fmt.Errorf("expected number after operator")
 		}
-		state.Advance()
 		value, err := strconv.ParseFloat(right.Value, 64)
 		if err != nil {
 			panic("Cannot convert string to float")
@@ -265,7 +269,6 @@ func parseParameters(state *ParserState) ([]Token, error) {
 	currentToken := state.Current()
 	tokens := make([]Token, 0)
 	for currentToken.Type != TOKEN_RPAREN {
-		fmt.Println("current token ", currentToken)
 		state.Advance()
 		currentToken = state.Current()
 		switch currentToken.Type {
