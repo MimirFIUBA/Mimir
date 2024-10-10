@@ -1,7 +1,7 @@
-package db_test
+package inlfuxdb_test
 
 import (
-	"mimir/db"
+	db "mimir/db/influxdb"
 	"testing"
 
 	"github.com/joho/godotenv"

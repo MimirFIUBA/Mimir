@@ -24,7 +24,6 @@ func BuildTriggers(mimirProcessor *mimir.MimirProcessor) {
 
 		trigger := buildTrigger(triggerMap)
 
-		fmt.Println("build condition for ", trigger.Name)
 		condition, exists := buildCondition(triggerMap)
 		if exists {
 			trigger.Condition = condition
@@ -86,11 +85,8 @@ func buildConditionFromString(conditionString string) triggers.Condition {
 		tokens := Tokenize(conditionString)
 		condition, err := ParseCondition(tokens)
 		if err != nil {
-			fmt.Println("err")
 			fmt.Println(err)
 		} else {
-			fmt.Println("tokens", tokens)
-			fmt.Println("condition", condition)
 			return condition
 		}
 	}

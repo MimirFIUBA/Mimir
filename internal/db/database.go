@@ -8,6 +8,7 @@ import (
 
 	"github.com/InfluxCommunity/influxdb3-go/influxdb3"
 	"github.com/InfluxCommunity/influxdb3-go/influxdb3/batching"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 var (
@@ -26,13 +27,14 @@ var (
 
 	ReadingsDBBuffer = make([]mimir.SensorReading, 0)
 
-	DBClient *influxdb3.Client
+	InfluxDBClient *influxdb3.Client
+	MongoDBClient  *mongo.Client
 )
 
 func Run() {
 	go func() {
 		for {
-			if len(ReadingsDBBuffer) > 0 && DBClient != nil {
+			if len(ReadingsDBBuffer) > 0 && InfluxDBClient != nil {
 				b := batching.NewBatcher(batching.WithSize(len(ReadingsDBBuffer)))
 				for _, reading := range ReadingsDBBuffer {
 					splittedTopic := strings.Split(reading.Topic, `/`)
@@ -50,7 +52,7 @@ func Run() {
 				}
 
 				if b.Ready() {
-					err := DBClient.WritePoints(context.Background(), b.Emit())
+					err := InfluxDBClient.WritePoints(context.Background(), b.Emit())
 					if err != nil {
 						panic(err)
 					}

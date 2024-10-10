@@ -9,8 +9,6 @@ import (
 	"unicode"
 )
 
-//Para parsear las condiciones vamos a construir un Árbol de Sintaxis Abstracta (AST)
-
 type TokenType int
 
 const (
@@ -37,7 +35,7 @@ const (
 )
 
 const (
-	AVG_COND_MIN_AMOUNT_DEFAULT        = 0
+	AVG_COND_MIN_AMOUNT_DEFAULT        = 1
 	AVG_COND_MAX_AMOUNT_DEFAULT        = 10
 	AVG_COND_TIMEFRAME_SECONDS_DEFAULT = 10
 )
@@ -122,7 +120,6 @@ type ParserState struct {
 
 // Current returns the current token
 func (p *ParserState) Current() Token {
-	fmt.Println("Current: ", p.pos)
 	if p.pos >= len(p.tokens) {
 		return Token{Type: TOKEN_END}
 	}
@@ -131,7 +128,6 @@ func (p *ParserState) Current() Token {
 
 // Advance moves to the next token
 func (p *ParserState) Advance() {
-	fmt.Println("Advance: ", p.pos)
 	if p.pos < len(p.tokens) {
 		p.pos++
 	}
@@ -145,14 +141,10 @@ func ParseCondition(tokens []Token) (triggers.Condition, error) {
 
 // parseExpression parses AND/OR expressions
 func parseExpression(state *ParserState) (triggers.Condition, error) {
-	fmt.Println("parseExpression", state)
 	left, err := parsePrimary(state)
 	if err != nil {
-		fmt.Println("err ", err)
 		return nil, err
 	}
-
-	fmt.Println("current ", state.Current())
 
 	for state.Current().Type == TOKEN_AND || state.Current().Type == TOKEN_OR {
 		operator := state.Current()
@@ -172,7 +164,6 @@ func parseExpression(state *ParserState) (triggers.Condition, error) {
 
 // parsePrimary parses individual conditions like $(sensorId) > 10
 func parsePrimary(state *ParserState) (triggers.Condition, error) {
-	fmt.Println("parsePrimary", state)
 	token := state.Current()
 	switch token.Type {
 	case TOKEN_IDENT:
@@ -235,7 +226,7 @@ func parseAverageCondition(state *ParserState) (triggers.Condition, error) {
 	state.Advance()
 	condition, err := parseConditionForExpression(state)
 	if err != nil {
-		fmt.Println(err)
+		return nil, err
 	}
 
 	avgCondition := buildAverageCondition(params, metadata, condition)
@@ -243,7 +234,6 @@ func parseAverageCondition(state *ParserState) (triggers.Condition, error) {
 }
 
 func parseConditionForExpression(state *ParserState) (triggers.Condition, error) {
-	fmt.Println("Parse condition")
 	operator := state.Current()
 	switch operator.Type {
 	case TOKEN_OP:
@@ -265,7 +255,6 @@ func parseConditionForExpression(state *ParserState) (triggers.Condition, error)
 }
 
 func parseParameters(state *ParserState) ([]Token, error) {
-	fmt.Println("parse parameters")
 	currentToken := state.Current()
 	tokens := make([]Token, 0)
 	for currentToken.Type != TOKEN_RPAREN {
@@ -291,7 +280,6 @@ func parseParameters(state *ParserState) ([]Token, error) {
 func parseMetadata(state *ParserState) ([]string, error) {
 	currentToken := state.Current()
 	params := make([]string, 0)
-	fmt.Println("parse metadata ", currentToken.Type)
 	for currentToken.Type != TOKEN_RBRACE {
 		switch currentToken.Type {
 		case TOKEN_LBRACE:

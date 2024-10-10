@@ -31,14 +31,14 @@ func (g mqttGenerator) generateIntData(n int, id int) {
 	g.c <- 0
 }
 
-func (g mqttGenerator) generateFloatData(n int, id string, mps time.Duration) {
+func (g mqttGenerator) generateFloatData(n int, id string, mps int) {
 	for i := 1; i <= n; i++ {
-		message := fmt.Sprintf(`{"id": "%s", "data": %.2f, "time": "%s"}`, id, rand.Float64()*40, time.Now())
+		message := fmt.Sprintf(`{"id": "%s", "data": %.2f, "time": "%s"}`, id, rand.Float64()*40+50, time.Now())
 		token := g.client.Publish(g.topic, 0, false, message)
 		token.Wait()
 
 		fmt.Printf("Published topic %s: %s\n", g.topic, message)
-		time.Sleep((1000 / mps) * time.Millisecond)
+		time.Sleep(time.Duration(1000/mps) * time.Millisecond)
 	}
 
 	g.c <- 0
@@ -80,24 +80,24 @@ func main() {
 
 	c := make(chan int)
 
-	// generator := mqttGenerator{"mimir/test", client, c}
-	// go generator.generateFloatData(10, "1", 1)
+	generator := mqttGenerator{"mimir/esp32/waterTemp", client, c}
+	go generator.generateFloatData(20, "1", 2)
 
-	message := fmt.Sprintf(`{"id": "%s", "data": %.2f, "time": "%s"}`, "0", 15.0, time.Now())
-	token := client.Publish("mimir/esp32/waterTemp", 0, false, message)
-	token.Wait()
+	// message := fmt.Sprintf(`{"id": "%s", "data": %.2f, "time": "%s"}`, "0", 15.0, time.Now())
+	// token := client.Publish("mimir/esp32/waterTemp", 0, false, message)
+	// token.Wait()
 
-	message = fmt.Sprintf(`{"id": "%s", "data": %.2f, "time": "%s"}`, "0", 9.0, time.Now())
-	token = client.Publish("mimir/esp32/waterTemp", 0, false, message)
-	token.Wait()
+	// message = fmt.Sprintf(`{"id": "%s", "data": %.2f, "time": "%s"}`, "0", 9.0, time.Now())
+	// token = client.Publish("mimir/esp32/waterTemp", 0, false, message)
+	// token.Wait()
 
-	message = fmt.Sprintf(`{"id": "%s", "data": %.2f, "time": "%s"}`, "0", 11.0, time.Now())
-	token = client.Publish("mimir/esp32/waterTemp", 0, false, message)
-	token.Wait()
+	// message = fmt.Sprintf(`{"id": "%s", "data": %.2f, "time": "%s"}`, "0", 11.0, time.Now())
+	// token = client.Publish("mimir/esp32/waterTemp", 0, false, message)
+	// token.Wait()
 
-	message = fmt.Sprintf(`{"id": "%s", "data": %.2f, "time": "%s"}`, "0", 55.0, time.Now())
-	token = client.Publish("mimir/esp32/waterTemp", 0, false, message)
-	token.Wait()
+	// message = fmt.Sprintf(`{"id": "%s", "data": %.2f, "time": "%s"}`, "0", 55.0, time.Now())
+	// token = client.Publish("mimir/esp32/waterTemp", 0, false, message)
+	// token.Wait()
 
 	// numbers := []uint8{65, 1, 50, 65, 35, 51, 51}
 	// go generator.generateBytes("1", numbers)

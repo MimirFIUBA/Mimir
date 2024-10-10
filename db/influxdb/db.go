@@ -1,4 +1,4 @@
-package db
+package inlfuxdb
 
 import (
 	"errors"
