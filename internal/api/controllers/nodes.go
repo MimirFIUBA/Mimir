@@ -9,6 +9,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func GetNodes(w http.ResponseWriter, r *http.Request) {
@@ -93,7 +94,14 @@ func UpdateNode(w http.ResponseWriter, r *http.Request) {
 		responses.SendErrorResponse(w, http.StatusBadRequest, responses.NodeErrorCodes.InvalidSchema)
 		return
 	}
-	node.ID = id
+
+	nodeId, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		logger.Error("Error decoding new node id", "body", r.Body, "error", err.Error())
+		responses.SendErrorResponse(w, http.StatusBadRequest, responses.GroupErrorCodes.InvalidSchema)
+		return
+	}
+	node.ID = nodeId
 
 	node, err = db.NodesData.UpdateNode(node)
 	if err != nil {

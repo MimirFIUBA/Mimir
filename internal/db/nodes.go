@@ -4,7 +4,8 @@ import (
 	"context"
 	"fmt"
 	mimir "mimir/internal/mimir/models"
-	"strconv"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type NodesManager struct {
@@ -23,7 +24,7 @@ func (n *NodesManager) GetNodes() []mimir.Node {
 
 func (n *NodesManager) GetNodeById(id string) (*mimir.Node, error) {
 	for index, node := range n.nodes {
-		if node.ID == id {
+		if node.GetId() == id {
 			return &n.nodes[index], nil
 		}
 	}
@@ -38,15 +39,19 @@ func (n *NodesManager) IdExists(id string) bool {
 
 func (n *NodesManager) CreateNode(node *mimir.Node) error {
 	// TODO(#20) - Add Body validation
-	newId := n.GetNewId()
-	node.ID = strconv.Itoa(newId)
 
 	nodesCollection := MongoDBClient.Database("Mimir").Collection("nodes")
-	_, err := nodesCollection.InsertOne(context.TODO(), node)
+	result, err := nodesCollection.InsertOne(context.TODO(), node)
 	if err != nil {
-		fmt.Println("error inserting group ", err)
 		return err
 	}
+
+	nodeId, ok := result.InsertedID.(primitive.ObjectID)
+	if !ok {
+		return fmt.Errorf("error converting id for node")
+	}
+
+	node.ID = nodeId
 
 	n.nodes = append(n.nodes, *node)
 	err = GroupsData.AddNodeToGroupById(node.GroupID, node)
@@ -58,7 +63,7 @@ func (n *NodesManager) CreateNode(node *mimir.Node) error {
 }
 
 func (n *NodesManager) UpdateNode(node *mimir.Node) (*mimir.Node, error) {
-	oldNode, err := n.GetNodeById(node.ID)
+	oldNode, err := n.GetNodeById(node.GetId())
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +76,7 @@ func (n *NodesManager) DeleteNode(id string) error {
 	nodeIndex := -1
 	for i := range n.nodes {
 		node := &n.nodes[i]
-		if node.ID == id {
+		if node.GetId() == id {
 			nodeIndex = i
 			break
 		}

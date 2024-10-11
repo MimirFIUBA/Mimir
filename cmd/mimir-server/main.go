@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 	influxdb "mimir/db/influxdb"
 	"mimir/db/mongodb"
 	"mimir/internal/api"
@@ -13,6 +14,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/InfluxCommunity/influxdb3-go/influxdb3"
 	"github.com/gookit/ini/v2"
 	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -40,16 +42,15 @@ func loadConfiguration(mimirProcessor *mimir.MimirProcessor) {
 	config.BuildTriggers(mimirProcessor)
 }
 
-func connectToInfluxDB() {
+func connectToInfluxDB() (*influxdb3.Client, error) {
 	godotenv.Load(ini.String("influxdb_configuration_file"))
 	dbClient, err := influxdb.ConnectToInfluxDB()
 	if err != nil {
-		fmt.Println("error connecting to db")
-		fmt.Println(err)
+		log.Fatal("Error connecting to InfluxDB ", err)
+		return nil, err
 	} else {
-		defer dbClient.Close()
-
 		mimirDb.InfluxDBClient = dbClient
+		return dbClient, nil
 	}
 }
 
@@ -59,8 +60,10 @@ func connectToMongo() (*mongo.Client, error) {
 	if err != nil {
 		fmt.Println("Failed to connect to mongo: ", err)
 		return nil, err
+	} else {
+		mimirDb.MongoDBClient = client
 	}
-	mimirDb.MongoDBClient = client
+
 	return client, nil
 }
 
@@ -82,7 +85,14 @@ func main() {
 			}
 		}()
 	}
-	connectToInfluxDB()
+
+	influxClient, err := connectToInfluxDB()
+	if err != nil {
+		fmt.Println("error connecting to influx ", err)
+	} else {
+		defer influxClient.Close()
+	}
+
 	loadConfiguration(mimirProcessor)
 	mimirDb.Run()
 

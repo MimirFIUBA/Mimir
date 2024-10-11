@@ -1,17 +1,21 @@
 package models
 
-import "fmt"
+import (
+	"fmt"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
+)
 
 type Node struct {
-	ID          string   `json:"id" bson:"mimir_id, omitempty"`
-	Name        string   `json:"name" bson:"name"`
-	Description string   `json:"description" bson:"description"`
-	GroupID     string   `json:"groupId" bson:"group_id"`
-	Sensors     []Sensor `json:"sensors" bson:"sensors, omitempty"`
+	ID          primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
+	Name        string             `json:"name" bson:"name"`
+	Description string             `json:"description" bson:"description"`
+	GroupID     string             `json:"groupId" bson:"group_id"`
+	Sensors     []Sensor           `json:"sensors" bson:"sensors, omitempty"`
 }
 
 func NewNode(name string) *Node {
-	return &Node{"", name, "", "", nil}
+	return &Node{primitive.ObjectID{}, name, "", "", nil}
 }
 
 func (n *Node) Update(updatedNode *Node) {
@@ -32,4 +36,8 @@ func (n *Node) AddSensor(sensor *Sensor) error {
 	sensor.Topic = "mimir/" + n.Name + "/" + sensor.DataName
 
 	return nil
+}
+
+func (n *Node) GetId() string {
+	return n.ID.String()
 }

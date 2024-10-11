@@ -1,17 +1,21 @@
 package models
 
-import "errors"
+import (
+	"errors"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
+)
 
 type Group struct {
-	ID          string `json:"id" bson:"mimirId, omitempty"`
-	Name        string `json:"name" bson:"name"`
-	Description string `json:"description" bson:"description"`
-	Type        string `json:"type" bson:"type"`
-	Nodes       []Node `json:"nodes" bson:"nodes, omitempty"`
+	ID          primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
+	Name        string             `json:"name" bson:"name"`
+	Description string             `json:"description" bson:"description"`
+	Type        string             `json:"type" bson:"type"`
+	Nodes       []Node             `json:"nodes" bson:"nodes,omitempty"`
 }
 
 func NewGroup(name string) *Group {
-	return &Group{"", name, "", "crop", nil}
+	return &Group{primitive.ObjectID{}, name, "", "crop", nil}
 }
 
 func (g *Group) Update(updatedGroup *Group) {
@@ -21,7 +25,7 @@ func (g *Group) Update(updatedGroup *Group) {
 }
 
 func (g *Group) GetId() string {
-	return g.ID
+	return g.ID.String()
 }
 
 func (g *Group) AddNode(node *Node) error {

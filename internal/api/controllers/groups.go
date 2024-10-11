@@ -9,6 +9,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func GetGroups(w http.ResponseWriter, r *http.Request) {
@@ -92,7 +93,14 @@ func UpdateGroup(w http.ResponseWriter, r *http.Request) {
 		responses.SendErrorResponse(w, http.StatusBadRequest, responses.GroupErrorCodes.InvalidSchema)
 		return
 	}
-	group.ID = id
+
+	groupId, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		logger.Error("Error decoding new group id", "body", r.Body, "error", err.Error())
+		responses.SendErrorResponse(w, http.StatusBadRequest, responses.GroupErrorCodes.InvalidSchema)
+		return
+	}
+	group.ID = groupId
 
 	group, err = db.GroupsData.UpdateGroup(group)
 	if err != nil {

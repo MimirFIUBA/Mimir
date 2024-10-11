@@ -4,7 +4,8 @@ import (
 	"context"
 	"fmt"
 	mimir "mimir/internal/mimir/models"
-	"strconv"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type GroupsManager struct {
@@ -23,7 +24,7 @@ func (g *GroupsManager) GetGroups() []mimir.Group {
 
 func (g *GroupsManager) GetGroupById(id string) (*mimir.Group, error) {
 	for index, group := range g.groups {
-		if group.ID == id {
+		if group.GetId() == id {
 			return &g.groups[index], nil
 		}
 	}
@@ -37,15 +38,17 @@ func (g *GroupsManager) IdExists(id string) bool {
 }
 
 func (g *GroupsManager) CreateGroup(group *mimir.Group) error {
-	newId := g.GetNewId()
-	group.ID = strconv.Itoa(newId)
-
 	groupsCollection := MongoDBClient.Database("Mimir").Collection("groups")
-	_, err := groupsCollection.InsertOne(context.TODO(), group)
+	result, err := groupsCollection.InsertOne(context.TODO(), group)
 	if err != nil {
 		fmt.Println("error inserting group ", err)
 		return err
 	}
+	groupId, ok := result.InsertedID.(primitive.ObjectID)
+	if !ok {
+		return fmt.Errorf("error converting id for group")
+	}
+	group.ID = groupId
 
 	g.AddGroup(group)
 
@@ -59,7 +62,7 @@ func (g *GroupsManager) AddGroup(group *mimir.Group) error {
 }
 
 func (g *GroupsManager) UpdateGroup(group *mimir.Group) (*mimir.Group, error) {
-	oldGroup, err := g.GetGroupById(group.ID)
+	oldGroup, err := g.GetGroupById(group.GetId())
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +74,7 @@ func (g *GroupsManager) UpdateGroup(group *mimir.Group) (*mimir.Group, error) {
 func (g *GroupsManager) DeleteGroup(id string) error {
 	groupIndex := -1
 	for i := range g.groups {
-		if g.groups[i].ID == id {
+		if g.groups[i].GetId() == id {
 			groupIndex = i
 			break
 		}

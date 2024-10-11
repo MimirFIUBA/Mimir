@@ -121,8 +121,6 @@ func (s *SensorsManager) LoadSensors(sensors []*mimir.Sensor) {
 	existingSensorsMap := make(map[string]mimir.Sensor)
 	for _, result := range results {
 		existingSensorsMap[result.Name] = result
-		// res, _ := bson.MarshalExtJSON(result, false, false)
-		// fmt.Println(string(res))
 	}
 
 	var sensorsToInsert []interface{}
