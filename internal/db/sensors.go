@@ -139,5 +139,4 @@ func (s *SensorsManager) LoadSensors(sensors []*mimir.Sensor) {
 			fmt.Println("err ", err)
 		}
 	}
-
 }

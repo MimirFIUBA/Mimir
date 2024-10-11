@@ -60,13 +60,6 @@ func connectToMongo() (*mongo.Client, error) {
 		fmt.Println("Failed to connect to mongo: ", err)
 		return nil, err
 	}
-	// } else {
-	// 	defer func() {
-	// 		if err = client.Disconnect(context.TODO()); err != nil {
-	// 			panic(err)
-	// 		}
-	// 	}()
-	// }
 	mimirDb.MongoDBClient = client
 	return client, nil
 }
@@ -90,11 +83,10 @@ func main() {
 		}()
 	}
 	connectToInfluxDB()
-
 	loadConfiguration(mimirProcessor)
+	mimirDb.Run()
 
 	go mimirProcessor.Run()
-	mimirDb.Run()
 	go api.Start(mimirProcessor.WsChannel)
 
 	fmt.Println("Everything up and running")

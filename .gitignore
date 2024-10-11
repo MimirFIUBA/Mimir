@@ -24,3 +24,6 @@ go.work.sum
 # DB
 test_mongodb.env
 test_influxdb.env
+
+# PersonalTestFiles
+examplesSetup

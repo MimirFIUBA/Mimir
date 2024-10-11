@@ -47,6 +47,12 @@ func (g *GroupsManager) CreateGroup(group *mimir.Group) error {
 		return err
 	}
 
+	g.AddGroup(group)
+
+	return nil
+}
+
+func (g *GroupsManager) AddGroup(group *mimir.Group) error {
 	g.groups = append(g.groups, *group)
 
 	return nil

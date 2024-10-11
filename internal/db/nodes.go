@@ -94,3 +94,7 @@ func (n *NodesManager) AddSensorToNodeById(id string, sensor *mimir.Sensor) erro
 
 	return oldNode.AddSensor(sensor)
 }
+
+func (n *NodesManager) AddNode(node *mimir.Node) {
+	n.nodes = append(n.nodes, *node)
+}
