@@ -17,6 +17,7 @@ func BuildProcessors(mimirProcessor *mimir.MimirProcessor) {
 		panic("Wrong processors format, no processors")
 	}
 
+	sensors := make([]*models.Sensor, 0)
 	for _, processorInterface := range processors {
 		processorMap, ok := processorInterface.(map[string]interface{})
 		if !ok {
@@ -43,6 +44,9 @@ func BuildProcessors(mimirProcessor *mimir.MimirProcessor) {
 		sensor := models.NewSensor(topic)
 		sensor.Topic = topic
 		mimirProcessor.RegisterSensor(sensor)
-		db.SensorsData.CreateSensor(sensor)
+		sensors = append(sensors, sensor)
+		// db.SensorsData.CreateSensor(sensor)
 	}
+	db.SensorsData.LoadSensors(sensors)
+
 }

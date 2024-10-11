@@ -1,6 +1,7 @@
 package db
 
 import (
+	"context"
 	"fmt"
 	mimir "mimir/internal/mimir/models"
 	"strconv"
@@ -40,8 +41,15 @@ func (n *NodesManager) CreateNode(node *mimir.Node) error {
 	newId := n.GetNewId()
 	node.ID = strconv.Itoa(newId)
 
+	nodesCollection := MongoDBClient.Database("Mimir").Collection("nodes")
+	_, err := nodesCollection.InsertOne(context.TODO(), node)
+	if err != nil {
+		fmt.Println("error inserting group ", err)
+		return err
+	}
+
 	n.nodes = append(n.nodes, *node)
-	err := GroupsData.AddNodeToGroupById(node.GroupID, node)
+	err = GroupsData.AddNodeToGroupById(node.GroupID, node)
 	if err != nil {
 		return err
 	}

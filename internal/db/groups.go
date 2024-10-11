@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	mimir "mimir/internal/mimir/models"
+	"strconv"
 )
 
 type GroupsManager struct {
@@ -36,17 +37,17 @@ func (g *GroupsManager) IdExists(id string) bool {
 }
 
 func (g *GroupsManager) CreateGroup(group *mimir.Group) error {
-	// newId := g.GetNewId()
-	// group.ID = strconv.Itoa(newId)
+	newId := g.GetNewId()
+	group.ID = strconv.Itoa(newId)
 
-	g.groups = append(g.groups, *group)
-	// TODO - Add node relationship
-
-	groupsCollection := MongoDBClient.Database("Mimir").Collection("Groups")
+	groupsCollection := MongoDBClient.Database("Mimir").Collection("groups")
 	_, err := groupsCollection.InsertOne(context.TODO(), group)
 	if err != nil {
 		fmt.Println("error inserting group ", err)
+		return err
 	}
+
+	g.groups = append(g.groups, *group)
 
 	return nil
 }

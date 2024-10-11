@@ -6,13 +6,13 @@ import (
 )
 
 type Sensor struct {
-	ID          string          `json:"id"`
-	Name        string          `json:"name"`
-	DataName    string          `json:"dataName"`
-	Topic       string          `json:"topic"`
-	NodeID      string          `json:"nodeId"`
-	Description string          `json:"description"`
-	Data        []SensorReading `json:"data"`
+	ID          string          `json:"id" bson:"mimir_id"`
+	Name        string          `json:"name" bson:"name"`
+	DataName    string          `json:"dataName" bson:"data_name"`
+	Topic       string          `json:"topic" bson:"topic"`
+	NodeID      string          `json:"nodeId" bson:"node_id"`
+	Description string          `json:"description" bson:"description"`
+	Data        []SensorReading `json:"data" bson:"data, omitempty"`
 	triggerList []triggers.TriggerObserver
 }
 

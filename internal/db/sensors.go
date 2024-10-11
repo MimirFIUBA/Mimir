@@ -1,9 +1,12 @@
 package db
 
 import (
+	"context"
 	"fmt"
 	mimir "mimir/internal/mimir/models"
 	"strconv"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 type SensorsManager struct {
@@ -48,8 +51,15 @@ func (s *SensorsManager) CreateSensor(sensor *mimir.Sensor) error {
 	newId := s.GetNewId()
 	sensor.ID = strconv.Itoa(newId)
 
+	topicsCollection := MongoDBClient.Database("Mimir").Collection("topics")
+	_, err := topicsCollection.InsertOne(context.TODO(), sensor)
+	if err != nil {
+		fmt.Println("error inserting sensor ", err)
+		return err
+	}
+
 	s.sensors = append(s.sensors, *sensor)
-	err := NodesData.AddSensorToNodeById(sensor.NodeID, sensor)
+	err = NodesData.AddSensorToNodeById(sensor.NodeID, sensor)
 	if err != nil {
 		return err
 	}
@@ -84,4 +94,50 @@ func (s *SensorsManager) DeleteSensor(id string) error {
 	s.sensors[sensorIndex] = s.sensors[len(s.sensors)-1]
 	s.sensors = s.sensors[:len(s.sensors)-1]
 	return nil
+}
+
+func (s *SensorsManager) LoadSensors(sensors []*mimir.Sensor) {
+	values := bson.A{}
+	sensorsMap := make(map[string]*mimir.Sensor)
+	for _, sensor := range sensors {
+		values = append(values, bson.D{{Key: "name", Value: sensor.Name}})
+		sensorsMap[sensor.Name] = sensor
+	}
+
+	filter := bson.D{{Key: "$or", Value: values}}
+	topicsCollection := MongoDBClient.Database("Mimir").Collection("topics")
+	cursor, err := topicsCollection.Find(context.TODO(), filter)
+	if err != nil {
+		panic(err)
+	} else {
+		defer cursor.Close(context.TODO())
+	}
+
+	var results []mimir.Sensor
+	if err = cursor.All(context.TODO(), &results); err != nil {
+		panic(err)
+	}
+
+	existingSensorsMap := make(map[string]mimir.Sensor)
+	for _, result := range results {
+		existingSensorsMap[result.Name] = result
+		// res, _ := bson.MarshalExtJSON(result, false, false)
+		// fmt.Println(string(res))
+	}
+
+	var sensorsToInsert []interface{}
+	for _, sensor := range sensors {
+		_, exists := existingSensorsMap[sensor.Name]
+		if !exists {
+			sensorsToInsert = append(sensorsToInsert, sensor)
+		}
+	}
+
+	if len(sensorsToInsert) > 0 {
+		_, err = topicsCollection.InsertMany(context.TODO(), sensorsToInsert)
+		if err != nil {
+			fmt.Println("err ", err)
+		}
+	}
+
 }

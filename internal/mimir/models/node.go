@@ -3,11 +3,11 @@ package models
 import "fmt"
 
 type Node struct {
-	ID          string   `json:"id"`
-	Name        string   `json:"name"`
-	Description string   `json:"description"`
-	GroupID     string   `json:"groupId"`
-	Sensors     []Sensor `json:"sensors"`
+	ID          string   `json:"id" bson:"mimir_id, omitempty"`
+	Name        string   `json:"name" bson:"name"`
+	Description string   `json:"description" bson:"description"`
+	GroupID     string   `json:"groupId" bson:"group_id"`
+	Sensors     []Sensor `json:"sensors" bson:"sensors, omitempty"`
 }
 
 func NewNode(name string) *Node {

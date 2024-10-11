@@ -79,8 +79,6 @@ func main() {
 	mimirProcessor := mimir.NewMimirProcessor()
 	mimirProcessor.StartGateway()
 
-	loadConfiguration(mimirProcessor)
-
 	mongoClient, err := connectToMongo()
 	if err != nil {
 		fmt.Println("error connecting to mongo ", err)
@@ -92,6 +90,8 @@ func main() {
 		}()
 	}
 	connectToInfluxDB()
+
+	loadConfiguration(mimirProcessor)
 
 	go mimirProcessor.Run()
 	mimirDb.Run()

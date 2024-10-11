@@ -3,11 +3,11 @@ package models
 import "errors"
 
 type Group struct {
-	ID          string `json:"id" bson:"_id,omitempty"`
+	ID          string `json:"id" bson:"mimirId, omitempty"`
 	Name        string `json:"name" bson:"name"`
 	Description string `json:"description" bson:"description"`
 	Type        string `json:"type" bson:"type"`
-	Nodes       []Node `json:"nodes" bson:"nodes,omitempty"`
+	Nodes       []Node `json:"nodes" bson:"nodes, omitempty"`
 }
 
 func NewGroup(name string) *Group {
