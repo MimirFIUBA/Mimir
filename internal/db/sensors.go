@@ -1,10 +1,9 @@
 package db
 
 import (
-	"context"
 	"fmt"
+	"log"
 	mimir "mimir/internal/mimir/models"
-	"strconv"
 
 	"go.mongodb.org/mongo-driver/bson"
 )
@@ -48,13 +47,10 @@ func (s *SensorsManager) IdExists(id string) bool {
 
 func (s *SensorsManager) CreateSensor(sensor *mimir.Sensor) error {
 	// TODO(#20) - Add Body validation
-	newId := s.GetNewId()
-	sensor.ID = strconv.Itoa(newId)
 
-	topicsCollection := MongoDBClient.Database("Mimir").Collection("topics")
-	_, err := topicsCollection.InsertOne(context.TODO(), sensor)
+	sensor, err := Database.insertTopic(sensor)
 	if err != nil {
-		fmt.Println("error inserting sensor ", err)
+		log.Fatal(err)
 		return err
 	}
 
@@ -63,7 +59,6 @@ func (s *SensorsManager) CreateSensor(sensor *mimir.Sensor) error {
 	if err != nil {
 		return err
 	}
-
 	return nil
 }
 
@@ -105,17 +100,11 @@ func (s *SensorsManager) LoadSensors(sensors []*mimir.Sensor) {
 	}
 
 	filter := bson.D{{Key: "$or", Value: values}}
-	topicsCollection := MongoDBClient.Database("Mimir").Collection("topics")
-	cursor, err := topicsCollection.Find(context.TODO(), filter)
-	if err != nil {
-		panic(err)
-	} else {
-		defer cursor.Close(context.TODO())
-	}
 
-	var results []mimir.Sensor
-	if err = cursor.All(context.TODO(), &results); err != nil {
-		panic(err)
+	results, err := Database.findTopics(filter)
+	if err != nil {
+		log.Fatal(err)
+		return
 	}
 
 	existingSensorsMap := make(map[string]mimir.Sensor)
@@ -132,9 +121,6 @@ func (s *SensorsManager) LoadSensors(sensors []*mimir.Sensor) {
 	}
 
 	if len(sensorsToInsert) > 0 {
-		_, err = topicsCollection.InsertMany(context.TODO(), sensorsToInsert)
-		if err != nil {
-			fmt.Println("err ", err)
-		}
+		Database.insertTopics(sensorsToInsert)
 	}
 }

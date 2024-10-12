@@ -1,11 +1,7 @@
 package db
 
 import (
-	"fmt"
 	mimir "mimir/internal/mimir/models"
-
-	"github.com/InfluxCommunity/influxdb3-go/influxdb3"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 var (
@@ -24,13 +20,13 @@ var (
 
 	ReadingsDBBuffer = make([]mimir.SensorReading, 0)
 
-	InfluxDBClient *influxdb3.Client
-	MongoDBClient  *mongo.Client
+	// InfluxDBClient *influxdb3.Client
+	// MongoDBClient  *mongo.Client
+
+	Database = DatabaseManager{}
 )
 
 func Run() {
 	loadTopology()
-	fmt.Println(GroupsData)
-	fmt.Println(NodesData)
 	go processPoints()
 }

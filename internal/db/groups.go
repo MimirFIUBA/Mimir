@@ -1,11 +1,8 @@
 package db
 
 import (
-	"context"
 	"fmt"
 	mimir "mimir/internal/mimir/models"
-
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type GroupsManager struct {
@@ -38,17 +35,10 @@ func (g *GroupsManager) IdExists(id string) bool {
 }
 
 func (g *GroupsManager) CreateGroup(group *mimir.Group) error {
-	groupsCollection := MongoDBClient.Database("Mimir").Collection("groups")
-	result, err := groupsCollection.InsertOne(context.TODO(), group)
+	group, err := Database.insertGroup(group)
 	if err != nil {
-		fmt.Println("error inserting group ", err)
 		return err
 	}
-	groupId, ok := result.InsertedID.(primitive.ObjectID)
-	if !ok {
-		return fmt.Errorf("error converting id for group")
-	}
-	group.ID = groupId
 
 	g.AddGroup(group)
 

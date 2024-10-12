@@ -49,7 +49,7 @@ func connectToInfluxDB() (*influxdb3.Client, error) {
 		log.Fatal("Error connecting to InfluxDB ", err)
 		return nil, err
 	} else {
-		mimirDb.InfluxDBClient = dbClient
+		mimirDb.Database.AddInfluxClient(dbClient)
 		return dbClient, nil
 	}
 }
@@ -61,7 +61,7 @@ func connectToMongo() (*mongo.Client, error) {
 		fmt.Println("Failed to connect to mongo: ", err)
 		return nil, err
 	} else {
-		mimirDb.MongoDBClient = client
+		mimirDb.Database.AddMongoClient(client)
 	}
 
 	return client, nil

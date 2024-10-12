@@ -1,11 +1,8 @@
 package db
 
 import (
-	"context"
 	"fmt"
 	mimir "mimir/internal/mimir/models"
-
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type NodesManager struct {
@@ -39,19 +36,10 @@ func (n *NodesManager) IdExists(id string) bool {
 
 func (n *NodesManager) CreateNode(node *mimir.Node) error {
 	// TODO(#20) - Add Body validation
-
-	nodesCollection := MongoDBClient.Database("Mimir").Collection("nodes")
-	result, err := nodesCollection.InsertOne(context.TODO(), node)
+	node, err := Database.insertNode(node)
 	if err != nil {
 		return err
 	}
-
-	nodeId, ok := result.InsertedID.(primitive.ObjectID)
-	if !ok {
-		return fmt.Errorf("error converting id for node")
-	}
-
-	node.ID = nodeId
 
 	n.nodes = append(n.nodes, *node)
 	err = GroupsData.AddNodeToGroupById(node.GroupID, node)

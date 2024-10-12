@@ -11,7 +11,8 @@ import (
 
 func processPoints() {
 	for {
-		if len(ReadingsDBBuffer) > 0 && InfluxDBClient != nil {
+		influxDBClient := Database.getInfluxDBClient()
+		if len(ReadingsDBBuffer) > 0 && influxDBClient != nil {
 			b := batching.NewBatcher(batching.WithSize(len(ReadingsDBBuffer)))
 			for _, reading := range ReadingsDBBuffer {
 				splittedTopic := strings.Split(reading.Topic, `/`)
@@ -29,7 +30,7 @@ func processPoints() {
 			}
 
 			if b.Ready() {
-				err := InfluxDBClient.WritePoints(context.Background(), b.Emit())
+				err := influxDBClient.WritePoints(context.Background(), b.Emit())
 				if err != nil {
 					panic(err)
 				}
