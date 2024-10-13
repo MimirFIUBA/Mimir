@@ -1,7 +1,6 @@
 package processors
 
 import (
-	"fmt"
 	"mimir/internal/mimir/models"
 )
 
@@ -20,7 +19,6 @@ func NewProcessorRegistry() *ProcessorRegistry {
 }
 
 func (r *ProcessorRegistry) RegisterProcessor(topic string, processor MessageProcessor) {
-	fmt.Println("register processor ", topic)
 	r.processors[topic] = processor
 }
 

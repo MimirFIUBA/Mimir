@@ -27,7 +27,6 @@ func BuildProcessors(mimirProcessor *mimir.MimirProcessor) {
 		}
 		var jsonMap map[string]interface{}
 		json.Unmarshal(byteValue, &jsonMap)
-		fmt.Println(jsonMap)
 
 		topic, ok := jsonMap["topic"].(string)
 		if !ok {

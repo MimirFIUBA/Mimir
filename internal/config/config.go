@@ -31,7 +31,7 @@ func LoadConfigurationFile(filename string) {
 	}
 }
 
-func LoadConfiguration(mimirProcessor *mimir.MimirProcessor) {
+func BuildInitialConfiguration(mimirProcessor *mimir.MimirProcessor) {
 	LoadConfigurationFile(ini.String("processors_file"))
 	LoadConfigurationFile(ini.String("triggers_file"))
 	BuildProcessors(mimirProcessor)

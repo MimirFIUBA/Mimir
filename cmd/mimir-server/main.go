@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"mimir/internal/api"
 	"mimir/internal/config"
 	mimirDb "mimir/internal/db"
@@ -13,17 +14,28 @@ import (
 )
 
 func main() {
+
+	handlerOpts := &slog.HandlerOptions{
+		Level: slog.LevelInfo,
+	}
+	logger := slog.New(slog.NewTextHandler(os.Stderr, handlerOpts))
+	slog.SetDefault(logger)
+
+	slog.Info("Starting")
 	fmt.Println("MiMiR starting")
 
 	config.LoadIni()
+	slog.Info("ini config file loaded")
 
 	mimirProcessor := mimir.NewMimirProcessor()
 	mimirProcessor.StartGateway()
+	slog.Info("gateway started")
 
 	mongoClient, err := mimirDb.Database.ConnectToMongo()
 	if err != nil {
-		fmt.Println("error connecting to mongo ", err)
+		slog.Error("error connecting to mongo", "error", err)
 	} else {
+		slog.Info("connection to mongo succesfully established")
 		defer func() {
 			if err = mongoClient.Disconnect(context.TODO()); err != nil {
 				panic(err)
@@ -33,12 +45,14 @@ func main() {
 
 	influxClient, err := mimirDb.Database.ConnectToInfluxDB()
 	if err != nil {
-		fmt.Println("error connecting to influx ", err)
+		slog.Error("error connecting to influx db", "error", err)
 	} else {
+		slog.Info("connection to influxdb succesfully established")
 		defer influxClient.Close()
 	}
 
-	config.LoadConfiguration(mimirProcessor)
+	config.BuildInitialConfiguration(mimirProcessor)
+	slog.Info("succesfully built environment based on configuration")
 	mimirDb.Run()
 
 	go mimirProcessor.Run()
@@ -50,7 +64,9 @@ func main() {
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 	<-sigChan
 
+	slog.Info("closing application")
 	mimir.CloseConnection()
+	slog.Info("close successful")
 
 	fmt.Println("Mimir is out of duty, bye!")
 }
