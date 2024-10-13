@@ -46,7 +46,6 @@ func (g mqttGenerator) generateFloatData(n int, id string, mps int) {
 
 func (g mqttGenerator) generateBytes(id string, numbers []uint8) {
 	buf := new(bytes.Buffer)
-	fmt.Println(id)
 	for _, n := range numbers {
 		err := binary.Write(buf, binary.BigEndian, n)
 		if err != nil {
@@ -80,7 +79,7 @@ func main() {
 
 	c := make(chan int)
 
-	generator := mqttGenerator{"mimir/esp32/waterTemp", client, c}
+	generator := mqttGenerator{"mimir/test", client, c}
 	go generator.generateFloatData(20, "1", 2)
 
 	// message := fmt.Sprintf(`{"id": "%s", "data": %.2f, "time": "%s"}`, "0", 15.0, time.Now())

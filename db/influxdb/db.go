@@ -11,7 +11,6 @@ import (
 // environement variables INFLUXDB_TOKEN, INFLUXDB_URL
 // return influxdb Client or errors
 func ConnectToInfluxDB() (*influxdb3.Client, error) {
-
 	dbToken := os.Getenv("INFLUXDB_TOKEN")
 	if dbToken == "" {
 		return nil, errors.New("INFLUXDB_TOKEN must be set")
@@ -38,11 +37,6 @@ func ConnectToInfluxDB() (*influxdb3.Client, error) {
 		Database:     bucketName,
 		Organization: dbOrg,
 	})
-
-	// client := influxdb3.NewClientWithOptions(dbURL, dbToken, influxdb3.DefaultOptions().SetBatchSize(20))
-
-	// validate client connection health
-	// _, err := client.Health(context.Background())
 
 	return client, err
 }

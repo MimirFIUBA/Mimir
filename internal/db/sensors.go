@@ -91,7 +91,7 @@ func (s *SensorsManager) DeleteSensor(id string) error {
 	return nil
 }
 
-func (s *SensorsManager) LoadSensors(sensors []*mimir.Sensor) {
+func buildNameFilter(sensors []*mimir.Sensor) bson.D {
 	values := bson.A{}
 	sensorsMap := make(map[string]*mimir.Sensor)
 	for _, sensor := range sensors {
@@ -99,8 +99,11 @@ func (s *SensorsManager) LoadSensors(sensors []*mimir.Sensor) {
 		sensorsMap[sensor.Name] = sensor
 	}
 
-	filter := bson.D{{Key: "$or", Value: values}}
+	return bson.D{{Key: "$or", Value: values}}
+}
 
+func (s *SensorsManager) LoadSensors(sensors []*mimir.Sensor) {
+	filter := buildNameFilter(sensors)
 	results, err := Database.findTopics(filter)
 	if err != nil {
 		log.Fatal(err)
@@ -114,6 +117,7 @@ func (s *SensorsManager) LoadSensors(sensors []*mimir.Sensor) {
 
 	var sensorsToInsert []interface{}
 	for _, sensor := range sensors {
+		s.sensors = append(s.sensors, *sensor)
 		_, exists := existingSensorsMap[sensor.Name]
 		if !exists {
 			sensorsToInsert = append(sensorsToInsert, sensor)

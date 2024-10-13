@@ -1,8 +1,8 @@
-package mimir
+package utils
 
 import "strings"
 
-func getValueFromJSON(data map[string]interface{}, path string) (interface{}, bool) {
+func GetValueFromJSON(data map[string]interface{}, path string) (interface{}, bool) {
 	keys := strings.Split(path, ".")
 	var value interface{} = data
 

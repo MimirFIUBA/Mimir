@@ -2,9 +2,12 @@ package db
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
-	mimir "mimir/internal/mimir/models"
+	"mimir/internal/mimir/models"
+	"mimir/internal/mimir/processors"
+	"os"
 
 	"github.com/InfluxCommunity/influxdb3-go/influxdb3"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -58,7 +61,7 @@ func (d *DatabaseManager) getInfluxDBClient() *influxdb3.Client {
 	return nil
 }
 
-func (d *DatabaseManager) insertGroup(group *mimir.Group) (*mimir.Group, error) {
+func (d *DatabaseManager) insertGroup(group *models.Group) (*models.Group, error) {
 	mongoClient := d.getMongoClient()
 	if mongoClient != nil {
 		groupsCollection := mongoClient.Database(MONGO_DB_MIMIR).Collection(GROUPS_COLLECTION)
@@ -77,7 +80,7 @@ func (d *DatabaseManager) insertGroup(group *mimir.Group) (*mimir.Group, error) 
 	return group, nil
 }
 
-func (d *DatabaseManager) insertNode(node *mimir.Node) (*mimir.Node, error) {
+func (d *DatabaseManager) insertNode(node *models.Node) (*models.Node, error) {
 	mongoClient := d.getMongoClient()
 	if mongoClient != nil {
 		nodesCollection := mongoClient.Database(MONGO_DB_MIMIR).Collection(NODES_COLLECTION)
@@ -97,7 +100,7 @@ func (d *DatabaseManager) insertNode(node *mimir.Node) (*mimir.Node, error) {
 	return node, nil
 }
 
-func (d *DatabaseManager) insertTopic(topic *mimir.Sensor) (*mimir.Sensor, error) {
+func (d *DatabaseManager) insertTopic(topic *models.Sensor) (*models.Sensor, error) {
 	mongoClient := d.getMongoClient()
 	if mongoClient != nil {
 		topicsCollection := mongoClient.Database(MONGO_DB_MIMIR).Collection(TOPICS_COLLECTION)
@@ -128,8 +131,8 @@ func (d *DatabaseManager) insertTopics(topics []interface{}) {
 	}
 }
 
-func (d *DatabaseManager) findTopics(filter primitive.D) ([]mimir.Sensor, error) {
-	var results []mimir.Sensor
+func (d *DatabaseManager) findTopics(filter primitive.D) ([]models.Sensor, error) {
+	var results []models.Sensor
 	mongoClient := d.getMongoClient()
 	if mongoClient != nil {
 		topicsCollection := mongoClient.Database(MONGO_DB_MIMIR).Collection(TOPICS_COLLECTION)
@@ -140,10 +143,29 @@ func (d *DatabaseManager) findTopics(filter primitive.D) ([]mimir.Sensor, error)
 			defer cursor.Close(context.TODO())
 		}
 
-		var results []mimir.Sensor
+		var results []models.Sensor
 		if err = cursor.All(context.TODO(), &results); err != nil {
 			return nil, err
 		}
 	}
 	return results, nil
+}
+
+func (d *DatabaseManager) SaveProcessor(processor processors.MessageProcessor) {
+	jsonString, err := json.MarshalIndent(processor, "", "    ")
+	if err != nil {
+		fmt.Println("Error ", err)
+	}
+
+	f, err := os.OpenFile("./fede.json", os.O_RDWR, os.ModePerm)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer f.Close()
+
+	f.WriteAt(jsonString, 2)
+
+	// fmt.Println("SaveProcessor ", jsonString)
+	// os.WriteFile("./fede.json", jsonString, os.ModePerm)
+	// os.WriteFile("./fede.json", jsonString, os.ModePerm)
 }

@@ -5,19 +5,20 @@ import (
 	"log"
 	"mimir/internal/consts"
 	"mimir/internal/mimir/models"
+	"mimir/internal/mimir/processors"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
 
 var (
 	Manager           MQTTManager
-	MessageProcessors *ProcessorRegistry
+	MessageProcessors *processors.ProcessorRegistry
 )
 
 type MQTTManager struct {
 	MQTTClient      mqtt.Client
 	Topics          map[string]Topic
-	readingsChannel chan models.SensorReading
+	ReadingsChannel chan models.SensorReading
 	newTopicChannel chan string
 }
 
@@ -60,7 +61,7 @@ func (p *MimirProcessor) StartGateway() {
 	topics := GetTopics()
 
 	Manager = *NewMQTTManager(client, p.ReadingChannel, p.TopicChannel)
-	MessageProcessors = NewProcessorRegistry()
+	MessageProcessors = processors.NewProcessorRegistry()
 
 	if token := client.Connect(); token.Wait() && token.Error() != nil {
 		panic(fmt.Sprintf("Error connecting to MQTT broker: %s", token.Error()))

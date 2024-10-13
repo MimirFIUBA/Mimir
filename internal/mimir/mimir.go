@@ -20,7 +20,6 @@ func NewMimirProcessor() *MimirProcessor {
 	outgoingMessagesChannel := make(chan string)
 	webSocketMessageChannel := make(chan string)
 
-	// Data.topicChannel = topicChannel
 	mp := MimirProcessor{
 		outgoingMessagesChannel,
 		readingsChannel,
@@ -30,9 +29,9 @@ func NewMimirProcessor() *MimirProcessor {
 }
 
 func (p *MimirProcessor) Run() {
-
 	for {
 		reading := <-p.ReadingChannel
+		fmt.Println("Reading From channnel in mp ", reading)
 
 		go func() {
 			processReading(reading)
@@ -64,5 +63,6 @@ func (p *MimirProcessor) NewSendWebSocketMessageAction(message string) triggers.
 }
 
 func (p *MimirProcessor) RegisterSensor(sensor *mimir.Sensor) {
+	sensor.IsActive = true
 	p.TopicChannel <- sensor.Topic
 }

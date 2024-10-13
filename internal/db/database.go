@@ -20,9 +20,6 @@ var (
 
 	ReadingsDBBuffer = make([]mimir.SensorReading, 0)
 
-	// InfluxDBClient *influxdb3.Client
-	// MongoDBClient  *mongo.Client
-
 	Database = DatabaseManager{}
 )
 

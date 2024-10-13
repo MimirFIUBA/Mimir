@@ -1,11 +1,14 @@
-package utils
+package processors
 
 import (
 	"encoding/binary"
-	"mimir/internal/mimir"
 )
 
-func JsonToProcessor(processorType string, jsonMap map[string]interface{}) (mimir.MessageProcessor, error) {
+func JsonToProcessor(jsonMap map[string]interface{}) (MessageProcessor, error) {
+	processorType, ok := jsonMap["type"].(string)
+	if !ok {
+		panic("bad configuration")
+	}
 
 	switch processorType {
 	case "bytes":
@@ -17,10 +20,6 @@ func JsonToProcessor(processorType string, jsonMap map[string]interface{}) (mimi
 	default:
 		return nil, nil
 	}
-}
-
-type BytesProcessor struct {
-	*mimir.BytesProcessor
 }
 
 func (p *BytesProcessor) setSensorId(jsonMap map[string]interface{}) bool {
@@ -62,7 +61,7 @@ func (p *BytesProcessor) setConfigurations(jsonMap map[string]interface{}) error
 	return nil
 }
 
-func jsonMapToByteConfiguration(jsonMap map[string]interface{}) (*mimir.BytesConfiguration, error) {
+func jsonMapToByteConfiguration(jsonMap map[string]interface{}) (*BytesConfiguration, error) {
 	dataTypeInterface, exists := jsonMap["dataType"]
 	if !exists {
 		return nil, RequiredFieldError{"dataType"}
@@ -103,12 +102,11 @@ func jsonMapToByteConfiguration(jsonMap map[string]interface{}) (*mimir.BytesCon
 	}
 	//TODO: validate that size is an int (not float)
 
-	return mimir.NewBytesConfiguration(dataTypeValue, byteOrder, int(sizeValue)), nil
+	return NewBytesConfiguration(dataTypeValue, byteOrder, int(sizeValue)), nil
 }
 
-func jsonMapToBytesProcessor(jsonMap map[string]interface{}) (mimir.MessageProcessor, error) {
-	bytesProcessor := BytesProcessor{mimir.NewBytesProcessor()}
-
+func jsonMapToBytesProcessor(jsonMap map[string]interface{}) (MessageProcessor, error) {
+	bytesProcessor := NewBytesProcessor()
 	ok := bytesProcessor.setSensorId(jsonMap)
 	if !ok {
 		return nil, WrongFormatError{"sensorId"}
@@ -123,8 +121,8 @@ func jsonMapToBytesProcessor(jsonMap map[string]interface{}) (mimir.MessageProce
 
 }
 
-func jsonToJsonProcessor(jsonMap map[string]interface{}) (mimir.MessageProcessor, error) {
-	processor := mimir.NewJSONProcessor()
+func jsonToJsonProcessor(jsonMap map[string]interface{}) (MessageProcessor, error) {
+	processor := NewJSONProcessor()
 
 	configurationsValue, exists := jsonMap["configurations"]
 	if !exists {
@@ -150,8 +148,8 @@ func jsonToJsonProcessor(jsonMap map[string]interface{}) (mimir.MessageProcessor
 	return processor, nil
 }
 
-func jsonMapToJsonConfiguration(jsonMap map[string]interface{}) (*mimir.JSONValueConfiguration, error) {
-	configuration := &mimir.JSONValueConfiguration{}
+func jsonMapToJsonConfiguration(jsonMap map[string]interface{}) (*JSONValueConfiguration, error) {
+	configuration := &JSONValueConfiguration{}
 	pathInterface, exists := jsonMap["path"]
 	if exists {
 		path, ok := pathInterface.(string)
@@ -165,7 +163,7 @@ func jsonMapToJsonConfiguration(jsonMap map[string]interface{}) (*mimir.JSONValu
 
 }
 
-func jsonToXMLProcessor() (mimir.MessageProcessor, error) {
-	processor := mimir.NewXMLProcessor()
+func jsonToXMLProcessor() (MessageProcessor, error) {
+	processor := NewXMLProcessor()
 	return processor, nil
 }

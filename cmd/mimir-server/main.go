@@ -35,13 +35,6 @@ func loadConfigFile() {
 	}
 }
 
-func loadConfiguration(mimirProcessor *mimir.MimirProcessor) {
-	config.LoadConfig(ini.String("processors_file"))
-	config.LoadConfig(ini.String("triggers_file"))
-	config.BuildProcessors(mimirProcessor)
-	config.BuildTriggers(mimirProcessor)
-}
-
 func connectToInfluxDB() (*influxdb3.Client, error) {
 	godotenv.Load(ini.String("influxdb_configuration_file"))
 	dbClient, err := influxdb.ConnectToInfluxDB()
@@ -49,6 +42,7 @@ func connectToInfluxDB() (*influxdb3.Client, error) {
 		log.Fatal("Error connecting to InfluxDB ", err)
 		return nil, err
 	} else {
+		fmt.Println("Add influx db")
 		mimirDb.Database.AddInfluxClient(dbClient)
 		return dbClient, nil
 	}
@@ -93,11 +87,11 @@ func main() {
 		defer influxClient.Close()
 	}
 
-	loadConfiguration(mimirProcessor)
+	config.LoadConfiguration(mimirProcessor)
 	mimirDb.Run()
 
 	go mimirProcessor.Run()
-	go api.Start(mimirProcessor.WsChannel)
+	go api.Start(mimirProcessor)
 
 	fmt.Println("Everything up and running")
 
