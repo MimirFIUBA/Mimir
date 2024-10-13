@@ -1,7 +1,16 @@
 package db
 
 import (
+	"fmt"
+	"log"
+	influxdb "mimir/db/influxdb"
+	"mimir/db/mongodb"
 	mimir "mimir/internal/mimir/models"
+
+	"github.com/InfluxCommunity/influxdb3-go/influxdb3"
+	"github.com/gookit/ini/v2"
+	"github.com/joho/godotenv"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 var (
@@ -26,4 +35,29 @@ var (
 func Run() {
 	loadTopology()
 	go processPoints()
+}
+
+func (d *DatabaseManager) ConnectToInfluxDB() (*influxdb3.Client, error) {
+	godotenv.Load(ini.String("influxdb_configuration_file"))
+	dbClient, err := influxdb.ConnectToInfluxDB()
+	if err != nil {
+		log.Fatal("Error connecting to InfluxDB ", err)
+		return nil, err
+	} else {
+		d.AddInfluxClient(dbClient)
+		return dbClient, nil
+	}
+}
+
+func (d *DatabaseManager) ConnectToMongo() (*mongo.Client, error) {
+	godotenv.Load(ini.String("mongodb_configuration_file"))
+	client, err := mongodb.Connect()
+	if err != nil {
+		fmt.Println("Failed to connect to mongo: ", err)
+		return nil, err
+	} else {
+		d.AddMongoClient(client)
+	}
+
+	return client, nil
 }

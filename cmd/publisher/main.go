@@ -46,7 +46,7 @@ func (g mqttGenerator) generateFloatData(n int, id string, mps int) {
 	g.c <- 0
 }
 
-func (g mqttGenerator) generateBytes(id string, numbers []uint8) {
+func (g mqttGenerator) GenerateBytes(id string, numbers []uint8) {
 	buf := new(bytes.Buffer)
 	for _, n := range numbers {
 		err := binary.Write(buf, binary.BigEndian, n)

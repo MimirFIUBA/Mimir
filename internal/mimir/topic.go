@@ -28,5 +28,4 @@ func (m *MQTTManager) GetSubscribedTopics() []string {
 		}
 	}
 	return topics
-
 }
