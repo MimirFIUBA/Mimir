@@ -35,6 +35,7 @@ func (s *SensorsManager) GetSensorById(id string) (*mimir.Sensor, error) {
 }
 
 func (s *SensorsManager) GetSensorByTopic(topic string) (*mimir.Sensor, error) {
+	//TODO: change error for bool
 	for index, sensor := range s.sensors {
 		if sensor.Topic == topic {
 			return &s.sensors[index], nil

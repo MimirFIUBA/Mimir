@@ -149,7 +149,7 @@ func jsonToJsonProcessor(jsonMap map[string]interface{}) (MessageProcessor, erro
 		if !ok {
 			return nil, WrongFormatError{"byteConfiguration"}
 		}
-		configuration, err := jsonMapToJsonConfiguration(configurationValue)
+		configuration, err := JsonMapToJsonConfiguration(configurationValue)
 		if err != nil {
 			return nil, err
 		}
@@ -158,7 +158,7 @@ func jsonToJsonProcessor(jsonMap map[string]interface{}) (MessageProcessor, erro
 	return processor, nil
 }
 
-func jsonMapToJsonConfiguration(jsonMap map[string]interface{}) (*JSONValueConfiguration, error) {
+func JsonMapToJsonConfiguration(jsonMap map[string]interface{}) (*JSONValueConfiguration, error) {
 	configuration := &JSONValueConfiguration{}
 	pathInterface, exists := jsonMap["path"]
 	if exists {

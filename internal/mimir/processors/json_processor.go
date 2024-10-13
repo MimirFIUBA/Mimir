@@ -85,7 +85,7 @@ func (p *JSONProcessor) ProcessMessage(topic string, payload []byte) error {
 }
 
 func (p *JSONProcessor) GetConfigFilename() string {
-	return p.Name + consts.PROCESSORS_FILE_SUFFIX
+	return strings.ReplaceAll(p.Name, " ", "_") + consts.PROCESSORS_FILE_SUFFIX
 }
 
 func (p *JSONProcessor) GetTopic() string {

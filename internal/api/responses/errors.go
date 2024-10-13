@@ -50,3 +50,18 @@ var SensorErrorCodes = struct {
 	UpdateFailed:  ErrorCode{Code: 4003, Message: "Sensor update failed"},
 	DeleteFailed:  ErrorCode{Code: 4004, Message: "Sensor delete failed"},
 }
+
+// SensorErrorCodes groups error codes related to sensors
+var ProcessorErrorCodes = struct {
+	NotFound      ErrorCode
+	InvalidSchema ErrorCode
+	UpdateFailed  ErrorCode
+	DeleteFailed  ErrorCode
+	AlreadyExists ErrorCode
+}{
+	NotFound:      ErrorCode{Code: 4001, Message: "Processor not found"},
+	InvalidSchema: ErrorCode{Code: 4002, Message: "Processor invalid schema"},
+	UpdateFailed:  ErrorCode{Code: 4003, Message: "Processor update failed"},
+	DeleteFailed:  ErrorCode{Code: 4004, Message: "Processor delete failed"},
+	AlreadyExists: ErrorCode{Code: 4005, Message: "Processor already exists"},
+}

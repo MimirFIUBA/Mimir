@@ -3,6 +3,7 @@ package controllers
 import (
 	"encoding/json"
 	"io"
+	"mimir/internal/api/middlewares"
 	"mimir/internal/api/responses"
 	"mimir/internal/db"
 	"mimir/internal/mimir"
@@ -35,6 +36,8 @@ func GetProcessor(w http.ResponseWriter, r *http.Request) {
 }
 
 func CreateProcessor(w http.ResponseWriter, r *http.Request) {
+	logger := middlewares.ContextWithLogger(r.Context())
+
 	decoder := json.NewDecoder(r.Body)
 	var requestBody responses.Processor
 	for {
@@ -48,6 +51,13 @@ func CreateProcessor(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	_, exists := mimir.MessageProcessors.GetProcessor(requestBody.Topic)
+	if exists {
+		logger.Error("Error creating new processor", "body", r.Body, "error", "processor for topic "+requestBody.Topic+" already exists")
+		responses.SendErrorResponse(w, http.StatusBadRequest, responses.ProcessorErrorCodes.AlreadyExists)
+		return
+	}
+
 	var messageProcessor processors.MessageProcessor
 	switch requestBody.ProcessorType {
 	case "json":
@@ -58,15 +68,15 @@ func CreateProcessor(w http.ResponseWriter, r *http.Request) {
 			ReadingsChannel: MimirProcessor.ReadingChannel}
 		//TODO see if we can do this better
 		for _, configurationInterface := range requestBody.Configurations {
-			configuration, ok := configurationInterface.(map[string]interface{})
+			jsonConfigurationMap, ok := configurationInterface.(map[string]interface{})
 			if ok {
-				pathInterface, exists := configuration["path"]
-				if exists {
-					path, ok := pathInterface.(string)
-					if ok {
-						jsonProcessor.AddValueConfiguration(processors.NewJSONValueConfiguration("", path))
-					}
+				jsonConfiguration, err := processors.JsonMapToJsonConfiguration(jsonConfigurationMap)
+				if err != nil {
+					logger.Error("Error creating new processor", "body", r.Body, "error", err)
+					responses.SendErrorResponse(w, http.StatusBadRequest, responses.ProcessorErrorCodes.InvalidSchema)
+					return
 				}
+				jsonProcessor.AddValueConfiguration(jsonConfiguration)
 			}
 		}
 		messageProcessor = jsonProcessor
@@ -81,7 +91,8 @@ func CreateProcessor(w http.ResponseWriter, r *http.Request) {
 			if ok {
 				byteConfiguration, err := processors.JsonMapToByteConfiguration(configurationMap)
 				if err != nil {
-					w.WriteHeader(http.StatusBadRequest)
+					logger.Error("Error creating new processor", "body", r.Body, "error", err)
+					responses.SendErrorResponse(w, http.StatusBadRequest, responses.ProcessorErrorCodes.InvalidSchema)
 					return
 				}
 				bytesProcessor.AddBytesConfiguration(*byteConfiguration)
@@ -100,8 +111,17 @@ func CreateProcessor(w http.ResponseWriter, r *http.Request) {
 	mimir.MessageProcessors.RegisterProcessor(requestBody.Topic, messageProcessor)
 
 	db.Database.SaveProcessor(messageProcessor)
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(requestBody)
+
+	err = responses.SendJSONResponse(w, http.StatusOK, responses.ItemsResponse{
+		Code:    0,
+		Message: "The new processor was created",
+		Items:   messageProcessor,
+	})
+	if err != nil {
+		logger.Error("Error sending response", "error", err.Error())
+		responses.SendErrorResponse(w, http.StatusInternalServerError, responses.InternalErrorCodes.ResponseError)
+		return
+	}
 }
 
 func UpdateProcessor(w http.ResponseWriter, r *http.Request) {
