@@ -16,6 +16,6 @@ func (p *XMLProcessor) SetReadingsChannel(readingsChannel chan models.SensorRead
 	panic("Missing implementation")
 }
 
-func (p *XMLProcessor) ToJsonPrettyString() string {
+func (p *XMLProcessor) GetConfigFilename() string {
 	panic("Missing implementation")
 }

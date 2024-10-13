@@ -86,6 +86,6 @@ func (p *BytesProcessor) ProcessMessage(topic string, payload []byte) error {
 	return nil
 }
 
-func (p *BytesProcessor) ToJsonPrettyString() string {
-	return ""
+func (p *BytesProcessor) GetConfigFilename() string {
+	return p.Name + ".json"
 }

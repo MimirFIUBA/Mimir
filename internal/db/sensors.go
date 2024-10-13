@@ -103,16 +103,18 @@ func buildNameFilter(sensors []*mimir.Sensor) bson.D {
 }
 
 func (s *SensorsManager) LoadSensors(sensors []*mimir.Sensor) {
-	filter := buildNameFilter(sensors)
-	results, err := Database.findTopics(filter)
-	if err != nil {
-		log.Fatal(err)
-		return
-	}
-
 	existingSensorsMap := make(map[string]mimir.Sensor)
-	for _, result := range results {
-		existingSensorsMap[result.Name] = result
+	if len(sensors) > 0 {
+		filter := buildNameFilter(sensors)
+		results, err := Database.findTopics(filter)
+		if err != nil {
+			log.Fatal(err)
+			return
+		}
+
+		for _, result := range results {
+			existingSensorsMap[result.Name] = result
+		}
 	}
 
 	var sensorsToInsert []interface{}

@@ -20,21 +20,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func loadConfigFile() {
-	err := ini.LoadExists("config/config.ini")
-	if err != nil {
-		fmt.Println("Error loading config file, loading default values...")
-		err = ini.LoadStrings(`
-			processors_file = "config/processors.json"
-			triggers_file = "config/triggers.json"
-			influxdb_configuration_file = "db/test_influxdb.env"
-		`)
-		if err != nil {
-			panic("Could not load initial configuration")
-		}
-	}
-}
-
 func connectToInfluxDB() (*influxdb3.Client, error) {
 	godotenv.Load(ini.String("influxdb_configuration_file"))
 	dbClient, err := influxdb.ConnectToInfluxDB()
@@ -42,7 +27,6 @@ func connectToInfluxDB() (*influxdb3.Client, error) {
 		log.Fatal("Error connecting to InfluxDB ", err)
 		return nil, err
 	} else {
-		fmt.Println("Add influx db")
 		mimirDb.Database.AddInfluxClient(dbClient)
 		return dbClient, nil
 	}
@@ -64,10 +48,13 @@ func connectToMongo() (*mongo.Client, error) {
 func main() {
 	fmt.Println("MiMiR starting")
 
-	loadConfigFile()
+	config.LoadIni()
+	fmt.Println("Ini loaded")
 
 	mimirProcessor := mimir.NewMimirProcessor()
+	fmt.Println("new mimir processor")
 	mimirProcessor.StartGateway()
+	fmt.Println("gateway started")
 
 	mongoClient, err := connectToMongo()
 	if err != nil {
@@ -79,6 +66,7 @@ func main() {
 			}
 		}()
 	}
+	fmt.Println("connected to mongo")
 
 	influxClient, err := connectToInfluxDB()
 	if err != nil {
@@ -86,9 +74,12 @@ func main() {
 	} else {
 		defer influxClient.Close()
 	}
+	fmt.Println("connected to influx")
 
 	config.LoadConfiguration(mimirProcessor)
+	fmt.Println("configuration loaded")
 	mimirDb.Run()
+	fmt.Println("DB running")
 
 	go mimirProcessor.Run()
 	go api.Start(mimirProcessor)

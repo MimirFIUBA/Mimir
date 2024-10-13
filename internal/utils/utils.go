@@ -1,6 +1,12 @@
 package utils
 
-import "strings"
+import (
+	"io/fs"
+	"log"
+	"os"
+	"path"
+	"strings"
+)
 
 func GetValueFromJSON(data map[string]interface{}, path string) (interface{}, bool) {
 	keys := strings.Split(path, ".")
@@ -16,4 +22,20 @@ func GetValueFromJSON(data map[string]interface{}, path string) (interface{}, bo
 	}
 
 	return value, true
+}
+
+func ListFilesWithSuffix(dir, suffix string) []string {
+	root := os.DirFS(dir)
+
+	mdFiles, err := fs.Glob(root, suffix)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var files []string
+	for _, v := range mdFiles {
+		files = append(files, path.Join(dir, v))
+	}
+	return files
 }

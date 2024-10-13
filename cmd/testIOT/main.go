@@ -2,17 +2,20 @@ package main
 
 import (
 	"fmt"
+	"mimir/internal/config"
 	"mimir/internal/consts"
 	"os"
 	"os/signal"
 	"syscall"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
+	"github.com/gookit/ini/v2"
 )
 
 func main() {
+	config.LoadIni()
 	opts := mqtt.NewClientOptions()
-	opts.AddBroker(consts.Broker)
+	opts.AddBroker(ini.String(consts.MQTT_BROKER_CONFIG_NAME))
 	topics := getTopics()
 
 	client := mqtt.NewClient(opts)

@@ -10,6 +10,7 @@ import (
 	"os"
 
 	"github.com/InfluxCommunity/influxdb3-go/influxdb3"
+	"github.com/gookit/ini/v2"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -157,15 +158,13 @@ func (d *DatabaseManager) SaveProcessor(processor processors.MessageProcessor) {
 		fmt.Println("Error ", err)
 	}
 
-	f, err := os.OpenFile("./fede.json", os.O_RDWR, os.ModePerm)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer f.Close()
+	fileName := ini.String("processors_dir") + "/" + processor.GetConfigFilename()
 
-	f.WriteAt(jsonString, 2)
+	// f, err := os.OpenFile(fileName, os.O_CREATE, os.ModePerm)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// defer f.Close()
 
-	// fmt.Println("SaveProcessor ", jsonString)
-	// os.WriteFile("./fede.json", jsonString, os.ModePerm)
-	// os.WriteFile("./fede.json", jsonString, os.ModePerm)
+	os.WriteFile(fileName, jsonString, os.ModePerm)
 }

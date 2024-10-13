@@ -6,10 +6,12 @@ import (
 	"fmt"
 	"log"
 	"math/rand/v2"
+	"mimir/internal/config"
 	"mimir/internal/consts"
 	"time"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
+	"github.com/gookit/ini/v2"
 )
 
 type mqttGenerator struct {
@@ -68,9 +70,9 @@ func (g mqttGenerator) generateBytes(id string, numbers []uint8) {
 }
 
 func main() {
-
+	config.LoadIni()
 	opts := mqtt.NewClientOptions()
-	opts.AddBroker(consts.Broker)
+	opts.AddBroker(ini.String(consts.MQTT_BROKER_CONFIG_NAME))
 
 	client := mqtt.NewClient(opts)
 	if token := client.Connect(); token.Wait() && token.Error() != nil {

@@ -83,6 +83,6 @@ func (p *JSONProcessor) ProcessMessage(topic string, payload []byte) error {
 	return nil
 }
 
-func (p *JSONProcessor) ToJsonPrettyString() string {
-	return ""
+func (p *JSONProcessor) GetConfigFilename() string {
+	return p.Name + ".json"
 }

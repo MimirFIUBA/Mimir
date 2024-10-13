@@ -8,6 +8,7 @@ import (
 	"mimir/internal/mimir/processors"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
+	"github.com/gookit/ini/v2"
 )
 
 var (
@@ -41,16 +42,9 @@ func onMessageReceived(client mqtt.Client, message mqtt.Message) {
 	}
 }
 
-func GetTopics() []string {
-	topicTemp := consts.TopicTemp
-	topicPH := consts.TopicPH
-	topics := []string{topicTemp, topicPH}
-	return topics
-}
-
 func StartMqttClient() mqtt.Client {
 	opts := mqtt.NewClientOptions()
-	opts.AddBroker(consts.Broker)
+	opts.AddBroker(ini.String(consts.MQTT_BROKER_CONFIG_NAME))
 
 	return mqtt.NewClient(opts)
 }
@@ -58,19 +52,12 @@ func StartMqttClient() mqtt.Client {
 func (p *MimirProcessor) StartGateway() {
 
 	client := StartMqttClient()
-	topics := GetTopics()
 
 	Manager = *NewMQTTManager(client, p.ReadingChannel, p.TopicChannel)
 	MessageProcessors = processors.NewProcessorRegistry()
 
 	if token := client.Connect(); token.Wait() && token.Error() != nil {
 		panic(fmt.Sprintf("Error connecting to MQTT broker: %s", token.Error()))
-	}
-
-	for _, topic := range topics {
-		if token := client.Subscribe(topic, 0, onMessageReceived); token.Wait() && token.Error() != nil {
-			panic(fmt.Sprintf("Error subscribing to topic: %s", token.Error()))
-		}
 	}
 
 	go func() {

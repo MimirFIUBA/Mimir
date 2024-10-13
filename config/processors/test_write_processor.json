@@ -1,0 +1,10 @@
+{
+    "name": "test write",
+    "topic": "mimir/testWrite",
+    "type": "json",
+    "configurations": [
+        {
+            "path": "data"
+        }
+    ]
+}

@@ -8,7 +8,7 @@ import (
 type MessageProcessor interface {
 	ProcessMessage(topic string, payload []byte) error
 	SetReadingsChannel(readingsChannel chan models.SensorReading)
-	ToJsonPrettyString() string
+	GetConfigFilename() string
 }
 
 type ProcessorRegistry struct {

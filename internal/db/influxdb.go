@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"log"
 	"strings"
 	"time"
 
@@ -32,9 +33,10 @@ func processPoints() {
 			if b.Ready() {
 				err := influxDBClient.WritePoints(context.Background(), b.Emit())
 				if err != nil {
-					panic(err)
+					log.Println("Error writing points to influx db - ", err)
 				}
 			}
+			//TODO: see what to do if error while writing
 			ReadingsDBBuffer = ReadingsDBBuffer[:0]
 		}
 		time.Sleep(5 * time.Second)
