@@ -8,6 +8,7 @@ type MessageProcessor interface {
 	ProcessMessage(topic string, payload []byte) error
 	SetReadingsChannel(readingsChannel chan models.SensorReading)
 	GetConfigFilename() string
+	GetTopic() string
 }
 
 type ProcessorRegistry struct {
@@ -20,6 +21,10 @@ func NewProcessorRegistry() *ProcessorRegistry {
 
 func (r *ProcessorRegistry) RegisterProcessor(topic string, processor MessageProcessor) {
 	r.processors[topic] = processor
+}
+
+func (r *ProcessorRegistry) RemoveProcessor(topic string) {
+	delete(r.processors, topic)
 }
 
 func (r *ProcessorRegistry) GetProcessor(topic string) (MessageProcessor, bool) {

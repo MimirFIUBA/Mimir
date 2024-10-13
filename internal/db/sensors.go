@@ -1,11 +1,14 @@
 package db
 
 import (
+	"context"
 	"fmt"
 	"log"
+	"mimir/internal/mimir/models"
 	mimir "mimir/internal/mimir/models"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type SensorsManager struct {
@@ -129,4 +132,55 @@ func (s *SensorsManager) LoadSensors(sensors []*mimir.Sensor) {
 	if len(sensorsToInsert) > 0 {
 		Database.insertTopics(sensorsToInsert)
 	}
+}
+
+func (d *DatabaseManager) insertTopic(topic *models.Sensor) (*models.Sensor, error) {
+	mongoClient := d.getMongoClient()
+	if mongoClient != nil {
+		topicsCollection := mongoClient.Database(MONGO_DB_MIMIR).Collection(TOPICS_COLLECTION)
+		result, err := topicsCollection.InsertOne(context.TODO(), topic)
+		if err != nil {
+			fmt.Println("error inserting group ", err)
+			return nil, err
+		}
+
+		topicId, ok := result.InsertedID.(primitive.ObjectID)
+		if !ok {
+			return nil, fmt.Errorf("error converting id for group")
+		}
+		topic.ID = topicId.String() //TODO: see if we need to change to primitive.ObjectId
+	}
+
+	return topic, nil
+}
+
+func (d *DatabaseManager) insertTopics(topics []interface{}) {
+	mongoClient := d.getMongoClient()
+	if mongoClient != nil {
+		topicsCollection := mongoClient.Database(MONGO_DB_MIMIR).Collection(TOPICS_COLLECTION)
+		_, err := topicsCollection.InsertMany(context.TODO(), topics)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+}
+
+func (d *DatabaseManager) findTopics(filter primitive.D) ([]models.Sensor, error) {
+	var results []models.Sensor
+	mongoClient := d.getMongoClient()
+	if mongoClient != nil {
+		topicsCollection := mongoClient.Database(MONGO_DB_MIMIR).Collection(TOPICS_COLLECTION)
+		cursor, err := topicsCollection.Find(context.TODO(), filter)
+		if err != nil {
+			return nil, err
+		} else {
+			defer cursor.Close(context.TODO())
+		}
+
+		var results []models.Sensor
+		if err = cursor.All(context.TODO(), &results); err != nil {
+			return nil, err
+		}
+	}
+	return results, nil
 }

@@ -3,6 +3,7 @@ package processors
 import (
 	"encoding/json"
 	"io"
+	"mimir/internal/consts"
 	"mimir/internal/mimir/models"
 	"mimir/internal/utils"
 	"strings"
@@ -84,5 +85,9 @@ func (p *JSONProcessor) ProcessMessage(topic string, payload []byte) error {
 }
 
 func (p *JSONProcessor) GetConfigFilename() string {
-	return p.Name + ".json"
+	return p.Name + consts.PROCESSORS_FILE_SUFFIX
+}
+
+func (p *JSONProcessor) GetTopic() string {
+	return p.Topic
 }

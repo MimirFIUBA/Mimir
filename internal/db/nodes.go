@@ -1,12 +1,15 @@
 package db
 
 import (
+	"context"
 	"fmt"
-	mimir "mimir/internal/mimir/models"
+	"mimir/internal/mimir/models"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type NodesManager struct {
-	nodes     []mimir.Node
+	nodes     []models.Node
 	idCounter int
 }
 
@@ -15,11 +18,11 @@ func (n *NodesManager) GetNewId() int {
 	return n.idCounter
 }
 
-func (n *NodesManager) GetNodes() []mimir.Node {
+func (n *NodesManager) GetNodes() []models.Node {
 	return n.nodes
 }
 
-func (n *NodesManager) GetNodeById(id string) (*mimir.Node, error) {
+func (n *NodesManager) GetNodeById(id string) (*models.Node, error) {
 	for index, node := range n.nodes {
 		if node.GetId() == id {
 			return &n.nodes[index], nil
@@ -34,7 +37,7 @@ func (n *NodesManager) IdExists(id string) bool {
 	return err == nil
 }
 
-func (n *NodesManager) CreateNode(node *mimir.Node) error {
+func (n *NodesManager) CreateNode(node *models.Node) error {
 	// TODO(#20) - Add Body validation
 	node, err := Database.insertNode(node)
 	if err != nil {
@@ -50,7 +53,7 @@ func (n *NodesManager) CreateNode(node *mimir.Node) error {
 	return nil
 }
 
-func (n *NodesManager) UpdateNode(node *mimir.Node) (*mimir.Node, error) {
+func (n *NodesManager) UpdateNode(node *models.Node) (*models.Node, error) {
 	oldNode, err := n.GetNodeById(node.GetId())
 	if err != nil {
 		return nil, err
@@ -79,7 +82,7 @@ func (n *NodesManager) DeleteNode(id string) error {
 	return nil
 }
 
-func (n *NodesManager) AddSensorToNodeById(id string, sensor *mimir.Sensor) error {
+func (n *NodesManager) AddSensorToNodeById(id string, sensor *models.Sensor) error {
 	oldNode, err := n.GetNodeById(id)
 	if err != nil {
 		return nil
@@ -88,6 +91,26 @@ func (n *NodesManager) AddSensorToNodeById(id string, sensor *mimir.Sensor) erro
 	return oldNode.AddSensor(sensor)
 }
 
-func (n *NodesManager) AddNode(node *mimir.Node) {
+func (n *NodesManager) AddNode(node *models.Node) {
 	n.nodes = append(n.nodes, *node)
+}
+
+func (d *DatabaseManager) insertNode(node *models.Node) (*models.Node, error) {
+	mongoClient := d.getMongoClient()
+	if mongoClient != nil {
+		nodesCollection := mongoClient.Database(MONGO_DB_MIMIR).Collection(NODES_COLLECTION)
+		result, err := nodesCollection.InsertOne(context.TODO(), node)
+		if err != nil {
+			fmt.Println("error inserting group ", err)
+			return nil, err
+		}
+
+		nodeId, ok := result.InsertedID.(primitive.ObjectID)
+		if !ok {
+			return nil, fmt.Errorf("error converting id for group")
+		}
+		node.ID = nodeId
+	}
+
+	return node, nil
 }

@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"encoding/binary"
 	"encoding/json"
 	"io"
 	"mimir/internal/api/responses"
@@ -77,17 +76,15 @@ func CreateProcessor(w http.ResponseWriter, r *http.Request) {
 			Topic:           requestBody.Topic,
 			Type:            requestBody.ProcessorType,
 			ReadingsChannel: MimirProcessor.ReadingChannel}
-		//TODO implement
 		for _, configurationInterface := range requestBody.Configurations {
-			configuration, ok := configurationInterface.(map[string]interface{})
+			configurationMap, ok := configurationInterface.(map[string]interface{})
 			if ok {
-				endiannessInterface, exists := configuration["endianness"]
-				if exists {
-					endianness, ok := endiannessInterface.(string)
-					if ok {
-						bytesProcessor.AddBytesConfiguration(*processors.NewBytesConfiguration(endianness, binary.BigEndian, 1))
-					}
+				byteConfiguration, err := processors.JsonMapToByteConfiguration(configurationMap)
+				if err != nil {
+					w.WriteHeader(http.StatusBadRequest)
+					return
 				}
+				bytesProcessor.AddBytesConfiguration(*byteConfiguration)
 			}
 		}
 		messageProcessor = bytesProcessor
@@ -108,6 +105,7 @@ func CreateProcessor(w http.ResponseWriter, r *http.Request) {
 }
 
 func UpdateProcessor(w http.ResponseWriter, r *http.Request) {
+	//TODO: missing implementation
 	var sensor *models.Sensor
 	err := json.NewDecoder(r.Body).Decode(&sensor)
 	if err != nil {
@@ -120,5 +118,18 @@ func UpdateProcessor(w http.ResponseWriter, r *http.Request) {
 }
 
 func DeleteProcessor(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+
+	topic := strings.ReplaceAll(id, ".", "/")
+	processor, exists := mimir.MessageProcessors.GetProcessor(topic)
+	if !exists {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	db.Database.DeleteProcessor(processor)
+	mimir.MessageProcessors.RemoveProcessor(topic)
+
 	w.WriteHeader(http.StatusOK)
 }

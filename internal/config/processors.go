@@ -17,7 +17,7 @@ import (
 
 func BuildProcessors(mimirProcessor *mimir.MimirProcessor) {
 	dir := ini.String(consts.PROCESSORS_DIR_CONFIG_NAME)
-	files := utils.ListFilesWithSuffix(dir, consts.PROCESSORS_FILE_SUFFIX)
+	files := utils.ListFilesWithSuffix(dir, "*"+consts.PROCESSORS_FILE_SUFFIX)
 	sensors := make([]*models.Sensor, 0)
 	for _, v := range files {
 		byteValue, err := os.ReadFile(v)

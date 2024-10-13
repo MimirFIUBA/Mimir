@@ -1,8 +1,12 @@
 package db
 
 import (
+	"context"
 	"fmt"
+	"mimir/internal/mimir/models"
 	mimir "mimir/internal/mimir/models"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type GroupsManager struct {
@@ -86,4 +90,23 @@ func (g *GroupsManager) AddNodeToGroupById(id string, node *mimir.Node) error {
 	}
 
 	return oldGroup.AddNode(node)
+}
+
+func (d *DatabaseManager) insertGroup(group *models.Group) (*models.Group, error) {
+	mongoClient := d.getMongoClient()
+	if mongoClient != nil {
+		groupsCollection := mongoClient.Database(MONGO_DB_MIMIR).Collection(GROUPS_COLLECTION)
+		result, err := groupsCollection.InsertOne(context.TODO(), group)
+		if err != nil {
+			fmt.Println("error inserting group ", err)
+			return nil, err
+		}
+
+		groupId, ok := result.InsertedID.(primitive.ObjectID)
+		if !ok {
+			return nil, fmt.Errorf("error converting id for group")
+		}
+		group.ID = groupId
+	}
+	return group, nil
 }

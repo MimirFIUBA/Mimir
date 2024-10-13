@@ -19,3 +19,7 @@ func (p *XMLProcessor) SetReadingsChannel(readingsChannel chan models.SensorRead
 func (p *XMLProcessor) GetConfigFilename() string {
 	panic("Missing implementation")
 }
+
+func (p *XMLProcessor) GetTopic() string {
+	panic("Missing implementation")
+}

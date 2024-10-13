@@ -51,7 +51,7 @@ func (p *BytesProcessor) setConfigurations(jsonMap map[string]interface{}) error
 		if !ok {
 			return WrongFormatError{"byteConfiguration"}
 		}
-		configuration, err := jsonMapToByteConfiguration(configurationValue)
+		configuration, err := JsonMapToByteConfiguration(configurationValue)
 		if err != nil {
 			return err
 		}
@@ -61,7 +61,7 @@ func (p *BytesProcessor) setConfigurations(jsonMap map[string]interface{}) error
 	return nil
 }
 
-func jsonMapToByteConfiguration(jsonMap map[string]interface{}) (*BytesConfiguration, error) {
+func JsonMapToByteConfiguration(jsonMap map[string]interface{}) (*BytesConfiguration, error) {
 	dataTypeInterface, exists := jsonMap["dataType"]
 	if !exists {
 		return nil, RequiredFieldError{"dataType"}
@@ -123,6 +123,16 @@ func jsonMapToBytesProcessor(jsonMap map[string]interface{}) (MessageProcessor, 
 
 func jsonToJsonProcessor(jsonMap map[string]interface{}) (MessageProcessor, error) {
 	processor := NewJSONProcessor()
+
+	nameInterface, exists := jsonMap["name"]
+	if !exists {
+		return nil, RequiredFieldError{"name"}
+	}
+	name, ok := nameInterface.(string)
+	if !ok {
+		return nil, WrongFormatError{"configurations"}
+	}
+	processor.Name = name
 
 	configurationsValue, exists := jsonMap["configurations"]
 	if !exists {

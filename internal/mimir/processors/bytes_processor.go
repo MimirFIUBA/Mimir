@@ -89,3 +89,7 @@ func (p *BytesProcessor) ProcessMessage(topic string, payload []byte) error {
 func (p *BytesProcessor) GetConfigFilename() string {
 	return p.Name + ".json"
 }
+
+func (p *BytesProcessor) GetTopic() string {
+	return p.Topic
+}

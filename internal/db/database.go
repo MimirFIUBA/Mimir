@@ -32,6 +32,23 @@ var (
 	Database = DatabaseManager{}
 )
 
+const (
+	MONGO_DB_MIMIR    = "Mimir"
+	GROUPS_COLLECTION = "groups"
+	NODES_COLLECTION  = "nodes"
+	TOPICS_COLLECTION = "topics"
+)
+
+type DatabaseManager struct {
+	InfluxDBClient DatabaseClient
+	MongoDBClient  DatabaseClient
+}
+
+type DatabaseClient struct {
+	client      interface{}
+	isConnected bool
+}
+
 func Run() {
 	loadTopology()
 	go processPoints()
@@ -60,4 +77,34 @@ func (d *DatabaseManager) ConnectToMongo() (*mongo.Client, error) {
 	}
 
 	return client, nil
+}
+
+func (d *DatabaseManager) AddMongoClient(mongoClient *mongo.Client) {
+	d.MongoDBClient = DatabaseClient{mongoClient, true}
+}
+
+func (d *DatabaseManager) AddInfluxClient(influxDbClient *influxdb3.Client) {
+	d.InfluxDBClient = DatabaseClient{influxDbClient, true}
+}
+
+func (d *DatabaseManager) getMongoClient() *mongo.Client {
+	if d.MongoDBClient.isConnected {
+		client, ok := d.MongoDBClient.client.(*mongo.Client)
+		if !ok {
+			panic("error getting mongo db client")
+		}
+		return client
+	}
+	return nil
+}
+
+func (d *DatabaseManager) getInfluxDBClient() *influxdb3.Client {
+	if d.InfluxDBClient.isConnected {
+		client, ok := d.InfluxDBClient.client.(*influxdb3.Client)
+		if !ok {
+			panic("error getting influx db client")
+		}
+		return client
+	}
+	return nil
 }
