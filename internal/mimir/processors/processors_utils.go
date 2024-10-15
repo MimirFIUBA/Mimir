@@ -121,18 +121,44 @@ func jsonMapToBytesProcessor(jsonMap map[string]interface{}) (MessageProcessor, 
 
 }
 
-func jsonToJsonProcessor(jsonMap map[string]interface{}) (MessageProcessor, error) {
-	processor := NewJSONProcessor()
-
+func (p *JSONProcessor) setName(jsonMap map[string]interface{}) error {
 	nameInterface, exists := jsonMap["name"]
 	if !exists {
-		return nil, RequiredFieldError{"name"}
+		return RequiredFieldError{"name"}
 	}
 	name, ok := nameInterface.(string)
 	if !ok {
-		return nil, WrongFormatError{"configurations"}
+		return WrongFormatError{"name"}
 	}
-	processor.Name = name
+	p.Name = name
+	return nil
+}
+
+func (p *JSONProcessor) setTopic(jsonMap map[string]interface{}) error {
+	topicInterface, exists := jsonMap["topic"]
+	if !exists {
+		return RequiredFieldError{"topic"}
+	}
+	topic, ok := topicInterface.(string)
+	if !ok {
+		return WrongFormatError{"topic"}
+	}
+	p.Topic = topic
+	return nil
+}
+
+func jsonToJsonProcessor(jsonMap map[string]interface{}) (MessageProcessor, error) {
+	processor := NewJSONProcessor()
+
+	err := processor.setName(jsonMap)
+	if err != nil {
+		return nil, err
+	}
+
+	err = processor.setTopic(jsonMap)
+	if err != nil {
+		return nil, err
+	}
 
 	configurationsValue, exists := jsonMap["configurations"]
 	if !exists {

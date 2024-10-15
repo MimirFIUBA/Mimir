@@ -2,13 +2,13 @@ package controllers
 
 import (
 	"encoding/json"
-	"io"
 	"mimir/internal/api/middlewares"
 	"mimir/internal/api/responses"
 	"mimir/internal/db"
 	"mimir/internal/mimir"
 	"mimir/internal/mimir/models"
 	"mimir/internal/mimir/processors"
+	"mimir/internal/utils"
 	"net/http"
 	"strings"
 
@@ -38,17 +38,11 @@ func GetProcessor(w http.ResponseWriter, r *http.Request) {
 func CreateProcessor(w http.ResponseWriter, r *http.Request) {
 	logger := middlewares.ContextWithLogger(r.Context())
 
-	decoder := json.NewDecoder(r.Body)
 	var requestBody responses.Processor
-	for {
-		err := decoder.Decode(&requestBody)
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
+	err := utils.DecodeJsonToMap(r.Body, &requestBody)
+	if err != nil {
+		logger.Error("Error updating processor", "body", r.Body, "error", err)
+		responses.SendErrorResponse(w, http.StatusBadRequest, responses.ProcessorErrorCodes.InvalidSchema)
 	}
 
 	_, exists := mimir.MessageProcessors.GetProcessor(requestBody.Topic)
@@ -61,47 +55,22 @@ func CreateProcessor(w http.ResponseWriter, r *http.Request) {
 	var messageProcessor processors.MessageProcessor
 	switch requestBody.ProcessorType {
 	case "json":
-		jsonProcessor := &processors.JSONProcessor{
-			Name:            requestBody.Name,
-			Topic:           requestBody.Topic,
-			Type:            requestBody.ProcessorType,
-			ReadingsChannel: MimirProcessor.ReadingChannel}
-		//TODO see if we can do this better
-		for _, configurationInterface := range requestBody.Configurations {
-			jsonConfigurationMap, ok := configurationInterface.(map[string]interface{})
-			if ok {
-				jsonConfiguration, err := processors.JsonMapToJsonConfiguration(jsonConfigurationMap)
-				if err != nil {
-					logger.Error("Error creating new processor", "body", r.Body, "error", err)
-					responses.SendErrorResponse(w, http.StatusBadRequest, responses.ProcessorErrorCodes.InvalidSchema)
-					return
-				}
-				jsonProcessor.AddValueConfiguration(jsonConfiguration)
-			}
+		jsonProcessor, err := createJSONProcessor(requestBody)
+		if err != nil {
+			logger.Error("Error creating new processor", "body", r.Body, "error", err)
+			responses.SendErrorResponse(w, http.StatusBadRequest, responses.ProcessorErrorCodes.InvalidSchema)
 		}
 		messageProcessor = jsonProcessor
 	case "bytes":
-		bytesProcessor := &processors.BytesProcessor{
-			Name:            requestBody.Name,
-			Topic:           requestBody.Topic,
-			Type:            requestBody.ProcessorType,
-			ReadingsChannel: MimirProcessor.ReadingChannel}
-		for _, configurationInterface := range requestBody.Configurations {
-			configurationMap, ok := configurationInterface.(map[string]interface{})
-			if ok {
-				byteConfiguration, err := processors.JsonMapToByteConfiguration(configurationMap)
-				if err != nil {
-					logger.Error("Error creating new processor", "body", r.Body, "error", err)
-					responses.SendErrorResponse(w, http.StatusBadRequest, responses.ProcessorErrorCodes.InvalidSchema)
-					return
-				}
-				bytesProcessor.AddBytesConfiguration(*byteConfiguration)
-			}
+		bytesProcessor, err := createBytesProcessor(requestBody)
+		if err != nil {
+			logger.Error("Error creating new processor", "body", r.Body, "error", err)
+			responses.SendErrorResponse(w, http.StatusBadRequest, responses.ProcessorErrorCodes.InvalidSchema)
 		}
 		messageProcessor = bytesProcessor
 	}
 
-	_, err := db.SensorsData.GetSensorByTopic(requestBody.Topic)
+	_, err = db.SensorsData.GetSensorByTopic(requestBody.Topic)
 	if err != nil {
 		sensor := models.NewSensor(requestBody.Topic)
 		sensor.Topic = requestBody.Topic
@@ -125,16 +94,46 @@ func CreateProcessor(w http.ResponseWriter, r *http.Request) {
 }
 
 func UpdateProcessor(w http.ResponseWriter, r *http.Request) {
-	//TODO: missing implementation
-	var sensor *models.Sensor
-	err := json.NewDecoder(r.Body).Decode(&sensor)
+	logger := middlewares.ContextWithLogger(r.Context())
+
+	var requestBody map[string]interface{}
+	err := utils.DecodeJsonToMap(r.Body, &requestBody)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		logger.Error("Error updating processor", "body", r.Body, "error", err)
+		responses.SendErrorResponse(w, http.StatusBadRequest, responses.ProcessorErrorCodes.InvalidSchema)
+	}
+
+	topicInterface, exists := requestBody["topic"]
+	if !exists {
+		logger.Error("Error updating processor", "body", r.Body, "error", "missing topic attribute")
+		responses.SendErrorResponse(w, http.StatusBadRequest, responses.ProcessorErrorCodes.InvalidSchema)
 		return
 	}
 
+	topic, ok := topicInterface.(string)
+	if !ok {
+		logger.Error("Error updating processor", "body", r.Body, "error", "topic attribute is not a string")
+		responses.SendErrorResponse(w, http.StatusNotFound, responses.ProcessorErrorCodes.InvalidSchema)
+		return
+	}
+
+	existingProcessor, exists := mimir.MessageProcessors.GetProcessor(topic)
+	if !exists {
+		logger.Error("Error updating processor", "body", r.Body, "error", "processor for topic "+topic+" does not exist")
+		responses.SendErrorResponse(w, http.StatusNotFound, responses.ProcessorErrorCodes.NotFound)
+		return
+	}
+
+	err = existingProcessor.UpdateFields(requestBody)
+	if err != nil {
+		logger.Error("Error updating processor", "body", r.Body, "error", err)
+		responses.SendErrorResponse(w, http.StatusBadRequest, responses.ProcessorErrorCodes.InvalidSchema)
+		return
+	}
+	db.Database.SaveProcessor(existingProcessor)
+
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(sensor)
+	json.NewEncoder(w).Encode(existingProcessor)
 }
 
 func DeleteProcessor(w http.ResponseWriter, r *http.Request) {
@@ -152,4 +151,42 @@ func DeleteProcessor(w http.ResponseWriter, r *http.Request) {
 	mimir.MessageProcessors.RemoveProcessor(topic)
 
 	w.WriteHeader(http.StatusOK)
+}
+
+func createJSONProcessor(requestBody responses.Processor) (*processors.JSONProcessor, error) {
+	jsonProcessor := &processors.JSONProcessor{
+		Name:            requestBody.Name,
+		Topic:           requestBody.Topic,
+		Type:            requestBody.ProcessorType,
+		ReadingsChannel: MimirProcessor.ReadingChannel}
+	for _, configurationInterface := range requestBody.Configurations {
+		jsonConfigurationMap, ok := configurationInterface.(map[string]interface{})
+		if ok {
+			jsonConfiguration, err := processors.JsonMapToJsonConfiguration(jsonConfigurationMap)
+			if err != nil {
+				return nil, err
+			}
+			jsonProcessor.AddValueConfiguration(jsonConfiguration)
+		}
+	}
+	return jsonProcessor, nil
+}
+
+func createBytesProcessor(requestBody responses.Processor) (*processors.BytesProcessor, error) {
+	bytesProcessor := &processors.BytesProcessor{
+		Name:            requestBody.Name,
+		Topic:           requestBody.Topic,
+		Type:            requestBody.ProcessorType,
+		ReadingsChannel: MimirProcessor.ReadingChannel}
+	for _, configurationInterface := range requestBody.Configurations {
+		configurationMap, ok := configurationInterface.(map[string]interface{})
+		if ok {
+			byteConfiguration, err := processors.JsonMapToByteConfiguration(configurationMap)
+			if err != nil {
+				return nil, err
+			}
+			bytesProcessor.AddBytesConfiguration(*byteConfiguration)
+		}
+	}
+	return bytesProcessor, nil
 }

@@ -23,3 +23,11 @@ func (p *XMLProcessor) GetConfigFilename() string {
 func (p *XMLProcessor) GetTopic() string {
 	panic("Missing implementation")
 }
+
+func (p *XMLProcessor) GetType() ProcessorType {
+	return XML_PROCESSOR
+}
+
+func (p *XMLProcessor) UpdateFields(map[string]interface{}) error {
+	return nil
+}

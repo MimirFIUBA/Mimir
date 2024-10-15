@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"encoding/binary"
 	"math"
+	"mimir/internal/consts"
 	"mimir/internal/mimir/models"
+	"strings"
 	"time"
 )
 
@@ -87,9 +89,17 @@ func (p *BytesProcessor) ProcessMessage(topic string, payload []byte) error {
 }
 
 func (p *BytesProcessor) GetConfigFilename() string {
-	return p.Name + ".json"
+	return strings.ReplaceAll(p.Topic, "/", "_") + consts.PROCESSORS_FILE_SUFFIX
 }
 
 func (p *BytesProcessor) GetTopic() string {
 	return p.Topic
+}
+
+func (p *BytesProcessor) GetType() ProcessorType {
+	return BYTES_PROCESSOR
+}
+
+func (p *BytesProcessor) UpdateFields(map[string]interface{}) error {
+	return nil
 }

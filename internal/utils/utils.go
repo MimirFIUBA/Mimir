@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"encoding/json"
+	"io"
 	"io/fs"
 	"log"
 	"os"
@@ -38,4 +40,18 @@ func ListFilesWithSuffix(dir, suffix string) []string {
 		files = append(files, path.Join(dir, v))
 	}
 	return files
+}
+
+func DecodeJsonToMap(reader io.Reader, result any) error {
+	decoder := json.NewDecoder(reader)
+	for {
+		err := decoder.Decode(result)
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }

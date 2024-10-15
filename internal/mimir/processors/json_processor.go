@@ -2,6 +2,7 @@ package processors
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"mimir/internal/consts"
 	"mimir/internal/mimir/models"
@@ -85,9 +86,27 @@ func (p *JSONProcessor) ProcessMessage(topic string, payload []byte) error {
 }
 
 func (p *JSONProcessor) GetConfigFilename() string {
-	return strings.ReplaceAll(p.Name, " ", "_") + consts.PROCESSORS_FILE_SUFFIX
+	return strings.ReplaceAll(p.Topic, "/", "_") + consts.PROCESSORS_FILE_SUFFIX
 }
 
 func (p *JSONProcessor) GetTopic() string {
 	return p.Topic
+}
+
+func (p *JSONProcessor) GetType() ProcessorType {
+	return JSON_PROCESSOR
+}
+
+func (p *JSONProcessor) UpdateFields(fieldsToUpdate map[string]interface{}) error {
+	for k, v := range fieldsToUpdate {
+		switch k {
+		case "name":
+			name, ok := v.(string)
+			if !ok {
+				return fmt.Errorf("name is not a string")
+			}
+			p.Name = name
+		}
+	}
+	return nil
 }

@@ -4,11 +4,21 @@ import (
 	"mimir/internal/mimir/models"
 )
 
+type ProcessorType int
+
+const (
+	JSON_PROCESSOR ProcessorType = iota
+	BYTES_PROCESSOR
+	XML_PROCESSOR
+)
+
 type MessageProcessor interface {
 	ProcessMessage(topic string, payload []byte) error
 	SetReadingsChannel(readingsChannel chan models.SensorReading)
 	GetConfigFilename() string
 	GetTopic() string
+	GetType() ProcessorType
+	UpdateFields(map[string]interface{}) error
 }
 
 type ProcessorRegistry struct {
