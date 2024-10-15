@@ -2,6 +2,7 @@ package processors
 
 import (
 	"encoding/binary"
+	"fmt"
 )
 
 func JsonToProcessor(jsonMap map[string]interface{}) (MessageProcessor, error) {
@@ -18,7 +19,7 @@ func JsonToProcessor(jsonMap map[string]interface{}) (MessageProcessor, error) {
 	case "xml":
 		return jsonToXMLProcessor()
 	default:
-		return nil, nil
+		return nil, fmt.Errorf("type must be json, bytes or xml")
 	}
 }
 
@@ -147,6 +148,19 @@ func (p *JSONProcessor) setTopic(jsonMap map[string]interface{}) error {
 	return nil
 }
 
+func (p *JSONProcessor) setType(jsonMap map[string]interface{}) error {
+	typeInterface, exists := jsonMap["type"]
+	if !exists {
+		return RequiredFieldError{"type"}
+	}
+	typeValue, ok := typeInterface.(string)
+	if !ok {
+		return WrongFormatError{"type"}
+	}
+	p.Type = typeValue
+	return nil
+}
+
 func jsonToJsonProcessor(jsonMap map[string]interface{}) (MessageProcessor, error) {
 	processor := NewJSONProcessor()
 
@@ -156,6 +170,11 @@ func jsonToJsonProcessor(jsonMap map[string]interface{}) (MessageProcessor, erro
 	}
 
 	err = processor.setTopic(jsonMap)
+	if err != nil {
+		return nil, err
+	}
+
+	err = processor.setType(jsonMap)
 	if err != nil {
 		return nil, err
 	}

@@ -1,6 +1,6 @@
 {
-    "name": "test write 5",
-    "topic": "mimir/testWrite3",
+    "name": "test update 1",
+    "topic": "mimir/testWrite5",
     "type": "json",
     "configurations": [
         {

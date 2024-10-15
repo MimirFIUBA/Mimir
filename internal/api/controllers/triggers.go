@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"encoding/json"
+	"mimir/internal/db"
 	"net/http"
 )
 
@@ -15,29 +16,11 @@ type TriggerResponse struct {
 }
 
 func GetTriggers(w http.ResponseWriter, _ *http.Request) {
-	// triggersBySensorId := mimir.Data.GetTriggersBySensorId()
-	// fmt.Printf("Triggers: %v \n", triggersBySensorId)
-	var triggerResponseList []TriggerResponse
 
-	// for sensorId, triggerList := range triggersBySensorId {
-	// 	for _, trigger := range triggerList {
-	// 		var triggerResponse TriggerResponse
-	// 		switch trigger := trigger.(type) {
-	// 		case *triggers.Trigger:
-	// 			triggerResponse = TriggerResponse{"0", trigger.Name, sensorId, "trigger"}
-	// 		case *triggers.TimeTrigger:
-	// 			triggerResponse = TriggerResponse{"0", trigger.Name, sensorId, "time trigger"}
-	// 		default:
-	// 			panic("Bad Trigger!")
-	// 		}
-	// 		triggerResponseList = append(triggerResponseList, triggerResponse)
-	// 	}
-	// }
-
-	// fmt.Printf("triggers response: %v \n", triggerResponseList)
+	triggers := db.GetTriggers()
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(triggerResponseList)
+	json.NewEncoder(w).Encode(triggers)
 }
 
 func GetTrigger(w http.ResponseWriter, r *http.Request) {

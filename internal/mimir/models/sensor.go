@@ -79,3 +79,7 @@ func (s *Sensor) notifyAll() {
 // 	}
 // 	return observerList
 // }
+
+func (s *Sensor) GetTriggers() []triggers.TriggerObserver {
+	return s.triggerList
+}

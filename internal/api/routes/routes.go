@@ -13,6 +13,7 @@ func CreateRouter() *mux.Router {
 	AddNodesRoutes(router)
 	AddGroupRoutes(router)
 	AddProcessorsRoutes(router)
+	AddTriggersRoutes(router)
 	AddWebSocketRoutes(router)
 
 	go controllers.HandleWebSocketMessages() //TODO (#26)

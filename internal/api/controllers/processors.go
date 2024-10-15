@@ -96,6 +96,10 @@ func CreateProcessor(w http.ResponseWriter, r *http.Request) {
 func UpdateProcessor(w http.ResponseWriter, r *http.Request) {
 	logger := middlewares.ContextWithLogger(r.Context())
 
+	vars := mux.Vars(r)
+	id := vars["id"]
+	topic := strings.ReplaceAll(id, ".", "/")
+
 	var requestBody map[string]interface{}
 	err := utils.DecodeJsonToMap(r.Body, &requestBody)
 	if err != nil {
@@ -103,19 +107,19 @@ func UpdateProcessor(w http.ResponseWriter, r *http.Request) {
 		responses.SendErrorResponse(w, http.StatusBadRequest, responses.ProcessorErrorCodes.InvalidSchema)
 	}
 
-	topicInterface, exists := requestBody["topic"]
-	if !exists {
-		logger.Error("Error updating processor", "body", r.Body, "error", "missing topic attribute")
-		responses.SendErrorResponse(w, http.StatusBadRequest, responses.ProcessorErrorCodes.InvalidSchema)
-		return
-	}
+	// topicInterface, exists := requestBody["topic"]
+	// if !exists {
+	// 	logger.Error("Error updating processor", "body", r.Body, "error", "missing topic attribute")
+	// 	responses.SendErrorResponse(w, http.StatusBadRequest, responses.ProcessorErrorCodes.InvalidSchema)
+	// 	return
+	// }
 
-	topic, ok := topicInterface.(string)
-	if !ok {
-		logger.Error("Error updating processor", "body", r.Body, "error", "topic attribute is not a string")
-		responses.SendErrorResponse(w, http.StatusNotFound, responses.ProcessorErrorCodes.InvalidSchema)
-		return
-	}
+	// topic, ok := topicInterface.(string)
+	// if !ok {
+	// 	logger.Error("Error updating processor", "body", r.Body, "error", "topic attribute is not a string")
+	// 	responses.SendErrorResponse(w, http.StatusNotFound, responses.ProcessorErrorCodes.InvalidSchema)
+	// 	return
+	// }
 
 	existingProcessor, exists := mimir.MessageProcessors.GetProcessor(topic)
 	if !exists {
