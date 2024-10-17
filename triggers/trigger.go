@@ -1,8 +1,6 @@
 package triggers
 
 import (
-	"fmt"
-
 	"github.com/google/uuid"
 )
 
@@ -10,17 +8,16 @@ type Trigger struct {
 	ID        string    `json:"id"`
 	Name      string    `json:"name"`
 	Condition Condition `json:"condition"`
+	IsActive  bool      `json:"active"`
 	Actions   []Action  `json:"actions"`
 }
 
 func NewTrigger(name string) *Trigger {
 	defaultCondition := TrueCondition{}
-	return &Trigger{uuid.New().String(), name, &defaultCondition, nil}
+	return &Trigger{ID: uuid.New().String(), Name: name, Condition: &defaultCondition}
 }
 
 func (t *Trigger) Update(event Event) {
-	fmt.Println("Update")
-	fmt.Println("t.Condition.Evaluate(event) ", t.Condition.Evaluate(event))
 	if t.Condition.Evaluate(event) {
 		for _, action := range t.Actions {
 			action.Execute(event)

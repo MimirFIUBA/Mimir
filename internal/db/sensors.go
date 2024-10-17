@@ -5,14 +5,13 @@ import (
 	"fmt"
 	"log"
 	"mimir/internal/mimir/models"
-	mimir "mimir/internal/mimir/models"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type SensorsManager struct {
-	sensors   []mimir.Sensor
+	sensors   []models.Sensor
 	idCounter int
 }
 
@@ -21,11 +20,11 @@ func (s *SensorsManager) GetNewId() int {
 	return s.idCounter
 }
 
-func (s *SensorsManager) GetSensors() []mimir.Sensor {
+func (s *SensorsManager) GetSensors() []models.Sensor {
 	return s.sensors
 }
 
-func (s *SensorsManager) GetSensorById(id string) (*mimir.Sensor, error) {
+func (s *SensorsManager) GetSensorById(id string) (*models.Sensor, error) {
 	for index, sensor := range s.sensors {
 		if sensor.ID == id {
 			return &s.sensors[index], nil
@@ -34,7 +33,7 @@ func (s *SensorsManager) GetSensorById(id string) (*mimir.Sensor, error) {
 	return nil, fmt.Errorf("sensor %s not found", id)
 }
 
-func (s *SensorsManager) GetSensorByTopic(topic string) (*mimir.Sensor, error) {
+func (s *SensorsManager) GetSensorByTopic(topic string) (*models.Sensor, error) {
 	//TODO: change error for bool
 	for index, sensor := range s.sensors {
 		if sensor.Topic == topic {
@@ -49,7 +48,7 @@ func (s *SensorsManager) IdExists(id string) bool {
 	return err == nil
 }
 
-func (s *SensorsManager) CreateSensor(sensor *mimir.Sensor) error {
+func (s *SensorsManager) CreateSensor(sensor *models.Sensor) error {
 	// TODO(#20) - Add Body validation
 
 	sensor, err := Database.insertTopic(sensor)
@@ -66,7 +65,7 @@ func (s *SensorsManager) CreateSensor(sensor *mimir.Sensor) error {
 	return nil
 }
 
-func (s *SensorsManager) UpdateSensor(sensor *mimir.Sensor) (*mimir.Sensor, error) {
+func (s *SensorsManager) UpdateSensor(sensor *models.Sensor) (*models.Sensor, error) {
 	oldSensor, err := s.GetSensorById(sensor.ID)
 	if err != nil {
 		return nil, err
@@ -95,9 +94,9 @@ func (s *SensorsManager) DeleteSensor(id string) error {
 	return nil
 }
 
-func buildNameFilter(sensors []*mimir.Sensor) bson.D {
+func buildNameFilter(sensors []*models.Sensor) bson.D {
 	values := bson.A{}
-	sensorsMap := make(map[string]*mimir.Sensor)
+	sensorsMap := make(map[string]*models.Sensor)
 	for _, sensor := range sensors {
 		values = append(values, bson.D{{Key: "name", Value: sensor.Name}})
 		sensorsMap[sensor.Name] = sensor
@@ -106,8 +105,8 @@ func buildNameFilter(sensors []*mimir.Sensor) bson.D {
 	return bson.D{{Key: "$or", Value: values}}
 }
 
-func (s *SensorsManager) LoadSensors(sensors []*mimir.Sensor) {
-	existingSensorsMap := make(map[string]mimir.Sensor)
+func (s *SensorsManager) LoadSensors(sensors []*models.Sensor) {
+	existingSensorsMap := make(map[string]models.Sensor)
 	if len(sensors) > 0 {
 		filter := buildNameFilter(sensors)
 		results, err := Database.findTopics(filter)

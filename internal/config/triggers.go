@@ -9,7 +9,7 @@ import (
 	"github.com/gookit/config"
 )
 
-func BuildTriggers(mimirProcessor *mimir.MimirProcessor) {
+func BuildTriggers(mimirProcessor *mimir.MimirProcessor) error {
 	configuration := config.Data()
 	triggersConfiguration, ok := configuration["triggers"].([]interface{})
 	if !ok {
@@ -19,23 +19,30 @@ func BuildTriggers(mimirProcessor *mimir.MimirProcessor) {
 	for _, triggerInterface := range triggersConfiguration {
 		triggerMap, ok := triggerInterface.(map[string]interface{})
 		if !ok {
-			panic("bad configuration")
+			return fmt.Errorf("wrong format for trigger configuration")
 		}
 
-		trigger := buildTrigger(triggerMap)
-
-		condition, exists := buildCondition(triggerMap)
-		if exists {
-			trigger.Condition = condition
-		}
-
-		actions := buildActions(triggerMap, mimirProcessor)
-		for _, action := range actions {
-			trigger.AddAction(action)
-		}
+		trigger := BuildTriggerFromMap(triggerMap, mimirProcessor)
 
 		registerTrigger(trigger, triggerMap)
 	}
+	return nil
+}
+
+func BuildTriggerFromMap(triggerMap map[string]interface{}, mimirProcessor *mimir.MimirProcessor) *triggers.Trigger {
+	trigger := buildTrigger(triggerMap)
+
+	condition, exists := buildCondition(triggerMap)
+	if exists {
+		trigger.Condition = condition
+	}
+
+	actions := buildActions(triggerMap, mimirProcessor)
+	for _, action := range actions {
+		trigger.AddAction(action)
+	}
+
+	return trigger
 }
 
 func registerTrigger(trigger *triggers.Trigger, triggerMap map[string]interface{}) {
@@ -76,8 +83,7 @@ func buildCondition(triggerMap map[string]interface{}) (triggers.Condition, bool
 }
 
 func buildConditionFromMap(_ map[string]interface{}) triggers.Condition {
-	//TODO: implement
-	return &triggers.TrueCondition{}
+	panic("missing implementation")
 }
 
 func buildConditionFromString(conditionString string) triggers.Condition {

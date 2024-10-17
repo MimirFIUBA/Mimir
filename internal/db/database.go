@@ -33,10 +33,11 @@ var (
 )
 
 const (
-	MONGO_DB_MIMIR    = "Mimir"
-	GROUPS_COLLECTION = "groups"
-	NODES_COLLECTION  = "nodes"
-	TOPICS_COLLECTION = "topics"
+	MONGO_DB_MIMIR      = "Mimir"
+	GROUPS_COLLECTION   = "groups"
+	NODES_COLLECTION    = "nodes"
+	TOPICS_COLLECTION   = "topics"
+	TRIGGERS_COLLECTION = "triggers"
 )
 
 type DatabaseManager struct {

@@ -2,17 +2,22 @@ package controllers
 
 import (
 	"encoding/json"
+	"mimir/internal/api/middlewares"
+	"mimir/internal/api/responses"
+	"mimir/internal/config"
 	"mimir/internal/db"
+	"mimir/internal/utils"
+	"mimir/triggers"
 	"net/http"
 )
 
 type TriggerResponse struct {
-	ID          string `json:"id"`
-	Name        string `json:"name"`
-	SensorID    string `json:"sensorId"`
-	TriggerType string `json:"type"`
-	// Condition   triggers.Condition `json:"condition"`
-	// Actions     []triggers.Action  `json:"actions"`
+	ID          string            `json:"id"`
+	Name        string            `json:"name"`
+	SensorID    string            `json:"sensorId"`
+	TriggerType string            `json:"type"`
+	Condition   string            `json:"condition"`
+	Actions     []triggers.Action `json:"actions"`
 }
 
 func GetTriggers(w http.ResponseWriter, _ *http.Request) {
@@ -33,18 +38,17 @@ func GetTrigger(w http.ResponseWriter, r *http.Request) {
 }
 
 func CreateTrigger(w http.ResponseWriter, r *http.Request) {
+	logger := middlewares.ContextWithLogger(r.Context())
 
-	// var sensor *mimir.Sensor
-	// err := json.NewDecoder(r.Body).Decode(&sensor)
-	// if err != nil {
-	// 	http.Error(w, err.Error(), http.StatusBadRequest)
-	// 	return
-	// }
-
-	// sensor = mimir.Data.AddSensor(sensor)
-
+	var requestBody map[string]interface{}
+	err := utils.DecodeJsonToMap(r.Body, &requestBody)
+	if err != nil {
+		logger.Error("Error updating processor", "body", r.Body, "error", err)
+		responses.SendErrorResponse(w, http.StatusBadRequest, responses.ProcessorErrorCodes.InvalidSchema)
+	}
+	trigger := config.BuildTriggerFromMap(requestBody, nil)
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode("sensor")
+	json.NewEncoder(w).Encode(trigger)
 }
 
 func UpdateTrigger(w http.ResponseWriter, r *http.Request) {

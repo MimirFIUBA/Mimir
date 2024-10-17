@@ -4,7 +4,7 @@
             "name": "trigger1",
             "condition": "",
             "topics": [
-                "mimir/test"
+                "mimir/testWrite3"
             ],
             "actions": [
                 {
@@ -29,7 +29,7 @@
                 {
                     "type": "alert",
                     "name": "water too hot alert",
-                    "message": "on"
+                    "message": "{waterTempAlert: on}"
                 }
             ]
         },
@@ -37,5 +37,4 @@
             "name": "trigger3"
         }
     ]
-
 }

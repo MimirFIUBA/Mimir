@@ -4,13 +4,12 @@ import (
 	"context"
 	"fmt"
 	"mimir/internal/mimir/models"
-	mimir "mimir/internal/mimir/models"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type GroupsManager struct {
-	groups    []mimir.Group
+	groups    []models.Group
 	idCounter int
 }
 
@@ -19,11 +18,11 @@ func (g *GroupsManager) GetNewId() int {
 	return g.idCounter
 }
 
-func (g *GroupsManager) GetGroups() []mimir.Group {
+func (g *GroupsManager) GetGroups() []models.Group {
 	return g.groups
 }
 
-func (g *GroupsManager) GetGroupById(id string) (*mimir.Group, error) {
+func (g *GroupsManager) GetGroupById(id string) (*models.Group, error) {
 	for index, group := range g.groups {
 		if group.GetId() == id {
 			return &g.groups[index], nil
@@ -38,7 +37,7 @@ func (g *GroupsManager) IdExists(id string) bool {
 	return err == nil
 }
 
-func (g *GroupsManager) CreateGroup(group *mimir.Group) error {
+func (g *GroupsManager) CreateGroup(group *models.Group) error {
 	group, err := Database.insertGroup(group)
 	if err != nil {
 		return err
@@ -49,13 +48,13 @@ func (g *GroupsManager) CreateGroup(group *mimir.Group) error {
 	return nil
 }
 
-func (g *GroupsManager) AddGroup(group *mimir.Group) error {
+func (g *GroupsManager) AddGroup(group *models.Group) error {
 	g.groups = append(g.groups, *group)
 
 	return nil
 }
 
-func (g *GroupsManager) UpdateGroup(group *mimir.Group) (*mimir.Group, error) {
+func (g *GroupsManager) UpdateGroup(group *models.Group) (*models.Group, error) {
 	oldGroup, err := g.GetGroupById(group.GetId())
 	if err != nil {
 		return nil, err
@@ -83,7 +82,7 @@ func (g *GroupsManager) DeleteGroup(id string) error {
 	return nil
 }
 
-func (g *GroupsManager) AddNodeToGroupById(id string, node *mimir.Node) error {
+func (g *GroupsManager) AddNodeToGroupById(id string, node *models.Node) error {
 	oldGroup, err := g.GetGroupById(id)
 	if err != nil {
 		return nil
