@@ -2,6 +2,7 @@ package models
 
 import (
 	"mimir/triggers"
+	"slices"
 	"time"
 )
 
@@ -48,13 +49,17 @@ func (s *Sensor) GetId() string {
 	return s.ID
 }
 
-func (s *Sensor) Register(observer triggers.TriggerObserver) {
-	s.triggerList = append(s.triggerList, observer)
+func (s *Sensor) Register(trigger triggers.TriggerObserver) {
+	s.triggerList = append(s.triggerList, trigger)
 }
 
-// func (s *Sensor) deregister(observer trigger.Observer) {
-// 	s.observerList = removeFromslice(s.observerList, observer)
-// }
+func (s *Sensor) Deregister(trigger triggers.TriggerObserver) {
+	idToRemove := trigger.GetID()
+
+	s.triggerList = slices.DeleteFunc(s.triggerList, func(trigger triggers.TriggerObserver) bool {
+		return trigger.GetID() == idToRemove
+	})
+}
 
 func (s *Sensor) notifyAll() {
 	for _, observer := range s.triggerList {
@@ -68,17 +73,6 @@ func (s *Sensor) notifyAll() {
 		observer.Update(event) //TODO: need to send the last value
 	}
 }
-
-// func removeFromslice(observerList []trigger.Observer, observerToRemove trigger.Observer) []trigger.Observer {
-// 	observerListLength := len(observerList)
-// 	for i, observer := range observerList {
-// 		if observerToRemove.GetID() == observer.GetID() {
-// 			observerList[observerListLength-1], observerList[i] = observerList[i], observerList[observerListLength-1]
-// 			return observerList[:observerListLength-1]
-// 		}
-// 	}
-// 	return observerList
-// }
 
 func (s *Sensor) GetTriggers() []triggers.TriggerObserver {
 	return s.triggerList

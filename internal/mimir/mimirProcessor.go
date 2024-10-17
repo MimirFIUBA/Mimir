@@ -32,7 +32,6 @@ func NewMimirProcessor() *MimirProcessor {
 func (p *MimirProcessor) Run() {
 	for {
 		reading := <-p.ReadingChannel
-		fmt.Println("Reading From channnel in mp ", reading)
 
 		go func() {
 			processReading(reading)
@@ -43,6 +42,12 @@ func (p *MimirProcessor) Run() {
 
 func CloseConnection() {
 	Manager.CloseConnection()
+	setTopicsInactive()
+}
+
+func setTopicsInactive() {
+	db.SensorsData.SetSensorsToInactive()
+	db.Database.DeactivateTopics(db.SensorsData.GetSensors())
 }
 
 func processReading(reading mimir.SensorReading) {

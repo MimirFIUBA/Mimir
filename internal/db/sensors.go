@@ -75,6 +75,12 @@ func (s *SensorsManager) UpdateSensor(sensor *models.Sensor) (*models.Sensor, er
 	return sensor, nil
 }
 
+func (s *SensorsManager) SetSensorsToInactive() {
+	for i, _ := range s.sensors {
+		s.sensors[i].IsActive = false
+	}
+}
+
 func (s *SensorsManager) DeleteSensor(id string) error {
 	sensorIndex := -1
 	for i := range s.sensors {
@@ -94,9 +100,9 @@ func (s *SensorsManager) DeleteSensor(id string) error {
 	return nil
 }
 
-func buildNameFilter(sensors []*models.Sensor) bson.D {
+func buildNameFilter(sensors []models.Sensor) bson.D {
 	values := bson.A{}
-	sensorsMap := make(map[string]*models.Sensor)
+	sensorsMap := make(map[string]models.Sensor)
 	for _, sensor := range sensors {
 		values = append(values, bson.D{{Key: "name", Value: sensor.Name}})
 		sensorsMap[sensor.Name] = sensor
@@ -105,7 +111,7 @@ func buildNameFilter(sensors []*models.Sensor) bson.D {
 	return bson.D{{Key: "$or", Value: values}}
 }
 
-func (s *SensorsManager) LoadSensors(sensors []*models.Sensor) {
+func (s *SensorsManager) LoadSensors(sensors []models.Sensor) {
 	existingSensorsMap := make(map[string]models.Sensor)
 	if len(sensors) > 0 {
 		filter := buildNameFilter(sensors)
@@ -122,7 +128,7 @@ func (s *SensorsManager) LoadSensors(sensors []*models.Sensor) {
 
 	var sensorsToInsert []interface{}
 	for _, sensor := range sensors {
-		s.sensors = append(s.sensors, *sensor)
+		s.sensors = append(s.sensors, sensor)
 		_, exists := existingSensorsMap[sensor.Name]
 		if !exists {
 			sensorsToInsert = append(sensorsToInsert, sensor)
@@ -159,6 +165,19 @@ func (d *DatabaseManager) insertTopics(topics []interface{}) {
 	if mongoClient != nil {
 		topicsCollection := mongoClient.Database(MONGO_DB_MIMIR).Collection(TOPICS_COLLECTION)
 		_, err := topicsCollection.InsertMany(context.TODO(), topics)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+}
+
+func (d *DatabaseManager) DeactivateTopics(sensors []models.Sensor) {
+	filter := buildNameFilter(sensors)
+	update := bson.D{{Key: "$set", Value: bson.D{{Key: "is_active", Value: false}}}}
+	mongoClient := d.getMongoClient()
+	if mongoClient != nil {
+		topicsCollection := mongoClient.Database(MONGO_DB_MIMIR).Collection(TOPICS_COLLECTION)
+		_, err := topicsCollection.UpdateMany(context.TODO(), filter, update)
 		if err != nil {
 			log.Fatal(err)
 		}
