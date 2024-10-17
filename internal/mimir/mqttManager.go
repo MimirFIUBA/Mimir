@@ -18,13 +18,13 @@ var (
 
 type MQTTManager struct {
 	MQTTClient      mqtt.Client
-	Topics          map[string]Topic
+	Topics          map[string]bool
 	ReadingsChannel chan models.SensorReading
 	newTopicChannel chan string
 }
 
 func NewMQTTManager(mqttClient mqtt.Client, readingsChannel chan models.SensorReading, newTopicChannel chan string) *MQTTManager {
-	return &MQTTManager{mqttClient, make(map[string]Topic), readingsChannel, newTopicChannel}
+	return &MQTTManager{mqttClient, make(map[string]bool), readingsChannel, newTopicChannel}
 }
 
 func onMessageReceived(client mqtt.Client, message mqtt.Message) {
@@ -49,27 +49,6 @@ func StartMqttClient() mqtt.Client {
 	return mqtt.NewClient(opts)
 }
 
-func (p *MimirProcessor) StartGateway() {
-
-	client := StartMqttClient()
-
-	Manager = *NewMQTTManager(client, p.ReadingChannel, p.TopicChannel)
-	MessageProcessors = processors.NewProcessorRegistry()
-
-	if token := client.Connect(); token.Wait() && token.Error() != nil {
-		panic(fmt.Sprintf("Error connecting to MQTT broker: %s", token.Error()))
-	}
-
-	go func() {
-		for {
-			newTopicName := <-p.TopicChannel
-			Manager.AddTopic(newTopicName)
-		}
-	}()
-
-	go p.publishOutgoingMessages()
-}
-
 func (m *MQTTManager) CloseConnection() {
 
 	topics := m.GetSubscribedTopics()
@@ -79,13 +58,22 @@ func (m *MQTTManager) CloseConnection() {
 	m.MQTTClient.Disconnect(250)
 }
 
-func (p *MimirProcessor) publishOutgoingMessages() {
-	for {
-		outgoingMessage := <-p.OutgoingMessagesChannel
-		topic := "mimir/alert"
-		token := Manager.MQTTClient.Publish(topic, 0, false, outgoingMessage)
-		token.Wait()
-
-		fmt.Printf("Published topic %s: %s\n", topic, outgoingMessage)
+func (m *MQTTManager) AddTopic(topic string) {
+	isSubscribed, ok := m.Topics[topic]
+	if !ok || !isSubscribed {
+		if token := m.MQTTClient.Subscribe(topic, 0, onMessageReceived); token.Wait() && token.Error() != nil {
+			panic(fmt.Sprintf("Error subscribing to topic: %s", token.Error()))
+		}
+		m.Topics[topic] = true
 	}
+}
+
+func (m *MQTTManager) GetSubscribedTopics() []string {
+	var topics []string
+	for topic, isSubscribed := range m.Topics {
+		if isSubscribed {
+			topics = append(topics, topic)
+		}
+	}
+	return topics
 }

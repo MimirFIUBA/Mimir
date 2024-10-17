@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"mimir/internal/db"
 	mimir "mimir/internal/mimir/models"
+	"mimir/internal/mimir/processors"
 	"mimir/triggers"
 )
 
@@ -65,4 +66,36 @@ func (p *MimirProcessor) NewSendWebSocketMessageAction(message string) triggers.
 func (p *MimirProcessor) RegisterSensor(sensor *mimir.Sensor) {
 	sensor.IsActive = true
 	p.TopicChannel <- sensor.Topic
+}
+
+func (p *MimirProcessor) publishOutgoingMessages() {
+	for {
+		outgoingMessage := <-p.OutgoingMessagesChannel
+		topic := "mimir/alert"
+		token := Manager.MQTTClient.Publish(topic, 0, false, outgoingMessage)
+		token.Wait()
+
+		fmt.Printf("Published topic %s: %s\n", topic, outgoingMessage)
+	}
+}
+
+func (p *MimirProcessor) StartGateway() {
+
+	client := StartMqttClient()
+
+	Manager = *NewMQTTManager(client, p.ReadingChannel, p.TopicChannel)
+	MessageProcessors = processors.NewProcessorRegistry()
+
+	if token := client.Connect(); token.Wait() && token.Error() != nil {
+		panic(fmt.Sprintf("Error connecting to MQTT broker: %s", token.Error()))
+	}
+
+	go func() {
+		for {
+			newTopicName := <-p.TopicChannel
+			Manager.AddTopic(newTopicName)
+		}
+	}()
+
+	go p.publishOutgoingMessages()
 }

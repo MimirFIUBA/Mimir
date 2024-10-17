@@ -6,7 +6,7 @@ import (
 )
 
 type Sensor struct {
-	ID          string          `json:"id" bson:"mimir_id"`
+	ID          string          `json:"id,omitempty" bson:"_id,omitempty"`
 	Name        string          `json:"name" bson:"name"`
 	DataName    string          `json:"dataName" bson:"data_name"`
 	Topic       string          `json:"topic" bson:"topic"`
