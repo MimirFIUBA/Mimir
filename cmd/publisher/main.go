@@ -81,7 +81,7 @@ func main() {
 
 	c := make(chan int)
 
-	generator := mqttGenerator{"mimir/test", client, c}
+	generator := mqttGenerator{"mimir/testWrite3", client, c}
 	go generator.generateFloatData(20, "1", 2)
 
 	// message := fmt.Sprintf(`{"id": "%s", "data": %.2f, "time": "%s"}`, "0", 15.0, time.Now())

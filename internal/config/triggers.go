@@ -1,27 +1,30 @@
 package config
 
 import (
+	"encoding/json"
 	"fmt"
+	"log"
+	"mimir/internal/consts"
 	"mimir/internal/db"
 	"mimir/internal/mimir"
+	"mimir/internal/utils"
 	"mimir/triggers"
+	"os"
 
-	"github.com/gookit/config"
+	"github.com/gookit/ini/v2"
 )
 
 func BuildTriggers(mimirProcessor *mimir.MimirProcessor) error {
-	configuration := config.Data()
-	triggersConfiguration, ok := configuration["triggers"].([]interface{})
-	if !ok {
-		panic("Wrong processors format, no triggers")
-	}
-
-	for _, triggerInterface := range triggersConfiguration {
-		triggerMap, ok := triggerInterface.(map[string]interface{})
-		if !ok {
-			return fmt.Errorf("wrong format for trigger configuration")
+	dir := ini.String(consts.TRIGGERS_DIR_CONFIG_NAME)
+	files := utils.ListFilesWithSuffix(dir, "*"+consts.TRIGGERS_FILE_SUFFIX)
+	for _, v := range files {
+		byteValue, err := os.ReadFile(v)
+		if err != nil {
+			log.Fatal(err)
+			return fmt.Errorf("error reading trigger file %s", v)
 		}
-
+		var triggerMap map[string]interface{}
+		json.Unmarshal(byteValue, &triggerMap)
 		trigger := BuildTriggerFromMap(triggerMap, mimirProcessor)
 
 		registerTrigger(trigger, triggerMap)

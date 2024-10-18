@@ -1,0 +1,14 @@
+{
+    "name": "trigger1",
+    "condition": "",
+    "topics": [
+        "mimir/testWrite3"
+    ],
+    "actions": [
+        {
+            "type": "print",
+            "name": "print test",
+            "message": "test action"
+        }
+    ]
+}
