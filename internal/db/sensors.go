@@ -26,7 +26,7 @@ func (s *SensorsManager) GetSensors() []models.Sensor {
 
 func (s *SensorsManager) GetSensorById(id string) (*models.Sensor, error) {
 	for index, sensor := range s.sensors {
-		if sensor.ID == id {
+		if sensor.GetId() == id {
 			return &s.sensors[index], nil
 		}
 	}
@@ -65,8 +65,8 @@ func (s *SensorsManager) CreateSensor(sensor *models.Sensor) error {
 	return nil
 }
 
-func (s *SensorsManager) UpdateSensor(sensor *models.Sensor) (*models.Sensor, error) {
-	oldSensor, err := s.GetSensorById(sensor.ID)
+func (s *SensorsManager) UpdateSensor(sensor *models.Sensor, id string) (*models.Sensor, error) {
+	oldSensor, err := s.GetSensorById(id)
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +76,7 @@ func (s *SensorsManager) UpdateSensor(sensor *models.Sensor) (*models.Sensor, er
 }
 
 func (s *SensorsManager) SetSensorsToInactive() {
-	for i, _ := range s.sensors {
+	for i := range s.sensors {
 		s.sensors[i].IsActive = false
 	}
 }
@@ -85,7 +85,7 @@ func (s *SensorsManager) DeleteSensor(id string) error {
 	sensorIndex := -1
 	for i := range s.sensors {
 		sensor := &s.sensors[i]
-		if sensor.ID == id {
+		if sensor.GetId() == id {
 			sensorIndex = i
 			break
 		}
@@ -100,21 +100,28 @@ func (s *SensorsManager) DeleteSensor(id string) error {
 	return nil
 }
 
-func buildNameFilter(sensors []models.Sensor) bson.D {
+func buildTopicFilter(sensors []models.Sensor) bson.D {
 	values := bson.A{}
-	sensorsMap := make(map[string]models.Sensor)
 	for _, sensor := range sensors {
-		values = append(values, bson.D{{Key: "name", Value: sensor.Name}})
-		sensorsMap[sensor.Name] = sensor
+		values = append(values, sensor.Topic)
 	}
 
-	return bson.D{{Key: "$or", Value: values}}
+	return bson.D{{Key: "topic", Value: bson.D{{Key: "$in", Value: values}}}}
 }
 
+// func buildIdFilter(sensors []models.Sensor) bson.D {
+// 	values := bson.A{}
+// 	for _, sensor := range sensors {
+// 		values = append(values, bson.D{{Key: "_id", Value: sensor.ID}})
+// 	}
+
+// 	return bson.D{{Key: "$or", Value: values}}
+// }
+
 func (s *SensorsManager) LoadSensors(sensors []models.Sensor) {
-	existingSensorsMap := make(map[string]models.Sensor)
+	existingSensorsMap := make(map[string]*models.Sensor)
 	if len(sensors) > 0 {
-		filter := buildNameFilter(sensors)
+		filter := buildTopicFilter(sensors)
 		results, err := Database.findTopics(filter)
 		if err != nil {
 			log.Fatal(err)
@@ -122,14 +129,14 @@ func (s *SensorsManager) LoadSensors(sensors []models.Sensor) {
 		}
 
 		for _, result := range results {
-			existingSensorsMap[result.Name] = result
+			existingSensorsMap[result.Topic] = &result
 		}
 	}
 
 	var sensorsToInsert []interface{}
 	for _, sensor := range sensors {
 		s.sensors = append(s.sensors, sensor)
-		_, exists := existingSensorsMap[sensor.Name]
+		_, exists := existingSensorsMap[sensor.Topic]
 		if !exists {
 			sensorsToInsert = append(sensorsToInsert, sensor)
 		}
@@ -154,7 +161,7 @@ func (d *DatabaseManager) insertTopic(topic *models.Sensor) (*models.Sensor, err
 		if !ok {
 			return nil, fmt.Errorf("error converting id for group")
 		}
-		topic.ID = topicId.String() //TODO: see if we need to change to primitive.ObjectId
+		topic.ID = topicId
 	}
 
 	return topic, nil
@@ -172,7 +179,7 @@ func (d *DatabaseManager) insertTopics(topics []interface{}) {
 }
 
 func (d *DatabaseManager) DeactivateTopics(sensors []models.Sensor) {
-	filter := buildNameFilter(sensors)
+	filter := buildTopicFilter(sensors)
 	update := bson.D{{Key: "$set", Value: bson.D{{Key: "is_active", Value: false}}}}
 	mongoClient := d.getMongoClient()
 	if mongoClient != nil {
@@ -196,7 +203,6 @@ func (d *DatabaseManager) findTopics(filter primitive.D) ([]models.Sensor, error
 			defer cursor.Close(context.TODO())
 		}
 
-		var results []models.Sensor
 		if err = cursor.All(context.TODO(), &results); err != nil {
 			return nil, err
 		}

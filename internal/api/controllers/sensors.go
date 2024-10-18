@@ -92,9 +92,8 @@ func UpdateSensor(w http.ResponseWriter, r *http.Request) {
 		responses.SendErrorResponse(w, http.StatusBadRequest, responses.SensorErrorCodes.InvalidSchema)
 		return
 	}
-	sensor.ID = id
 
-	sensor, err = db.SensorsData.UpdateSensor(sensor)
+	sensor, err = db.SensorsData.UpdateSensor(sensor, id)
 	if err != nil {
 		logger.Error("Error updating sensor", "sensor_ud", id, "error", err.Error())
 		return

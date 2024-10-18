@@ -4,17 +4,19 @@ import (
 	"mimir/triggers"
 	"slices"
 	"time"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type Sensor struct {
-	ID          string          `json:"id,omitempty" bson:"_id,omitempty"`
-	Name        string          `json:"name" bson:"name"`
-	DataName    string          `json:"dataName" bson:"data_name"`
-	Topic       string          `json:"topic" bson:"topic"`
-	NodeID      string          `json:"nodeId" bson:"node_id"`
-	Description string          `json:"description" bson:"description"`
-	IsActive    bool            `json:"isActive" bson:"is_active"`
-	Data        []SensorReading `json:"data" bson:"data, omitempty"`
+	ID          primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
+	Name        string             `json:"name" bson:"name"`
+	DataName    string             `json:"dataName" bson:"data_name"`
+	Topic       string             `json:"topic" bson:"topic"`
+	NodeID      string             `json:"nodeId" bson:"node_id"`
+	Description string             `json:"description" bson:"description"`
+	IsActive    bool               `json:"isActive" bson:"is_active"`
+	Data        []SensorReading    `json:"data" bson:"data, omitempty"`
 	triggerList []triggers.TriggerObserver
 }
 
@@ -46,7 +48,7 @@ func (s *Sensor) Update(newData *Sensor) {
 }
 
 func (s *Sensor) GetId() string {
-	return s.ID
+	return s.ID.String()
 }
 
 func (s *Sensor) Register(trigger triggers.TriggerObserver) {
