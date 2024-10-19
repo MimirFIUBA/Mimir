@@ -109,15 +109,6 @@ func buildTopicFilter(sensors []models.Sensor) bson.D {
 	return bson.D{{Key: "topic", Value: bson.D{{Key: "$in", Value: values}}}}
 }
 
-// func buildIdFilter(sensors []models.Sensor) bson.D {
-// 	values := bson.A{}
-// 	for _, sensor := range sensors {
-// 		values = append(values, bson.D{{Key: "_id", Value: sensor.ID}})
-// 	}
-
-// 	return bson.D{{Key: "$or", Value: values}}
-// }
-
 func (s *SensorsManager) LoadSensors(sensors []models.Sensor) {
 	existingSensorsMap := make(map[string]*models.Sensor)
 	if len(sensors) > 0 {

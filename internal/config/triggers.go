@@ -18,22 +18,32 @@ import (
 func BuildTriggers(mimirProcessor *mimir.MimirProcessor) error {
 	dir := ini.String(consts.TRIGGERS_DIR_CONFIG_NAME)
 	files := utils.ListFilesWithSuffix(dir, "*"+consts.TRIGGERS_FILE_SUFFIX)
-	for _, filename := range files {
-		byteValue, err := os.ReadFile(filename)
-		if err != nil {
-			log.Fatal(err)
-			return fmt.Errorf("error reading trigger file %s", filename)
+
+	if len(files) > 0 {
+		triggersToUpsert := make([]db.Trigger, 0)
+
+		for _, filename := range files {
+			byteValue, err := os.ReadFile(filename)
+			if err != nil {
+				log.Fatal(err)
+				return fmt.Errorf("error reading trigger file %s", filename)
+			}
+			var triggerData db.Trigger
+			json.Unmarshal(byteValue, &triggerData)
+			triggerData.Filename = filename
+			triggersToUpsert = append(triggersToUpsert, triggerData)
+
+			db.RegisterTrigger(&triggerData)
 		}
-		var triggerData db.Trigger
-		json.Unmarshal(byteValue, &triggerData)
-		triggerData.Filename = filename
-		newTrigger, err := db.Database.InsertTrigger(&triggerData)
+
+		_, err := db.Database.UpsertTriggers(triggersToUpsert)
 		if err != nil {
-			slog.Error("Error creating trigger", "body", byteValue, "error", err) //TODO byte value to string
+			slog.Error("error upserting triggers", "error", err)
 			return err
 		}
-		db.RegisterTrigger(newTrigger)
+
 	}
+
 	return nil
 }
 
@@ -51,35 +61,13 @@ func BuildTriggerFromMap(triggerMap map[string]interface{}, mimirProcessor *mimi
 	return trigger
 }
 
-func RegisterTrigger(trigger *triggers.Trigger, triggerMap map[string]interface{}) {
-	db.ActiveTriggers = append(db.ActiveTriggers, trigger)
-	topicsInterface, exists := triggerMap["topics"]
-	if exists {
-		topics, ok := topicsInterface.([]interface{})
-		if !ok {
-			panic("Bad format for topics")
-		}
-
-		for _, topicInterface := range topics {
-			topic, ok := topicInterface.(string)
-			if !ok {
-				panic("Topic is not a string")
-			}
-			sensor, err := db.SensorsData.GetSensorByTopic(topic)
-			if err == nil {
-				sensor.Register(trigger)
-			}
-		}
-	}
-}
-
 func buildCondition(triggerMap map[string]interface{}) (triggers.Condition, bool) {
 	conditionConfiguration, exists := triggerMap["condition"]
 	if exists {
 		var condition triggers.Condition
 		switch conditionValue := conditionConfiguration.(type) {
 		case string:
-			condition = BuildConditionFromString(conditionValue)
+			condition = triggers.BuildConditionFromString(conditionValue)
 		case map[string]interface{}:
 			condition = buildConditionFromMap(conditionValue)
 		}
@@ -90,19 +78,6 @@ func buildCondition(triggerMap map[string]interface{}) (triggers.Condition, bool
 
 func buildConditionFromMap(_ map[string]interface{}) triggers.Condition {
 	panic("missing implementation")
-}
-
-func BuildConditionFromString(conditionString string) triggers.Condition {
-	if conditionString != "" {
-		tokens := Tokenize(conditionString)
-		condition, err := ParseCondition(tokens)
-		if err != nil {
-			fmt.Println(err)
-		} else {
-			return condition
-		}
-	}
-	return &triggers.TrueCondition{}
 }
 
 func buildTrigger(triggerMap map[string]interface{}) *triggers.Trigger {

@@ -1,8 +1,7 @@
 {
-    "id": "6714053fc620e978e707fefc",
     "name": "test",
     "filename": "",
-    "active": false,
+    "active": true,
     "topics": [
         "mimir/testWrite4"
     ],
