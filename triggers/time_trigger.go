@@ -9,6 +9,7 @@ import (
 type TimeTrigger struct {
 	ID           string        `json:"id"`
 	Name         string        `json:"name"`
+	IsActive     bool          `json:"active"`
 	Condition    Condition     `json:"condition"`
 	Actions      []Action      `json:"actions"`
 	Duration     time.Duration `json:"duration"`
@@ -17,7 +18,13 @@ type TimeTrigger struct {
 }
 
 func NewTimeTrigger(name string, duration time.Duration) *TimeTrigger {
-	return &TimeTrigger{uuid.New().String(), name, nil, nil, duration, time.NewTicker(duration), make(chan bool)}
+	return &TimeTrigger{
+		ID:           uuid.New().String(),
+		Name:         name,
+		Duration:     duration,
+		ticker:       time.NewTicker(duration),
+		resetChannel: make(chan bool),
+	}
 }
 
 func (t *TimeTrigger) Start() {

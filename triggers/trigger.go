@@ -5,11 +5,12 @@ import (
 )
 
 type Trigger struct {
-	ID        string    `json:"id"`
-	Name      string    `json:"name"`
-	Condition Condition `json:"condition"`
-	IsActive  bool      `json:"active"`
-	Actions   []Action  `json:"actions"`
+	ID              string    `json:"id"`
+	Name            string    `json:"name"`
+	Condition       Condition `json:"condition"`
+	stringCondition string
+	IsActive        bool     `json:"active"`
+	Actions         []Action `json:"actions"`
 }
 
 func NewTrigger(name string) *Trigger {
@@ -35,4 +36,8 @@ func (t *Trigger) SetCondition(c Condition) {
 
 func (t *Trigger) AddAction(a Action) {
 	t.Actions = append(t.Actions, a)
+}
+
+func (t *Trigger) GetConditionAsString() string {
+	return t.stringCondition
 }

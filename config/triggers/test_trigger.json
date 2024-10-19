@@ -1,6 +1,7 @@
 {
     "name": "trigger1",
-    "condition": "",
+    "condition": "$(mimir/testWrite3) > 50",
+    "active": true,
     "topics": [
         "mimir/testWrite3"
     ],

@@ -1,6 +1,10 @@
 package triggers
 
-import "time"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type Event struct {
 	Name      string
@@ -11,12 +15,16 @@ type Event struct {
 }
 
 func NewEvent() *Event {
-	return &Event{}
+	return &Event{Id: uuid.New().String()}
 }
 
 // NewFloatEvent is just an empty event with only float data
 func NewFloatEvent(data float64) *Event {
-	return &Event{"", time.Now(), data, "", ""}
+	return &Event{
+		Id:        uuid.New().String(),
+		Timestamp: time.Now(),
+		Data:      data,
+	}
 }
 
 func (e *Event) GetId() string {

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"log/slog"
 	"mimir/internal/consts"
 	"mimir/internal/db"
 	"mimir/internal/mimir"
@@ -17,29 +18,31 @@ import (
 func BuildTriggers(mimirProcessor *mimir.MimirProcessor) error {
 	dir := ini.String(consts.TRIGGERS_DIR_CONFIG_NAME)
 	files := utils.ListFilesWithSuffix(dir, "*"+consts.TRIGGERS_FILE_SUFFIX)
-	for _, v := range files {
-		byteValue, err := os.ReadFile(v)
+	for _, filename := range files {
+		byteValue, err := os.ReadFile(filename)
 		if err != nil {
 			log.Fatal(err)
-			return fmt.Errorf("error reading trigger file %s", v)
+			return fmt.Errorf("error reading trigger file %s", filename)
 		}
-		var triggerMap map[string]interface{}
-		json.Unmarshal(byteValue, &triggerMap)
-		trigger := BuildTriggerFromMap(triggerMap, mimirProcessor)
-
-		registerTrigger(trigger, triggerMap)
+		var triggerData db.Trigger
+		json.Unmarshal(byteValue, &triggerData)
+		triggerData.Filename = filename
+		newTrigger, err := db.Database.InsertTrigger(&triggerData)
+		if err != nil {
+			slog.Error("Error creating trigger", "body", byteValue, "error", err) //TODO byte value to string
+			return err
+		}
+		db.RegisterTrigger(newTrigger)
 	}
 	return nil
 }
 
 func BuildTriggerFromMap(triggerMap map[string]interface{}, mimirProcessor *mimir.MimirProcessor) *triggers.Trigger {
 	trigger := buildTrigger(triggerMap)
-
 	condition, exists := buildCondition(triggerMap)
 	if exists {
 		trigger.Condition = condition
 	}
-
 	actions := buildActions(triggerMap, mimirProcessor)
 	for _, action := range actions {
 		trigger.AddAction(action)
@@ -48,7 +51,8 @@ func BuildTriggerFromMap(triggerMap map[string]interface{}, mimirProcessor *mimi
 	return trigger
 }
 
-func registerTrigger(trigger *triggers.Trigger, triggerMap map[string]interface{}) {
+func RegisterTrigger(trigger *triggers.Trigger, triggerMap map[string]interface{}) {
+	db.ActiveTriggers = append(db.ActiveTriggers, trigger)
 	topicsInterface, exists := triggerMap["topics"]
 	if exists {
 		topics, ok := topicsInterface.([]interface{})
@@ -66,7 +70,6 @@ func registerTrigger(trigger *triggers.Trigger, triggerMap map[string]interface{
 				sensor.Register(trigger)
 			}
 		}
-
 	}
 }
 
@@ -76,7 +79,7 @@ func buildCondition(triggerMap map[string]interface{}) (triggers.Condition, bool
 		var condition triggers.Condition
 		switch conditionValue := conditionConfiguration.(type) {
 		case string:
-			condition = buildConditionFromString(conditionValue)
+			condition = BuildConditionFromString(conditionValue)
 		case map[string]interface{}:
 			condition = buildConditionFromMap(conditionValue)
 		}
@@ -89,7 +92,7 @@ func buildConditionFromMap(_ map[string]interface{}) triggers.Condition {
 	panic("missing implementation")
 }
 
-func buildConditionFromString(conditionString string) triggers.Condition {
+func BuildConditionFromString(conditionString string) triggers.Condition {
 	if conditionString != "" {
 		tokens := Tokenize(conditionString)
 		condition, err := ParseCondition(tokens)

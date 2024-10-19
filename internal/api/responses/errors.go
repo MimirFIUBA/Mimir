@@ -7,9 +7,11 @@ type ErrorCode struct {
 
 // InternalErrorCodes groups error codes related to internal errors
 var InternalErrorCodes = struct {
-	ResponseError ErrorCode
+	ResponseError   ErrorCode
+	UnexpectedError ErrorCode
 }{
-	ResponseError: ErrorCode{Code: 1000, Message: "Error creating response"},
+	ResponseError:   ErrorCode{Code: 1001, Message: "Error creating response"},
+	UnexpectedError: ErrorCode{Code: 1001, Message: "Unexpected error"},
 }
 
 // GroupErrorCodes groups error codes related to groups
@@ -59,9 +61,24 @@ var ProcessorErrorCodes = struct {
 	DeleteFailed  ErrorCode
 	AlreadyExists ErrorCode
 }{
-	NotFound:      ErrorCode{Code: 4001, Message: "Processor not found"},
-	InvalidSchema: ErrorCode{Code: 4002, Message: "Processor invalid schema"},
-	UpdateFailed:  ErrorCode{Code: 4003, Message: "Processor update failed"},
-	DeleteFailed:  ErrorCode{Code: 4004, Message: "Processor delete failed"},
-	AlreadyExists: ErrorCode{Code: 4005, Message: "Processor already exists"},
+	NotFound:      ErrorCode{Code: 5001, Message: "Processor not found"},
+	InvalidSchema: ErrorCode{Code: 5002, Message: "Processor invalid schema"},
+	UpdateFailed:  ErrorCode{Code: 5003, Message: "Processor update failed"},
+	DeleteFailed:  ErrorCode{Code: 5004, Message: "Processor delete failed"},
+	AlreadyExists: ErrorCode{Code: 5005, Message: "Processor already exists"},
+}
+
+// SensorErrorCodes groups error codes related to sensors
+var TriggerErrorCodes = struct {
+	NotFound      ErrorCode
+	InvalidSchema ErrorCode
+	UpdateFailed  ErrorCode
+	DeleteFailed  ErrorCode
+	AlreadyExists ErrorCode
+}{
+	NotFound:      ErrorCode{Code: 6001, Message: "Trigger not found"},
+	InvalidSchema: ErrorCode{Code: 6002, Message: "Trigger invalid schema"},
+	UpdateFailed:  ErrorCode{Code: 6003, Message: "Trigger update failed"},
+	DeleteFailed:  ErrorCode{Code: 6004, Message: "Trigger delete failed"},
+	AlreadyExists: ErrorCode{Code: 6005, Message: "Trigger already exists"},
 }

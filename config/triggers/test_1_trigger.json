@@ -1,0 +1,17 @@
+{
+    "id": "6714053fc620e978e707fefc",
+    "name": "test",
+    "filename": "",
+    "active": false,
+    "topics": [
+        "mimir/testWrite4"
+    ],
+    "condition": "",
+    "actions": [
+        {
+            "Name": "print test",
+            "Type": "print",
+            "Message": "test action"
+        }
+    ]
+}

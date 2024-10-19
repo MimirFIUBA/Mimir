@@ -10,6 +10,7 @@ import (
 type FrequencyTrigger struct {
 	ID                string    `json:"id"`
 	Name              string    `json:"name"`
+	IsActive          string    `json:"active"`
 	Condition         Condition `json:"condition"`
 	Actions           []Action  `json:"actions"`
 	Frequency         time.Duration
@@ -20,7 +21,13 @@ type FrequencyTrigger struct {
 }
 
 func NewFrequencyTrigger(name string, frequency time.Duration) *FrequencyTrigger {
-	return &FrequencyTrigger{uuid.New().String(), name, nil, nil, frequency, time.Now(), nil, nil, false}
+	return &FrequencyTrigger{
+		ID:              uuid.New().String(),
+		Name:            name,
+		Frequency:       frequency,
+		lastExecuteTime: time.Now(),
+		isTickerActive:  false,
+	}
 }
 
 func (t *FrequencyTrigger) Update(event Event) {

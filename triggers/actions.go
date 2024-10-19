@@ -11,12 +11,13 @@ type Action interface {
 }
 
 type PrintAction struct {
+	Name              string
 	messageContructor func(Event) string
 	Message           string
 }
 
 func NewPrintAction() *PrintAction {
-	return &PrintAction{nil, ""}
+	return &PrintAction{}
 }
 
 func (a *PrintAction) SetMessage(message string) {

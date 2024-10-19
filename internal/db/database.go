@@ -5,7 +5,8 @@ import (
 	"log"
 	influxdb "mimir/db/influxdb"
 	"mimir/db/mongodb"
-	mimir "mimir/internal/mimir/models"
+	"mimir/internal/mimir/models"
+	"mimir/triggers"
 
 	"github.com/InfluxCommunity/influxdb3-go/influxdb3"
 	"github.com/gookit/ini/v2"
@@ -16,28 +17,22 @@ import (
 var (
 	SensorsData = SensorsManager{
 		idCounter: 0,
-		sensors:   make([]mimir.Sensor, 0),
+		sensors:   make([]models.Sensor, 0),
 	}
 	NodesData = NodesManager{
 		idCounter: 0,
-		nodes:     make([]mimir.Node, 0),
+		nodes:     make([]models.Node, 0),
 	}
 	GroupsData = GroupsManager{
 		idCounter: 0,
-		groups:    make([]mimir.Group, 0),
+		groups:    make([]models.Group, 0),
 	}
 
-	ReadingsDBBuffer = make([]mimir.SensorReading, 0)
+	ActiveTriggers = make([]triggers.TriggerObserver, 0)
+
+	ReadingsDBBuffer = make([]models.SensorReading, 0)
 
 	Database = DatabaseManager{}
-)
-
-const (
-	MONGO_DB_MIMIR      = "Mimir"
-	GROUPS_COLLECTION   = "groups"
-	NODES_COLLECTION    = "nodes"
-	TOPICS_COLLECTION   = "topics"
-	TRIGGERS_COLLECTION = "triggers"
 )
 
 type DatabaseManager struct {

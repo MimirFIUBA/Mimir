@@ -107,20 +107,6 @@ func UpdateProcessor(w http.ResponseWriter, r *http.Request) {
 		responses.SendErrorResponse(w, http.StatusBadRequest, responses.ProcessorErrorCodes.InvalidSchema)
 	}
 
-	// topicInterface, exists := requestBody["topic"]
-	// if !exists {
-	// 	logger.Error("Error updating processor", "body", r.Body, "error", "missing topic attribute")
-	// 	responses.SendErrorResponse(w, http.StatusBadRequest, responses.ProcessorErrorCodes.InvalidSchema)
-	// 	return
-	// }
-
-	// topic, ok := topicInterface.(string)
-	// if !ok {
-	// 	logger.Error("Error updating processor", "body", r.Body, "error", "topic attribute is not a string")
-	// 	responses.SendErrorResponse(w, http.StatusNotFound, responses.ProcessorErrorCodes.InvalidSchema)
-	// 	return
-	// }
-
 	existingProcessor, exists := mimir.MessageProcessors.GetProcessor(topic)
 	if !exists {
 		logger.Error("Error updating processor", "body", r.Body, "error", "processor for topic "+topic+" does not exist")

@@ -37,8 +37,11 @@ type CompareCondition struct {
 }
 
 func NewCompareCondition(operator string, referenceValue interface{}) *CompareCondition {
-	//TODO: see what to do with first test value (set to reference value)
-	return &CompareCondition{operator, referenceValue, referenceValue, "", "", false}
+	return &CompareCondition{
+		Operator:       operator,
+		ReferenceValue: referenceValue,
+		hasTestValue:   false,
+	}
 }
 
 func (c *CompareCondition) GetEventId() string {
