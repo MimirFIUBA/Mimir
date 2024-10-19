@@ -1,0 +1,17 @@
+{
+    "id": "000000000000000000000000",
+    "name": "test write 1",
+    "filename": "",
+    "active": true,
+    "topics": [
+        "mimir/testWrite4"
+    ],
+    "condition": "",
+    "actions": [
+        {
+            "Name": "print test",
+            "Type": "print",
+            "Message": "test action"
+        }
+    ]
+}

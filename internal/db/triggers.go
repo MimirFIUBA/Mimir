@@ -8,6 +8,7 @@ import (
 	"mimir/internal/consts"
 	"mimir/triggers"
 	"os"
+	"strings"
 
 	"github.com/gookit/ini/v2"
 	"go.mongodb.org/mongo-driver/bson"
@@ -45,9 +46,11 @@ func (a Action) ToTriggerAction() triggers.Action {
 		triggerAction = action
 	case "alert":
 		action := triggers.NewSendMessageThroughChannel(nil)
+		action.Message = a.Message
 		triggerAction = action
 	case "webSocket":
 		action := triggers.NewSendMessageThroughChannel(nil)
+		action.Message = a.Message
 		triggerAction = action
 	default:
 		slog.Warn("action type not recognized while creating trigger action", "type", a.Type)
@@ -60,19 +63,17 @@ func (t *Trigger) BuildTriggerObserver() triggers.TriggerObserver {
 	trigger := triggers.NewTrigger(t.Name)
 	trigger.Condition = triggers.BuildConditionFromString(string(t.Condition))
 	for _, action := range t.Actions {
-		fmt.Println("Action: ", action)
 		triggerAction := action.ToTriggerAction()
 		trigger.AddAction(triggerAction)
-		fmt.Println("Trigger Action: ", triggerAction)
 	}
 
 	return trigger
 }
 
 func (t *Trigger) BuildFileName(suffix string) string {
-	filename := t.Name
+	filename := strings.ReplaceAll(t.Name, " ", "_")
 	if suffix != "" {
-		filename = t.Name + "_" + suffix
+		filename += "_" + suffix
 	}
 	return ini.String(consts.TRIGGERS_DIR_CONFIG_NAME) + "/" + filename + consts.TRIGGERS_FILE_SUFFIX
 }
