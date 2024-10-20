@@ -69,3 +69,7 @@ func (t *TimeTrigger) Update(event Event) {
 func (t *TimeTrigger) GetID() string {
 	return t.ID
 }
+
+func (t *TimeTrigger) SetID(id string) {
+	t.ID = id
+}

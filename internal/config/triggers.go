@@ -13,6 +13,7 @@ import (
 	"os"
 
 	"github.com/gookit/ini/v2"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func BuildTriggers(mimirProcessor *mimir.MimirProcessor) error {
@@ -20,6 +21,8 @@ func BuildTriggers(mimirProcessor *mimir.MimirProcessor) error {
 	files := utils.ListFilesWithSuffix(dir, "*"+consts.TRIGGERS_FILE_SUFFIX)
 
 	if len(files) > 0 {
+		triggersByFilename := make(map[string]triggers.TriggerObserver)
+		topicsByFilename := make(map[string][]string)
 		triggersToUpsert := make([]db.Trigger, 0)
 
 		for _, filename := range files {
@@ -34,7 +37,8 @@ func BuildTriggers(mimirProcessor *mimir.MimirProcessor) error {
 			triggersToUpsert = append(triggersToUpsert, triggerData)
 
 			trigger := BuildTriggerObserver(triggerData, mimirProcessor)
-			db.RegisterTrigger(trigger, triggerData.Topics)
+			triggersByFilename[filename] = trigger
+			topicsByFilename[filename] = triggerData.Topics
 		}
 
 		_, err := db.Database.UpsertTriggers(triggersToUpsert)
@@ -43,6 +47,26 @@ func BuildTriggers(mimirProcessor *mimir.MimirProcessor) error {
 			return err
 		}
 
+		//TODO: doing this to set id on trigger. See if we can improve (or at least take it somewhere else)
+		values := bson.A{}
+		for filename := range triggersByFilename {
+			values = append(values, filename)
+		}
+		filter := bson.D{{Key: "filename", Value: bson.D{{Key: "$in", Value: values}}}}
+		dbTriggers, err := db.Database.FindTriggers(filter)
+		if err != nil {
+			return err
+		}
+		for _, dbTriggerData := range dbTriggers {
+			triggerToUpdate, exists := triggersByFilename[dbTriggerData.Filename]
+			if exists {
+				triggerToUpdate.SetID(dbTriggerData.ID.String())
+				topics, exists := topicsByFilename[dbTriggerData.Filename]
+				if exists {
+					db.RegisterTrigger(triggerToUpdate, topics)
+				}
+			}
+		}
 	}
 
 	return nil
@@ -50,6 +74,7 @@ func BuildTriggers(mimirProcessor *mimir.MimirProcessor) error {
 
 func BuildTriggerObserver(t db.Trigger, mimirProcessor *mimir.MimirProcessor) triggers.TriggerObserver {
 	trigger := triggers.NewTrigger(t.Name)
+	trigger.SetID(t.ID.String())
 	trigger.Condition = triggers.BuildConditionFromString(string(t.Condition))
 	for _, action := range t.Actions {
 		triggerAction := ToTriggerAction(action, mimirProcessor)

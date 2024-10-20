@@ -79,10 +79,15 @@ func UpdateTrigger(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	db.Database.UpdateTrigger(id, &requestBody)
+	updatedTrigger, err := db.Database.UpdateTrigger(id, &requestBody)
+	if err != nil {
+		logger.Error("Error updating trigger", "body", r.Body, "error", err)
+		responses.SendErrorResponse(w, http.StatusBadRequest, responses.ProcessorErrorCodes.InvalidSchema)
+		return
+	}
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode("not implemented")
+	json.NewEncoder(w).Encode(updatedTrigger)
 }
 
 func DeleteTrigger(w http.ResponseWriter, r *http.Request) {

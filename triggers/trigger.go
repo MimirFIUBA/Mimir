@@ -1,9 +1,5 @@
 package triggers
 
-import (
-	"github.com/google/uuid"
-)
-
 type Trigger struct {
 	ID              string    `json:"id"`
 	Name            string    `json:"name"`
@@ -15,11 +11,11 @@ type Trigger struct {
 
 func NewTrigger(name string) *Trigger {
 	defaultCondition := TrueCondition{}
-	return &Trigger{ID: uuid.New().String(), Name: name, Condition: &defaultCondition}
+	return &Trigger{Name: name, Condition: &defaultCondition}
 }
 
 func (t *Trigger) Update(event Event) {
-	if t.Condition.Evaluate(event) {
+	if t.IsActive && t.Condition.Evaluate(event) {
 		for _, action := range t.Actions {
 			action.Execute(event)
 		}
@@ -28,6 +24,10 @@ func (t *Trigger) Update(event Event) {
 
 func (t *Trigger) GetID() string {
 	return t.ID
+}
+
+func (t *Trigger) SetID(id string) {
+	t.ID = id
 }
 
 func (t *Trigger) SetCondition(c Condition) {

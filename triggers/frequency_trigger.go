@@ -57,3 +57,7 @@ func (t *FrequencyTrigger) execute(event Event) {
 func (t *FrequencyTrigger) GetID() string {
 	return t.ID
 }
+
+func (t *FrequencyTrigger) SetID(id string) {
+	t.ID = id
+}

@@ -101,7 +101,7 @@ func (d *DatabaseManager) InsertTrigger(t *Trigger) (*Trigger, error) {
 	return t, nil
 }
 
-func (d *DatabaseManager) UpdateTrigger(id string, trigger *Trigger) (*mongo.UpdateResult, error) {
+func (d *DatabaseManager) UpdateTrigger(id string, triggerUpdate *Trigger) (*Trigger, error) {
 	mongoClient := d.getMongoClient()
 	if mongoClient == nil {
 		return nil, fmt.Errorf("mongo client not running")
@@ -112,13 +112,20 @@ func (d *DatabaseManager) UpdateTrigger(id string, trigger *Trigger) (*mongo.Upd
 		return nil, err
 	}
 	filter := bson.D{{Key: "_id", Value: objectId}}
-	update := bson.D{{Key: "$set", Value: trigger}}
-	result, err := triggersCollection.UpdateOne(context.TODO(), filter, update)
+	update := bson.D{{Key: "$set", Value: triggerUpdate}}
+	_, err = triggersCollection.UpdateOne(context.TODO(), filter, update)
 	if err != nil {
 		return nil, err
 	}
 
-	return result, nil
+	for _, trigger := range ActiveTriggers {
+		fmt.Println("trigger: ", trigger)
+		if trigger.GetID() == id {
+			fmt.Println("trigger id match")
+		}
+	}
+
+	return triggerUpdate, nil
 }
 
 func RegisterTrigger(trigger triggers.TriggerObserver, topics []string) {
