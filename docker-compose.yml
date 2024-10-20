@@ -1,0 +1,5 @@
+name: Mimir
+include:
+    - db/influxdb/docker-compose.yml
+    - db/mongodb/docker-compose.yml
+    - mqtt/docker-compose.yml
