@@ -21,6 +21,11 @@ INFLUXDB_ORG=tp
 
 ### Server startup
 
+To start all the docker services required by the project at once:
+```
+sudo INFLUXDB_USERNAME=tp INFLUXDB_PASSWORD=tp INFLUXDB_ORG=tp INFLUXDB_BUCKET=Mimir INFLUXDB_TOKEN=tp MONGODB_USERNAME=tp MONGODB_PASSWORD=tp docker compose up -d
+```
+
 To start the server run:
 ```
 go run cmd/mimir-server/main.go
