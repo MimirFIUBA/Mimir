@@ -35,61 +35,12 @@ type Action struct {
 	Message string `bson:"message,omitempty"`
 }
 
-func (a Action) ToTriggerAction() triggers.Action {
-	var triggerAction triggers.Action
-
-	switch a.Type {
-	case "print":
-		action := triggers.NewPrintAction()
-		action.Message = a.Message
-		action.Name = a.Name
-		triggerAction = action
-	case "alert":
-		action := triggers.NewSendMessageThroughChannel(nil)
-		action.Message = a.Message
-		triggerAction = action
-	case "webSocket":
-		action := triggers.NewSendMessageThroughChannel(nil)
-		action.Message = a.Message
-		triggerAction = action
-	default:
-		slog.Warn("action type not recognized while creating trigger action", "type", a.Type)
-	}
-
-	return triggerAction
-}
-
-func (t *Trigger) BuildTriggerObserver() triggers.TriggerObserver {
-	trigger := triggers.NewTrigger(t.Name)
-	trigger.Condition = triggers.BuildConditionFromString(string(t.Condition))
-	for _, action := range t.Actions {
-		triggerAction := action.ToTriggerAction()
-		trigger.AddAction(triggerAction)
-	}
-
-	return trigger
-}
-
 func (t *Trigger) BuildFileName(suffix string) string {
 	filename := strings.ReplaceAll(t.Name, " ", "_")
 	if suffix != "" {
 		filename += "_" + suffix
 	}
 	return ini.String(consts.TRIGGERS_DIR_CONFIG_NAME) + "/" + filename + consts.TRIGGERS_FILE_SUFFIX
-}
-
-func AddNewTriggerFromMap(triggerMap map[string]interface{}) {
-
-}
-
-func AddNewTriggerObserver(trigger *triggers.TriggerObserver) (*Trigger, error) {
-	return nil, nil
-}
-
-func AddNewTrigger(trigger *Trigger) (*Trigger, error) {
-	trigger, err := Database.InsertTrigger(trigger)
-	return trigger, err
-
 }
 
 func (d *DatabaseManager) GetTriggers() []triggers.TriggerObserver {
@@ -150,14 +101,32 @@ func (d *DatabaseManager) InsertTrigger(t *Trigger) (*Trigger, error) {
 	return t, nil
 }
 
-func RegisterTrigger(trigger *Trigger) {
-	triggerObserver := trigger.BuildTriggerObserver()
+func (d *DatabaseManager) UpdateTrigger(id string, trigger *Trigger) (*mongo.UpdateResult, error) {
+	mongoClient := d.getMongoClient()
+	if mongoClient == nil {
+		return nil, fmt.Errorf("mongo client not running")
+	}
+	triggersCollection := mongoClient.Database(MONGO_DB_MIMIR).Collection(TRIGGERS_COLLECTION)
+	objectId, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return nil, err
+	}
+	filter := bson.D{{Key: "_id", Value: objectId}}
+	update := bson.D{{Key: "$set", Value: trigger}}
+	result, err := triggersCollection.UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return nil, err
+	}
 
-	ActiveTriggers = append(ActiveTriggers, triggerObserver)
-	for _, topic := range trigger.Topics {
+	return result, nil
+}
+
+func RegisterTrigger(trigger triggers.TriggerObserver, topics []string) {
+	ActiveTriggers = append(ActiveTriggers, trigger)
+	for _, topic := range topics {
 		sensor, err := SensorsData.GetSensorByTopic(topic)
 		if err == nil {
-			sensor.Register(triggerObserver)
+			sensor.Register(trigger)
 		}
 	}
 }

@@ -2,6 +2,7 @@ package mimir
 
 import (
 	"fmt"
+	"mimir/internal/consts"
 	"mimir/internal/db"
 	mimir "mimir/internal/mimir/models"
 	"mimir/internal/mimir/processors"
@@ -34,7 +35,6 @@ func (p *MimirProcessor) Run() {
 		reading := <-p.ReadingChannel
 
 		go func() {
-			processReading(reading)
 			db.StoreReading(reading)
 		}()
 	}
@@ -50,12 +50,7 @@ func setTopicsInactive() {
 	db.Database.DeactivateTopics(db.SensorsData.GetSensors())
 }
 
-func processReading(reading mimir.SensorReading) {
-	//TODO: ver si necesitamos hacer algo aca
-	fmt.Printf("Processing reading: %v \n", reading.Value)
-}
-
-// Action creation for simple use
+// Action creation for simpler use
 func (p *MimirProcessor) NewSendMQTTMessageAction(message string) triggers.SendMessageThroughChannel {
 	return triggers.SendMessageThroughChannel{
 		Message:                 message,
@@ -76,7 +71,7 @@ func (p *MimirProcessor) RegisterSensor(sensor *mimir.Sensor) {
 func (p *MimirProcessor) publishOutgoingMessages() {
 	for {
 		outgoingMessage := <-p.OutgoingMessagesChannel
-		topic := "mimir/alert"
+		topic := consts.AlertTopic
 		token := Manager.MQTTClient.Publish(topic, 0, false, outgoingMessage)
 		token.Wait()
 

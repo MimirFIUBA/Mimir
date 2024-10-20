@@ -33,7 +33,8 @@ func BuildTriggers(mimirProcessor *mimir.MimirProcessor) error {
 			triggerData.Filename = filename
 			triggersToUpsert = append(triggersToUpsert, triggerData)
 
-			db.RegisterTrigger(&triggerData)
+			trigger := BuildTriggerObserver(triggerData, mimirProcessor)
+			db.RegisterTrigger(trigger, triggerData.Topics)
 		}
 
 		_, err := db.Database.UpsertTriggers(triggersToUpsert)
@@ -45,6 +46,17 @@ func BuildTriggers(mimirProcessor *mimir.MimirProcessor) error {
 	}
 
 	return nil
+}
+
+func BuildTriggerObserver(t db.Trigger, mimirProcessor *mimir.MimirProcessor) triggers.TriggerObserver {
+	trigger := triggers.NewTrigger(t.Name)
+	trigger.Condition = triggers.BuildConditionFromString(string(t.Condition))
+	for _, action := range t.Actions {
+		triggerAction := ToTriggerAction(action, mimirProcessor)
+		trigger.AddAction(triggerAction)
+	}
+
+	return trigger
 }
 
 func BuildTriggerFromMap(triggerMap map[string]interface{}, mimirProcessor *mimir.MimirProcessor) *triggers.Trigger {
@@ -91,4 +103,28 @@ func buildTrigger(triggerMap map[string]interface{}) *triggers.Trigger {
 		panic("Trigger name is not a string")
 	}
 	return triggers.NewTrigger(triggerName)
+}
+
+func ToTriggerAction(a db.Action, mimirProcessor *mimir.MimirProcessor) triggers.Action {
+	var triggerAction triggers.Action
+
+	switch a.Type {
+	case "print":
+		action := triggers.NewPrintAction()
+		action.Message = a.Message
+		action.Name = a.Name
+		triggerAction = action
+	case "alert":
+		action := mimirProcessor.NewSendMQTTMessageAction(a.Message)
+		action.Message = a.Message
+		triggerAction = &action
+	case "webSocket":
+		action := mimirProcessor.NewSendWebSocketMessageAction(a.Message)
+		action.Message = a.Message
+		triggerAction = &action
+	default:
+		slog.Warn("action type not recognized while creating trigger action", "type", a.Type)
+	}
+
+	return triggerAction
 }

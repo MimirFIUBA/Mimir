@@ -27,6 +27,7 @@ func main() {
 		if token := client.Subscribe(topic, 0, onMessageReceived); token.Wait() && token.Error() != nil {
 			panic(fmt.Sprintf("Error subscribing to topic: %s", token.Error()))
 		}
+		fmt.Println("Listenning to topic: ", topic)
 	}
 
 	sigChan := make(chan os.Signal, 1)

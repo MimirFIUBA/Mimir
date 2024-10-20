@@ -10,6 +10,11 @@
             "type": "print",
             "name": "print test",
             "message": "test action"
+        },
+        {
+            "type": "alert",
+            "name": "water too hot",
+            "message": "water too hot test"
         }
     ]
 }

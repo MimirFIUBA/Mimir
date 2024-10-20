@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"mimir/internal/api/middlewares"
 	"mimir/internal/api/responses"
+	"mimir/internal/config"
 	"mimir/internal/db"
 	"mimir/internal/utils"
 	"net/http"
@@ -54,15 +55,32 @@ func CreateTrigger(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Error("Error creating trigger", "body", r.Body, "error", err)
 		responses.SendErrorResponse(w, http.StatusInternalServerError, responses.InternalErrorCodes.UnexpectedError)
+		return
 	}
 
-	db.RegisterTrigger(newTrigger)
+	trigger := config.BuildTriggerObserver(*newTrigger, MimirProcessor)
+	db.RegisterTrigger(trigger, newTrigger.Topics)
 
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(newTrigger)
 }
 
 func UpdateTrigger(w http.ResponseWriter, r *http.Request) {
+	logger := middlewares.ContextWithLogger(r.Context())
+
+	vars := mux.Vars(r)
+	id := vars["id"]
+
+	var requestBody db.Trigger
+	err := utils.DecodeJsonToMap(r.Body, &requestBody)
+	if err != nil {
+		logger.Error("Error updating trigger", "body", r.Body, "error", err)
+		responses.SendErrorResponse(w, http.StatusBadRequest, responses.ProcessorErrorCodes.InvalidSchema)
+		return
+	}
+
+	db.Database.UpdateTrigger(id, &requestBody)
+
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode("not implemented")
 }
