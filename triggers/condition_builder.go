@@ -320,15 +320,15 @@ func buildAverageCondition(parameters []Token, metadata []string, condition Cond
 	return avgCondition
 }
 
-func BuildConditionFromString(conditionString string) Condition {
+func BuildConditionFromString(conditionString string) (Condition, error) {
 	if conditionString != "" {
 		tokens := Tokenize(conditionString)
 		condition, err := ParseCondition(tokens)
 		if err != nil {
-			fmt.Println(err)
+			return nil, err
 		} else {
-			return condition
+			return condition, nil
 		}
 	}
-	return &TrueCondition{}
+	return &TrueCondition{}, nil
 }

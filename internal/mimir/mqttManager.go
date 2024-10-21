@@ -3,6 +3,7 @@ package mimir
 import (
 	"fmt"
 	"log"
+	"log/slog"
 	"mimir/internal/consts"
 	"mimir/internal/mimir/models"
 	"mimir/internal/mimir/processors"
@@ -61,6 +62,7 @@ func (m *MQTTManager) CloseConnection() {
 func (m *MQTTManager) AddTopic(topic string) {
 	isSubscribed, ok := m.Topics[topic]
 	if !ok || !isSubscribed {
+		slog.Info("Subcribing to topic " + topic)
 		if token := m.MQTTClient.Subscribe(topic, 0, onMessageReceived); token.Wait() && token.Error() != nil {
 			panic(fmt.Sprintf("Error subscribing to topic: %s", token.Error()))
 		}

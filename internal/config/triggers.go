@@ -26,6 +26,7 @@ func BuildTriggers(mimirProcessor *mimir.MimirProcessor) error {
 		triggersToUpsert := make([]db.Trigger, 0)
 
 		for _, filename := range files {
+			slog.Info("Building trigger", "trigger", filename)
 			byteValue, err := os.ReadFile(filename)
 			if err != nil {
 				log.Fatal(err)
@@ -41,6 +42,7 @@ func BuildTriggers(mimirProcessor *mimir.MimirProcessor) error {
 			topicsByFilename[filename] = triggerData.Topics
 		}
 
+		slog.Info("Upsert triggers", "triggers", triggersToUpsert)
 		_, err := db.Database.UpsertTriggers(triggersToUpsert)
 		if err != nil {
 			slog.Error("error upserting triggers", "error", err)
@@ -60,7 +62,7 @@ func BuildTriggers(mimirProcessor *mimir.MimirProcessor) error {
 		for _, dbTriggerData := range dbTriggers {
 			triggerToUpdate, exists := triggersByFilename[dbTriggerData.Filename]
 			if exists {
-				triggerToUpdate.SetID(dbTriggerData.ID.String())
+				triggerToUpdate.SetID(dbTriggerData.ID.Hex())
 				topics, exists := topicsByFilename[dbTriggerData.Filename]
 				if exists {
 					db.RegisterTrigger(triggerToUpdate, topics)
@@ -68,14 +70,19 @@ func BuildTriggers(mimirProcessor *mimir.MimirProcessor) error {
 			}
 		}
 	}
-
 	return nil
 }
 
 func BuildTriggerObserver(t db.Trigger, mimirProcessor *mimir.MimirProcessor) triggers.TriggerObserver {
 	trigger := triggers.NewTrigger(t.Name)
-	trigger.SetID(t.ID.String())
-	trigger.Condition = triggers.BuildConditionFromString(string(t.Condition))
+	trigger.SetID(t.ID.Hex())
+	trigger.IsActive = t.IsActive
+	condition, err := triggers.BuildConditionFromString(string(t.Condition))
+	if err != nil {
+		fmt.Println("error")
+		//TODO return error
+	}
+	trigger.Condition = condition
 	for _, action := range t.Actions {
 		triggerAction := ToTriggerAction(action, mimirProcessor)
 		trigger.AddAction(triggerAction)
@@ -104,7 +111,11 @@ func buildCondition(triggerMap map[string]interface{}) (triggers.Condition, bool
 		var condition triggers.Condition
 		switch conditionValue := conditionConfiguration.(type) {
 		case string:
-			condition = triggers.BuildConditionFromString(conditionValue)
+			conditionBuilt, err := triggers.BuildConditionFromString(conditionValue)
+			if err != nil {
+				return nil, false //TODO ver si tenemos que devolver el error
+			}
+			condition = conditionBuilt
 		case map[string]interface{}:
 			condition = buildConditionFromMap(conditionValue)
 		}

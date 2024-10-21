@@ -73,3 +73,12 @@ func (t *TimeTrigger) GetID() string {
 func (t *TimeTrigger) SetID(id string) {
 	t.ID = id
 }
+
+func (t *TimeTrigger) UpdateCondition(newCondition string) error {
+	condition, err := BuildConditionFromString(newCondition)
+	if err != nil {
+		return err
+	}
+	t.Condition = condition
+	return nil
+}

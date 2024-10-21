@@ -41,3 +41,13 @@ func (t *Trigger) AddAction(a Action) {
 func (t *Trigger) GetConditionAsString() string {
 	return t.stringCondition
 }
+
+func (t *Trigger) UpdateCondition(newCondition string) error {
+	condition, err := BuildConditionFromString(newCondition)
+	if err != nil {
+		return err
+	}
+	t.Condition = condition
+	t.stringCondition = newCondition
+	return nil
+}

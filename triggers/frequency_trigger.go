@@ -61,3 +61,12 @@ func (t *FrequencyTrigger) GetID() string {
 func (t *FrequencyTrigger) SetID(id string) {
 	t.ID = id
 }
+
+func (t *FrequencyTrigger) UpdateCondition(newCondition string) error {
+	condition, err := BuildConditionFromString(newCondition)
+	if err != nil {
+		return err
+	}
+	t.Condition = condition
+	return nil
+}

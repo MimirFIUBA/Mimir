@@ -4,6 +4,7 @@ type TriggerObserver interface {
 	Update(Event)
 	GetID() string
 	SetID(string)
+	UpdateCondition(string) error
 }
 
 type Subject interface {

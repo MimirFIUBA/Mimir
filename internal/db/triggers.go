@@ -119,9 +119,12 @@ func (d *DatabaseManager) UpdateTrigger(id string, triggerUpdate *Trigger) (*Tri
 	}
 
 	for _, trigger := range ActiveTriggers {
-		fmt.Println("trigger: ", trigger)
 		if trigger.GetID() == id {
-			fmt.Println("trigger id match")
+			//TODO: ver que datos podemos actualizar del trigger activo
+			fmt.Println("Update trigger TODO")
+			if triggerUpdate.Condition != "" {
+				trigger.UpdateCondition(string(triggerUpdate.Condition))
+			}
 		}
 	}
 

@@ -33,9 +33,9 @@ func (g mqttGenerator) generateIntData(n int, id int) {
 	g.c <- 0
 }
 
-func (g mqttGenerator) generateFloatData(n int, id string, mps int) {
+func (g mqttGenerator) generateFloatData(n int, id string, mps int, multiplier float64, suma float64) {
 	for i := 1; i <= n; i++ {
-		message := fmt.Sprintf(`{"id": "%s", "data": %.2f, "time": "%s"}`, id, rand.Float64()*40+50, time.Now())
+		message := fmt.Sprintf(`{"id": "%s", "data": %.2f, "time": "%s"}`, id, rand.Float64()*multiplier+suma, time.Now())
 		token := g.client.Publish(g.topic, 0, false, message)
 		token.Wait()
 
@@ -82,7 +82,7 @@ func main() {
 	c := make(chan int)
 
 	generator := mqttGenerator{"mimir/testWrite3", client, c}
-	go generator.generateFloatData(20, "1", 2)
+	go generator.generateFloatData(1, "1", 1, 1, 0)
 
 	// message := fmt.Sprintf(`{"id": "%s", "data": %.2f, "time": "%s"}`, "0", 15.0, time.Now())
 	// token := client.Publish("mimir/esp32/waterTemp", 0, false, message)

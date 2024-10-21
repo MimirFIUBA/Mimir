@@ -53,6 +53,7 @@ func Run() {
 func (d *DatabaseManager) ConnectToInfluxDB() (*influxdb3.Client, error) {
 	godotenv.Load(ini.String("influxdb_configuration_file"))
 	dbClient, err := influxdb.ConnectToInfluxDB()
+	fmt.Println("**** error influx ", err, dbClient)
 	if err != nil {
 		log.Fatal("Error connecting to InfluxDB ", err)
 		return nil, err
