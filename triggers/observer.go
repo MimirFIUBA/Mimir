@@ -5,6 +5,10 @@ type TriggerObserver interface {
 	GetID() string
 	SetID(string)
 	UpdateCondition(string) error
+	UpdateActions([]Action) error
+	AddAction(Action)
+	AddSubject(Subject)
+	StopWatching()
 }
 
 type Subject interface {

@@ -1,12 +1,13 @@
 package triggers
 
 type Trigger struct {
-	ID              string    `json:"id"`
-	Name            string    `json:"name"`
-	Condition       Condition `json:"condition"`
-	stringCondition string
-	IsActive        bool     `json:"active"`
-	Actions         []Action `json:"actions"`
+	ID               string    `json:"id"`
+	Name             string    `json:"name"`
+	Condition        Condition `json:"condition"`
+	stringCondition  string
+	IsActive         bool     `json:"active"`
+	Actions          []Action `json:"actions"`
+	observedSubjects []Subject
 }
 
 func NewTrigger(name string) *Trigger {
@@ -50,4 +51,19 @@ func (t *Trigger) UpdateCondition(newCondition string) error {
 	t.Condition = condition
 	t.stringCondition = newCondition
 	return nil
+}
+
+func (t *Trigger) UpdateActions(actions []Action) error {
+	t.Actions = actions
+	return nil
+}
+
+func (t *Trigger) AddSubject(subject Subject) {
+	t.observedSubjects = append(t.observedSubjects, subject)
+}
+
+func (t *Trigger) StopWatching() {
+	for _, subject := range t.observedSubjects {
+		subject.Deregister(t)
+	}
 }

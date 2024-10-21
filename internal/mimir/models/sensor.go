@@ -35,7 +35,7 @@ func NewSensor(name string) *Sensor {
 
 func (s *Sensor) AddReading(reading SensorReading) {
 	s.Data = append(s.Data, reading)
-	s.notifyAll()
+	s.NotifyAll()
 }
 
 func (s *Sensor) Update(newData *Sensor) {
@@ -53,6 +53,7 @@ func (s *Sensor) GetId() string {
 
 func (s *Sensor) Register(trigger triggers.TriggerObserver) {
 	s.triggerList = append(s.triggerList, trigger)
+	trigger.AddSubject(s)
 }
 
 func (s *Sensor) Deregister(trigger triggers.TriggerObserver) {
@@ -63,7 +64,7 @@ func (s *Sensor) Deregister(trigger triggers.TriggerObserver) {
 	})
 }
 
-func (s *Sensor) notifyAll() {
+func (s *Sensor) NotifyAll() {
 	for _, observer := range s.triggerList {
 		reading := s.Data[len(s.Data)-1]
 		event := triggers.Event{

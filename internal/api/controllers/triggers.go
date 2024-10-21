@@ -7,6 +7,7 @@ import (
 	"mimir/internal/config"
 	"mimir/internal/db"
 	"mimir/internal/utils"
+	"mimir/triggers"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -77,18 +78,24 @@ func UpdateTrigger(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
 
+	//TODO: con este approach necesitamos mandar el cuerpo entero del trigger
 	var requestBody db.Trigger
 	err := utils.DecodeJsonToMap(r.Body, &requestBody)
 	if err != nil {
 		logger.Error("Error updating trigger", "body", r.Body, "error", err)
-		responses.SendErrorResponse(w, http.StatusBadRequest, responses.ProcessorErrorCodes.InvalidSchema)
+		responses.SendErrorResponse(w, http.StatusBadRequest, responses.TriggerErrorCodes.InvalidSchema)
 		return
 	}
 
-	updatedTrigger, err := db.Database.UpdateTrigger(id, &requestBody)
+	actions := make([]triggers.Action, 0)
+	for _, action := range requestBody.Actions {
+		triggerAction := config.ToTriggerAction(action, MimirProcessor)
+		actions = append(actions, triggerAction)
+	}
+	updatedTrigger, err := db.Database.UpdateTrigger(id, &requestBody, actions)
 	if err != nil {
 		logger.Error("Error updating trigger", "body", r.Body, "error", err)
-		responses.SendErrorResponse(w, http.StatusBadRequest, responses.ProcessorErrorCodes.InvalidSchema)
+		responses.SendErrorResponse(w, http.StatusBadRequest, responses.TriggerErrorCodes.InvalidSchema)
 		return
 	}
 
@@ -97,6 +104,25 @@ func UpdateTrigger(w http.ResponseWriter, r *http.Request) {
 }
 
 func DeleteTrigger(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode("not implemented")
+	logger := middlewares.ContextWithLogger(r.Context())
+
+	vars := mux.Vars(r)
+	id := vars["id"]
+
+	err := db.Database.DeleteTrigger(id)
+	if err != nil {
+		logger.Error("Error deleting trigger", "body", r.Body, "error", err)
+		responses.SendErrorResponse(w, http.StatusBadRequest, responses.TriggerErrorCodes.InvalidSchema)
+		return
+	}
+
+	err = responses.SendJSONResponse(w, http.StatusNoContent, responses.MessageResponse{
+		Code:    0,
+		Message: "The trigger was deleted",
+	})
+	if err != nil {
+		logger.Error("Error sending response", "error", err.Error())
+		responses.SendErrorResponse(w, http.StatusInternalServerError, responses.InternalErrorCodes.ResponseError)
+		return
+	}
 }

@@ -101,7 +101,7 @@ func (d *DatabaseManager) InsertTrigger(t *Trigger) (*Trigger, error) {
 	return t, nil
 }
 
-func (d *DatabaseManager) UpdateTrigger(id string, triggerUpdate *Trigger) (*Trigger, error) {
+func (d *DatabaseManager) UpdateTrigger(id string, triggerUpdate *Trigger, actions []triggers.Action) (*Trigger, error) {
 	mongoClient := d.getMongoClient()
 	if mongoClient == nil {
 		return nil, fmt.Errorf("mongo client not running")
@@ -120,13 +120,18 @@ func (d *DatabaseManager) UpdateTrigger(id string, triggerUpdate *Trigger) (*Tri
 
 	for _, trigger := range ActiveTriggers {
 		if trigger.GetID() == id {
-			//TODO: ver que datos podemos actualizar del trigger activo
-			fmt.Println("Update trigger TODO")
-			if triggerUpdate.Condition != "" {
-				trigger.UpdateCondition(string(triggerUpdate.Condition))
+			//TODO Support for other triggertypes
+			trigger, ok := trigger.(*triggers.Trigger)
+			if ok {
+				trigger.Name = triggerUpdate.Name
+				trigger.IsActive = triggerUpdate.IsActive
 			}
+			trigger.UpdateCondition(string(triggerUpdate.Condition))
+			trigger.UpdateActions(actions)
 		}
 	}
+
+	saveTriggerFile(triggerUpdate)
 
 	return triggerUpdate, nil
 }
@@ -208,4 +213,63 @@ func (d *DatabaseManager) UpsertTriggers(triggersToUpsert []Trigger) (*mongo.Bul
 		return triggersCollection.BulkWrite(context.TODO(), writeModels, opts)
 	}
 	return nil, fmt.Errorf("mongo client not available")
+}
+
+func saveTriggerFile(triggerData *Trigger) error {
+	jsonString, err := json.MarshalIndent(triggerData, "", "    ")
+	if err != nil {
+		return err
+	}
+
+	fileName := triggerData.Filename
+
+	fmt.Println("SAVING FILE ", fileName)
+
+	return os.WriteFile(fileName, jsonString, os.ModePerm)
+}
+
+func (d *DatabaseManager) DeleteTrigger(id string) error {
+	mongoClient := d.getMongoClient()
+	if mongoClient != nil {
+		triggersCollection := mongoClient.Database(MONGO_DB_MIMIR).Collection(TRIGGERS_COLLECTION)
+		objectId, err := primitive.ObjectIDFromHex(id)
+		if err != nil {
+			return err
+		}
+		filter := bson.D{{Key: "_id", Value: objectId}}
+		_, err = triggersCollection.DeleteOne(context.TODO(), filter)
+		if err != nil {
+			return err
+		}
+	}
+
+	filename, exists := TriggerFilenamesById[id]
+	if exists {
+		deleteTriggerFile(filename)
+	}
+	removeTriggerFromWokflow(id)
+
+	return nil
+}
+
+func deleteTriggerFile(filename string) {
+	newName := strings.Replace(filename, ".json", "_deleted.json", 1)
+	err := os.Rename(filename, newName)
+	if err != nil {
+		slog.Error("error renaming file for deletion", "error", err)
+	}
+}
+
+func removeTriggerFromWokflow(id string) {
+	indexToRemove := -1
+	for i, trigger := range ActiveTriggers {
+		if trigger.GetID() == id {
+			trigger.StopWatching()
+			indexToRemove = i
+		}
+	}
+
+	if indexToRemove >= 0 {
+		ActiveTriggers = append(ActiveTriggers[:indexToRemove], ActiveTriggers[indexToRemove+1:]...)
+	}
 }

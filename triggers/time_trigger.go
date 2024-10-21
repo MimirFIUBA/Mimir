@@ -7,14 +7,15 @@ import (
 )
 
 type TimeTrigger struct {
-	ID           string        `json:"id"`
-	Name         string        `json:"name"`
-	IsActive     bool          `json:"active"`
-	Condition    Condition     `json:"condition"`
-	Actions      []Action      `json:"actions"`
-	Duration     time.Duration `json:"duration"`
-	ticker       *time.Ticker
-	resetChannel chan bool
+	ID               string        `json:"id"`
+	Name             string        `json:"name"`
+	IsActive         bool          `json:"active"`
+	Condition        Condition     `json:"condition"`
+	Actions          []Action      `json:"actions"`
+	Duration         time.Duration `json:"duration"`
+	ticker           *time.Ticker
+	resetChannel     chan bool
+	observedSubjects []Subject
 }
 
 func NewTimeTrigger(name string, duration time.Duration) *TimeTrigger {
@@ -81,4 +82,23 @@ func (t *TimeTrigger) UpdateCondition(newCondition string) error {
 	}
 	t.Condition = condition
 	return nil
+}
+
+func (t *TimeTrigger) UpdateActions(actions []Action) error {
+	t.Actions = actions
+	return nil
+}
+
+func (t *TimeTrigger) AddAction(a Action) {
+	t.Actions = append(t.Actions, a)
+}
+
+func (t *TimeTrigger) AddSubject(subject Subject) {
+	t.observedSubjects = append(t.observedSubjects, subject)
+}
+
+func (t *TimeTrigger) StopWatching() {
+	for _, subject := range t.observedSubjects {
+		subject.Deregister(t)
+	}
 }

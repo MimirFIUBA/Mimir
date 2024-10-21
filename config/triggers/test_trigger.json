@@ -1,20 +1,22 @@
 {
+    "id": "000000000000000000000000",
     "name": "trigger1",
-    "condition": "$(mimir/testWrite3) > 50.0",
+    "filename": "config/triggers/test_trigger.json",
     "active": true,
     "topics": [
         "mimir/testWrite3"
     ],
+    "condition": "$(mimir/testWrite3) \u003e 52.0",
     "actions": [
         {
-            "type": "print",
-            "name": "print test",
-            "message": "test action"
+            "Name": "print test",
+            "Type": "print",
+            "Message": "test action updated"
         },
         {
-            "type": "alert",
-            "name": "water too hot",
-            "message": "water too hot test"
+            "Name": "water too hot",
+            "Type": "alert",
+            "Message": "water too hot test"
         }
     ]
 }

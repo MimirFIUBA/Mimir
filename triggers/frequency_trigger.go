@@ -18,6 +18,7 @@ type FrequencyTrigger struct {
 	lastEventReceived *Event
 	Ticker            *time.Ticker
 	isTickerActive    bool
+	observedSubjects  []Subject
 }
 
 func NewFrequencyTrigger(name string, frequency time.Duration) *FrequencyTrigger {
@@ -69,4 +70,23 @@ func (t *FrequencyTrigger) UpdateCondition(newCondition string) error {
 	}
 	t.Condition = condition
 	return nil
+}
+
+func (t *FrequencyTrigger) UpdateActions(actions []Action) error {
+	t.Actions = actions
+	return nil
+}
+
+func (t *FrequencyTrigger) AddAction(a Action) {
+	t.Actions = append(t.Actions, a)
+}
+
+func (t *FrequencyTrigger) AddSubject(subject Subject) {
+	t.observedSubjects = append(t.observedSubjects, subject)
+}
+
+func (t *FrequencyTrigger) StopWatching() {
+	for _, subject := range t.observedSubjects {
+		subject.Deregister(t)
+	}
 }

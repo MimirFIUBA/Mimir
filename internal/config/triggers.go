@@ -67,6 +67,7 @@ func BuildTriggers(mimirProcessor *mimir.MimirProcessor) error {
 			if exists {
 				triggerToUpdate.SetID(dbTriggerData.ID.Hex())
 				topics, exists := topicsByFilename[dbTriggerData.Filename]
+				db.TriggerFilenamesById[dbTriggerData.ID.Hex()] = dbTriggerData.Filename
 				if exists {
 					db.RegisterTrigger(triggerToUpdate, topics)
 				}
@@ -83,15 +84,18 @@ func BuildTriggerObserver(t db.Trigger, mimirProcessor *mimir.MimirProcessor) (t
 	condition, err := triggers.BuildConditionFromString(string(t.Condition))
 	if err != nil {
 		return nil, err
-		//TODO return error
 	}
 	trigger.Condition = condition
-	for _, action := range t.Actions {
+	BuildActions(t, trigger, mimirProcessor)
+
+	return trigger, nil
+}
+
+func BuildActions(triggerData db.Trigger, trigger triggers.TriggerObserver, mimirProcessor *mimir.MimirProcessor) {
+	for _, action := range triggerData.Actions {
 		triggerAction := ToTriggerAction(action, mimirProcessor)
 		trigger.AddAction(triggerAction)
 	}
-
-	return trigger, nil
 }
 
 func BuildTriggerFromMap(triggerMap map[string]interface{}, mimirProcessor *mimir.MimirProcessor) *triggers.Trigger {
