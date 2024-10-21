@@ -1,0 +1,17 @@
+{
+    "id": "000000000000000000000000",
+    "name": "test fede 3",
+    "filename": "",
+    "active": true,
+    "topics": [
+        "mimir/testFede3"
+    ],
+    "condition": "",
+    "actions": [
+        {
+            "Name": "print test",
+            "Type": "print",
+            "Message": "test action"
+        }
+    ]
+}

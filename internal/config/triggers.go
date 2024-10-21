@@ -37,12 +37,15 @@ func BuildTriggers(mimirProcessor *mimir.MimirProcessor) error {
 			triggerData.Filename = filename
 			triggersToUpsert = append(triggersToUpsert, triggerData)
 
-			trigger := BuildTriggerObserver(triggerData, mimirProcessor)
-			triggersByFilename[filename] = trigger
-			topicsByFilename[filename] = triggerData.Topics
+			trigger, err := BuildTriggerObserver(triggerData, mimirProcessor)
+			if err == nil {
+				triggersByFilename[filename] = trigger
+				topicsByFilename[filename] = triggerData.Topics
+			} else {
+				slog.Error("Error creating trigger", "error", err)
+			}
 		}
 
-		slog.Info("Upsert triggers", "triggers", triggersToUpsert)
 		_, err := db.Database.UpsertTriggers(triggersToUpsert)
 		if err != nil {
 			slog.Error("error upserting triggers", "error", err)
@@ -73,13 +76,13 @@ func BuildTriggers(mimirProcessor *mimir.MimirProcessor) error {
 	return nil
 }
 
-func BuildTriggerObserver(t db.Trigger, mimirProcessor *mimir.MimirProcessor) triggers.TriggerObserver {
+func BuildTriggerObserver(t db.Trigger, mimirProcessor *mimir.MimirProcessor) (triggers.TriggerObserver, error) {
 	trigger := triggers.NewTrigger(t.Name)
 	trigger.SetID(t.ID.Hex())
 	trigger.IsActive = t.IsActive
 	condition, err := triggers.BuildConditionFromString(string(t.Condition))
 	if err != nil {
-		fmt.Println("error")
+		return nil, err
 		//TODO return error
 	}
 	trigger.Condition = condition
@@ -88,7 +91,7 @@ func BuildTriggerObserver(t db.Trigger, mimirProcessor *mimir.MimirProcessor) tr
 		trigger.AddAction(triggerAction)
 	}
 
-	return trigger
+	return trigger, nil
 }
 
 func BuildTriggerFromMap(triggerMap map[string]interface{}, mimirProcessor *mimir.MimirProcessor) *triggers.Trigger {
@@ -159,6 +162,7 @@ func ToTriggerAction(a db.Action, mimirProcessor *mimir.MimirProcessor) triggers
 		action.Message = a.Message
 		triggerAction = &action
 	default:
+		//TODO see if returning nil is fine or we need some error here
 		slog.Warn("action type not recognized while creating trigger action", "type", a.Type)
 	}
 

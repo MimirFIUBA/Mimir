@@ -58,7 +58,13 @@ func CreateTrigger(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	trigger := config.BuildTriggerObserver(*newTrigger, MimirProcessor)
+	trigger, err := config.BuildTriggerObserver(*newTrigger, MimirProcessor)
+	if err != nil {
+		//TODO: En general aca falla cuando hay una bad condition, hay que agregar esos detalles
+		logger.Error("Error creating trigger", "body", r.Body, "error", err)
+		responses.SendErrorResponse(w, http.StatusInternalServerError, responses.InternalErrorCodes.UnexpectedError)
+		return
+	}
 	db.RegisterTrigger(trigger, newTrigger.Topics)
 
 	w.WriteHeader(http.StatusCreated)
