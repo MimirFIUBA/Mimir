@@ -13,6 +13,11 @@ import (
 
 func Connect() (*mongo.Client, error) {
 
+	dbProtocol := os.Getenv("MONGODB_PROTOCOL")
+	if dbProtocol == "" {
+		return nil, errors.New("MONGODB_PROTOCOL must be set")
+	}
+
 	dbUsername := os.Getenv("MONGODB_USERNAME")
 	if dbUsername == "" {
 		return nil, errors.New("MONGODB_USERNAME must be set")
@@ -23,16 +28,14 @@ func Connect() (*mongo.Client, error) {
 		return nil, errors.New("MONGODB_PASSWORD must be set")
 	}
 
-	dbLocal := os.Getenv("MONGODB_LOCAL")
+	dbHostname := os.Getenv("MONGODB_HOSTNAME")
+	if dbHostname == "" {
+		return nil, errors.New("MONGODB_HOSTNAME must be set")
+	}
 
 	// Use the SetServerAPIOptions() method to set the version of the Stable API on the client
 	serverAPI := options.ServerAPI(options.ServerAPIVersion1)
-	var uri string
-	if dbLocal == "true" {
-		uri = fmt.Sprintf("mongodb://%s:%s@localhost:27017/?retryWrites=true&w=majority&appName=Mimir", dbUsername, dbPassword)
-	} else {
-		uri = fmt.Sprintf("mongodb+srv://%s:%s@mimir.razfo.mongodb.net/?retryWrites=true&w=majority&appName=Mimir", dbUsername, dbPassword)
-	}
+	uri := fmt.Sprintf("%s://%s:%s@%s/?retryWrites=true&w=majority&appName=Mimir", dbProtocol, dbUsername, dbPassword, dbHostname)
 	opts := options.Client().ApplyURI(uri).SetServerAPIOptions(serverAPI)
 	// Create a new client and connect to the server
 	client, err := mongo.Connect(context.TODO(), opts)
