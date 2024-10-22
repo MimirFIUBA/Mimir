@@ -93,7 +93,7 @@ func BuildTriggerObserver(t db.Trigger, mimirProcessor *mimir.MimirProcessor) (t
 
 func BuildActions(triggerData db.Trigger, trigger triggers.TriggerObserver, mimirProcessor *mimir.MimirProcessor) {
 	for _, action := range triggerData.Actions {
-		triggerAction := ToTriggerAction(action, mimirProcessor)
+		triggerAction := ToTriggerAction(action)
 		trigger.AddAction(triggerAction)
 	}
 }
@@ -148,7 +148,7 @@ func buildTrigger(triggerMap map[string]interface{}) *triggers.Trigger {
 	return triggers.NewTrigger(triggerName)
 }
 
-func ToTriggerAction(a db.Action, mimirProcessor *mimir.MimirProcessor) triggers.Action {
+func ToTriggerAction(a db.Action) triggers.Action {
 	var triggerAction triggers.Action
 
 	switch a.Type {
@@ -158,11 +158,11 @@ func ToTriggerAction(a db.Action, mimirProcessor *mimir.MimirProcessor) triggers
 		action.Name = a.Name
 		triggerAction = action
 	case "alert":
-		action := mimirProcessor.NewSendMQTTMessageAction(a.Message)
+		action := mimir.ActionFactory.NewSendMQTTMessageAction(a.Message)
 		action.Message = a.Message
 		triggerAction = &action
 	case "webSocket":
-		action := mimirProcessor.NewSendWebSocketMessageAction(a.Message)
+		action := mimir.ActionFactory.NewSendWebSocketMessageAction(a.Message)
 		action.Message = a.Message
 		triggerAction = &action
 	default:

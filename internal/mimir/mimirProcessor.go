@@ -6,7 +6,6 @@ import (
 	"mimir/internal/db"
 	"mimir/internal/mimir/processors"
 	"mimir/internal/models"
-	"mimir/triggers"
 )
 
 type MimirProcessor struct {
@@ -50,19 +49,6 @@ func setTopicsInactive() {
 	db.Database.DeactivateTopics(db.SensorsData.GetSensors())
 }
 
-// Action creation for simpler use
-func (p *MimirProcessor) NewSendMQTTMessageAction(message string) triggers.SendMessageThroughChannel {
-	return triggers.SendMessageThroughChannel{
-		Message:                 message,
-		OutgoingMessagesChannel: p.OutgoingMessagesChannel}
-}
-
-func (p *MimirProcessor) NewSendWebSocketMessageAction(message string) triggers.SendMessageThroughChannel {
-	return triggers.SendMessageThroughChannel{
-		Message:                 message,
-		OutgoingMessagesChannel: p.WsChannel}
-}
-
 func (p *MimirProcessor) RegisterSensor(sensor *models.Sensor) {
 	sensor.IsActive = true
 	p.TopicChannel <- sensor.Topic
@@ -98,4 +84,10 @@ func (p *MimirProcessor) StartGateway() {
 	}()
 
 	go p.publishOutgoingMessages()
+}
+
+func StartMimir() *MimirProcessor {
+	mp := NewMimirProcessor()
+	ActionFactory = models.NewActionFactory(mp.OutgoingMessagesChannel, mp.WsChannel)
+	return mp
 }
