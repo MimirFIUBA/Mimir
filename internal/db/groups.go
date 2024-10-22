@@ -3,7 +3,7 @@ package db
 import (
 	"context"
 	"fmt"
-	"mimir/internal/mimir/models"
+	"mimir/internal/models"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )

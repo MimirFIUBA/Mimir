@@ -5,7 +5,7 @@ import (
 	"log"
 	influxdb "mimir/db/influxdb"
 	"mimir/db/mongodb"
-	"mimir/internal/mimir/models"
+	"mimir/internal/models"
 	"mimir/triggers"
 
 	"github.com/InfluxCommunity/influxdb3-go/influxdb3"

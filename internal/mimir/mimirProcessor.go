@@ -4,21 +4,21 @@ import (
 	"fmt"
 	"mimir/internal/consts"
 	"mimir/internal/db"
-	mimir "mimir/internal/mimir/models"
 	"mimir/internal/mimir/processors"
+	"mimir/internal/models"
 	"mimir/triggers"
 )
 
 type MimirProcessor struct {
 	OutgoingMessagesChannel chan string
-	ReadingChannel          chan mimir.SensorReading
+	ReadingChannel          chan models.SensorReading
 	TopicChannel            chan string
 	WsChannel               chan string
 }
 
 func NewMimirProcessor() *MimirProcessor {
 	topicChannel := make(chan string)
-	readingsChannel := make(chan mimir.SensorReading, 50)
+	readingsChannel := make(chan models.SensorReading, 50)
 	outgoingMessagesChannel := make(chan string)
 	webSocketMessageChannel := make(chan string)
 
@@ -63,7 +63,7 @@ func (p *MimirProcessor) NewSendWebSocketMessageAction(message string) triggers.
 		OutgoingMessagesChannel: p.WsChannel}
 }
 
-func (p *MimirProcessor) RegisterSensor(sensor *mimir.Sensor) {
+func (p *MimirProcessor) RegisterSensor(sensor *models.Sensor) {
 	sensor.IsActive = true
 	p.TopicChannel <- sensor.Topic
 }

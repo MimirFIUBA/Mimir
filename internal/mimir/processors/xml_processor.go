@@ -1,6 +1,6 @@
 package processors
 
-import "mimir/internal/mimir/models"
+import "mimir/internal/models"
 
 type XMLProcessor struct{}
 

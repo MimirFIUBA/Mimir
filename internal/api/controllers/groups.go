@@ -5,7 +5,7 @@ import (
 	"mimir/internal/api/middlewares"
 	"mimir/internal/api/responses"
 	"mimir/internal/db"
-	mimir "mimir/internal/mimir/models"
+	"mimir/internal/models"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -54,7 +54,7 @@ func GetGroupById(w http.ResponseWriter, r *http.Request) {
 func CreateGroup(w http.ResponseWriter, r *http.Request) {
 	logger := middlewares.ContextWithLogger(r.Context())
 
-	var newGroup *mimir.Group
+	var newGroup *models.Group
 	err := json.NewDecoder(r.Body).Decode(&newGroup)
 	if err != nil {
 		logger.Error("Error decoding new group", "body", r.Body, "error", err.Error())
@@ -86,7 +86,7 @@ func UpdateGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var group *mimir.Group
+	var group *models.Group
 	err := json.NewDecoder(r.Body).Decode(&group)
 	if err != nil {
 		logger.Error("Error decoding new group", "body", r.Body, "error", err.Error())

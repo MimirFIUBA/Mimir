@@ -1,10 +1,10 @@
 package db
 
 import (
-	mimir "mimir/internal/mimir/models"
+	"mimir/internal/models"
 )
 
-func StoreReading(reading mimir.SensorReading) error {
+func StoreReading(reading models.SensorReading) error {
 	if reading.SensorID != "" {
 		sensor, err := SensorsData.GetSensorById(reading.SensorID)
 		if err != nil {

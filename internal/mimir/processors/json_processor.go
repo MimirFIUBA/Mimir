@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io"
 	"mimir/internal/consts"
-	"mimir/internal/mimir/models"
+	"mimir/internal/models"
 	"mimir/internal/utils"
 	"strings"
 	"time"

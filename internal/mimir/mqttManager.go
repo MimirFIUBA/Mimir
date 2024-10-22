@@ -5,8 +5,8 @@ import (
 	"log"
 	"log/slog"
 	"mimir/internal/consts"
-	"mimir/internal/mimir/models"
 	"mimir/internal/mimir/processors"
+	"mimir/internal/models"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/gookit/ini/v2"

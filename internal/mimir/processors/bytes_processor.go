@@ -5,7 +5,7 @@ import (
 	"encoding/binary"
 	"math"
 	"mimir/internal/consts"
-	"mimir/internal/mimir/models"
+	"mimir/internal/models"
 	"strings"
 	"time"
 )

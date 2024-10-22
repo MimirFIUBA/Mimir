@@ -5,7 +5,7 @@ import (
 	"mimir/internal/api/middlewares"
 	"mimir/internal/api/responses"
 	"mimir/internal/db"
-	mimir "mimir/internal/mimir/models"
+	"mimir/internal/models"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -55,7 +55,7 @@ func GetNodeById(w http.ResponseWriter, r *http.Request) {
 func CreateNode(w http.ResponseWriter, r *http.Request) {
 	logger := middlewares.ContextWithLogger(r.Context())
 
-	var newNode *mimir.Node
+	var newNode *models.Node
 	err := json.NewDecoder(r.Body).Decode(&newNode)
 	if err != nil {
 		logger.Error("Error decoding new node", "body", r.Body, "error", err.Error())
@@ -87,7 +87,7 @@ func UpdateNode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var node *mimir.Node
+	var node *models.Node
 	err := json.NewDecoder(r.Body).Decode(&node)
 	if err != nil {
 		logger.Error("Error decoding new node", "body", r.Body, "error", err.Error())

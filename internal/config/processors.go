@@ -7,8 +7,8 @@ import (
 	"mimir/internal/consts"
 	"mimir/internal/db"
 	"mimir/internal/mimir"
-	"mimir/internal/mimir/models"
 	"mimir/internal/mimir/processors"
+	"mimir/internal/models"
 	"mimir/internal/utils"
 	"os"
 

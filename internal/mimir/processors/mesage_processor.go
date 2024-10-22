@@ -1,7 +1,7 @@
 package processors
 
 import (
-	"mimir/internal/mimir/models"
+	"mimir/internal/models"
 )
 
 type ProcessorType int

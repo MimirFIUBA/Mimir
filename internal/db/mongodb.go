@@ -2,7 +2,7 @@ package db
 
 import (
 	"context"
-	mimir "mimir/internal/mimir/models"
+	"mimir/internal/models"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -25,7 +25,7 @@ func loadGroups(mongoDBClient *mongo.Client) {
 			defer cursor.Close(context.TODO())
 		}
 
-		var results []mimir.Group
+		var results []models.Group
 		if err = cursor.All(context.TODO(), &results); err != nil {
 			panic(err)
 		}
@@ -50,7 +50,7 @@ func loadNodes(mongoDBClient *mongo.Client) {
 			defer cursor.Close(context.TODO())
 		}
 
-		var results []mimir.Node
+		var results []models.Node
 		if err = cursor.All(context.TODO(), &results); err != nil {
 			panic(err)
 		}
