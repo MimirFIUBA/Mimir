@@ -26,5 +26,9 @@ test_mongodb.env
 test_influxdb.env
 db_data
 
+# MQTT
+mqtt/data
+mqtt/log
+
 # PersonalTestFiles
 examplesSetup
