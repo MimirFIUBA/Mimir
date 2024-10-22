@@ -30,5 +30,8 @@ db_data
 mqtt/data
 mqtt/log
 
+# Configuration files
+config.ini
+
 # PersonalTestFiles
 examplesSetup
