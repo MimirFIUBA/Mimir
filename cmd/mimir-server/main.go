@@ -6,7 +6,7 @@ import (
 	"log/slog"
 	"mimir/internal/api"
 	"mimir/internal/config"
-	mimirDb "mimir/internal/db"
+	"mimir/internal/db"
 	"mimir/internal/mimir"
 	"os"
 	"os/signal"
@@ -27,11 +27,12 @@ func main() {
 	config.LoadIni()
 	slog.Info("ini config file loaded")
 
-	mimirProcessor := mimir.NewMimirProcessor()
+	// mimirProcessor := mimir.NewMimirProcessor()
+	mimirProcessor := mimir.StartMimir()
 	mimirProcessor.StartGateway()
 	slog.Info("gateway started")
 
-	mongoClient, err := mimirDb.Database.ConnectToMongo()
+	mongoClient, err := db.Database.ConnectToMongo()
 	if err != nil {
 		slog.Error("error connecting to mongo", "error", err)
 	} else {
@@ -43,7 +44,7 @@ func main() {
 		}()
 	}
 
-	influxClient, err := mimirDb.Database.ConnectToInfluxDB()
+	influxClient, err := db.Database.ConnectToInfluxDB()
 	if err != nil {
 		slog.Error("error connecting to influx db", "error", err)
 	} else {
@@ -53,7 +54,7 @@ func main() {
 
 	config.BuildInitialConfiguration(mimirProcessor)
 	slog.Info("succesfully built environment based on configuration")
-	mimirDb.Run()
+	db.Run()
 
 	go mimirProcessor.Run()
 	go api.Start(mimirProcessor)

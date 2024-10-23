@@ -89,7 +89,7 @@ func UpdateTrigger(w http.ResponseWriter, r *http.Request) {
 
 	actions := make([]triggers.Action, 0)
 	for _, action := range requestBody.Actions {
-		triggerAction := config.ToTriggerAction(action, MimirProcessor)
+		triggerAction := config.ToTriggerAction(action)
 		actions = append(actions, triggerAction)
 	}
 	updatedTrigger, err := db.Database.UpdateTrigger(id, &requestBody, actions)

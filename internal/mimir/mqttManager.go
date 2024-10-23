@@ -2,7 +2,6 @@ package mimir
 
 import (
 	"fmt"
-	"log"
 	"log/slog"
 	"mimir/internal/consts"
 	"mimir/internal/mimir/processors"
@@ -36,8 +35,7 @@ func onMessageReceived(client mqtt.Client, message mqtt.Message) {
 		go func() {
 			err := processor.ProcessMessage(message.Topic(), message.Payload())
 			if err != nil {
-				log.Fatal("Error processing message: ", err)
-				fmt.Println("Error Process Message")
+				slog.Error("Error processing message: ", "error", err)
 			}
 		}()
 	}
