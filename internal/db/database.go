@@ -5,6 +5,7 @@ import (
 	"log"
 	influxdb "mimir/db/influxdb"
 	"mimir/db/mongodb"
+	"mimir/internal/consts"
 	"mimir/internal/models"
 	"mimir/triggers"
 
@@ -28,7 +29,7 @@ var (
 		groups:    make([]models.Group, 0),
 	}
 
-	ActiveTriggers       = make([]triggers.TriggerObserver, 0)
+	ActiveTriggers       = make([]triggers.Trigger, 0)
 	TriggerFilenamesById = make(map[string]string, 0)
 
 	ReadingsDBBuffer = make([]models.SensorReading, 0)
@@ -52,7 +53,7 @@ func Run() {
 }
 
 func (d *DatabaseManager) ConnectToInfluxDB() (*influxdb3.Client, error) {
-	godotenv.Load(ini.String("influxdb_configuration_file"))
+	godotenv.Load(ini.String(consts.INFLUX_CONFIGURATION_FILE_CONFIG_NAME))
 	dbClient, err := influxdb.ConnectToInfluxDB()
 	if err != nil {
 		log.Fatal("Error connecting to InfluxDB ", err)
@@ -64,7 +65,7 @@ func (d *DatabaseManager) ConnectToInfluxDB() (*influxdb3.Client, error) {
 }
 
 func (d *DatabaseManager) ConnectToMongo() (*mongo.Client, error) {
-	godotenv.Load(ini.String("mongodb_configuration_file"))
+	godotenv.Load(ini.String(consts.MONGO_CONFIGURATION_FILE_CONFIG_NAME))
 	client, err := mongodb.Connect()
 	if err != nil {
 		fmt.Println("Failed to connect to mongo: ", err)

@@ -43,8 +43,8 @@ func (t *Trigger) BuildFileName(suffix string) string {
 	return ini.String(consts.TRIGGERS_DIR_CONFIG_NAME) + "/" + filename + consts.TRIGGERS_FILE_SUFFIX
 }
 
-func (d *DatabaseManager) GetTriggers() []triggers.TriggerObserver {
-	var triggerList []triggers.TriggerObserver
+func (d *DatabaseManager) GetTriggers() []triggers.Trigger {
+	var triggerList []triggers.Trigger
 	for _, sensor := range SensorsData.sensors {
 		triggerList = append(triggerList, sensor.GetTriggers()...)
 	}
@@ -121,7 +121,7 @@ func (d *DatabaseManager) UpdateTrigger(id string, triggerUpdate *Trigger, actio
 	for _, trigger := range ActiveTriggers {
 		if trigger.GetID() == id {
 			//TODO Support for other triggertypes
-			trigger, ok := trigger.(*triggers.Trigger)
+			trigger, ok := trigger.(*triggers.EventTrigger)
 			if ok {
 				trigger.Name = triggerUpdate.Name
 				trigger.IsActive = triggerUpdate.IsActive
@@ -136,7 +136,7 @@ func (d *DatabaseManager) UpdateTrigger(id string, triggerUpdate *Trigger, actio
 	return triggerUpdate, nil
 }
 
-func RegisterTrigger(trigger triggers.TriggerObserver, topics []string) {
+func RegisterTrigger(trigger triggers.Trigger, topics []string) {
 	ActiveTriggers = append(ActiveTriggers, trigger)
 	for _, topic := range topics {
 		sensor, err := SensorsData.GetSensorByTopic(topic)

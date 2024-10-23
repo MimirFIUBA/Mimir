@@ -21,7 +21,7 @@ func BuildTriggers(mimirProcessor *mimir.MimirProcessor) error {
 	files := utils.ListFilesWithSuffix(dir, "*"+consts.TRIGGERS_FILE_SUFFIX)
 
 	if len(files) > 0 {
-		triggersByFilename := make(map[string]triggers.TriggerObserver)
+		triggersByFilename := make(map[string]triggers.Trigger)
 		topicsByFilename := make(map[string][]string)
 		triggersToUpsert := make([]db.Trigger, 0)
 
@@ -77,8 +77,8 @@ func BuildTriggers(mimirProcessor *mimir.MimirProcessor) error {
 	return nil
 }
 
-func BuildTriggerObserver(t db.Trigger, mimirProcessor *mimir.MimirProcessor) (triggers.TriggerObserver, error) {
-	trigger := triggers.NewTrigger(t.Name)
+func BuildTriggerObserver(t db.Trigger, mimirProcessor *mimir.MimirProcessor) (triggers.Trigger, error) {
+	trigger := triggers.NewEventTrigger(t.Name)
 	trigger.SetID(t.ID.Hex())
 	trigger.IsActive = t.IsActive
 	condition, err := triggers.BuildConditionFromString(string(t.Condition))
@@ -91,61 +91,11 @@ func BuildTriggerObserver(t db.Trigger, mimirProcessor *mimir.MimirProcessor) (t
 	return trigger, nil
 }
 
-func BuildActions(triggerData db.Trigger, trigger triggers.TriggerObserver, mimirProcessor *mimir.MimirProcessor) {
+func BuildActions(triggerData db.Trigger, trigger triggers.Trigger, mimirProcessor *mimir.MimirProcessor) {
 	for _, action := range triggerData.Actions {
 		triggerAction := ToTriggerAction(action)
 		trigger.AddAction(triggerAction)
 	}
-}
-
-func BuildTriggerFromMap(triggerMap map[string]interface{}, mimirProcessor *mimir.MimirProcessor) *triggers.Trigger {
-	trigger := buildTrigger(triggerMap)
-	condition, exists := buildCondition(triggerMap)
-	if exists {
-		trigger.Condition = condition
-	}
-	actions := buildActions(triggerMap, mimirProcessor)
-	for _, action := range actions {
-		trigger.AddAction(action)
-	}
-
-	return trigger
-}
-
-func buildCondition(triggerMap map[string]interface{}) (triggers.Condition, bool) {
-	conditionConfiguration, exists := triggerMap["condition"]
-	if exists {
-		var condition triggers.Condition
-		switch conditionValue := conditionConfiguration.(type) {
-		case string:
-			conditionBuilt, err := triggers.BuildConditionFromString(conditionValue)
-			if err != nil {
-				return nil, false //TODO ver si tenemos que devolver el error
-			}
-			condition = conditionBuilt
-		case map[string]interface{}:
-			condition = buildConditionFromMap(conditionValue)
-		}
-		return condition, true
-	}
-	return nil, false
-}
-
-func buildConditionFromMap(_ map[string]interface{}) triggers.Condition {
-	panic("missing implementation")
-}
-
-func buildTrigger(triggerMap map[string]interface{}) *triggers.Trigger {
-	nameValue, exists := triggerMap["name"]
-	if !exists {
-		panic("Missing name for trigger")
-	}
-
-	triggerName, ok := nameValue.(string)
-	if !ok {
-		panic("Trigger name is not a string")
-	}
-	return triggers.NewTrigger(triggerName)
 }
 
 func ToTriggerAction(a db.Action) triggers.Action {

@@ -18,6 +18,10 @@ func NewEvent() *Event {
 	return &Event{Id: uuid.New().String()}
 }
 
+func NilEvent() *Event {
+	return &Event{Id: uuid.Nil.String()}
+}
+
 // NewFloatEvent is just an empty event with only float data
 func NewFloatEvent(data float64) *Event {
 	return &Event{

@@ -6,7 +6,7 @@ import (
 	"github.com/google/uuid"
 )
 
-type TimeTrigger struct {
+type TimerTrigger struct {
 	ID               string        `json:"id"`
 	Name             string        `json:"name"`
 	IsActive         bool          `json:"active"`
@@ -18,17 +18,17 @@ type TimeTrigger struct {
 	observedSubjects []Subject
 }
 
-func NewTimeTrigger(name string, duration time.Duration) *TimeTrigger {
-	return &TimeTrigger{
+func NewTimerTrigger(name string, timeout time.Duration) *TimerTrigger {
+	return &TimerTrigger{
 		ID:           uuid.New().String(),
 		Name:         name,
-		Duration:     duration,
-		ticker:       time.NewTicker(duration),
+		Duration:     timeout,
+		ticker:       time.NewTicker(timeout),
 		resetChannel: make(chan bool),
 	}
 }
 
-func (t *TimeTrigger) Start() {
+func (t *TimerTrigger) Start() {
 	go func() {
 		for {
 			select {
@@ -41,19 +41,21 @@ func (t *TimeTrigger) Start() {
 	}()
 }
 
-func (t *TimeTrigger) reset() {
+func (t *TimerTrigger) reset() {
 	if t.ticker != nil {
 		t.ticker.Reset(t.Duration)
 	}
 }
 
-func (t *TimeTrigger) execute() {
-	for _, action := range t.Actions {
-		action.Execute(*NewEvent())
+func (t *TimerTrigger) execute() {
+	if t.IsActive {
+		for _, action := range t.Actions {
+			action.Execute(*NilEvent())
+		}
 	}
 }
 
-func (t *TimeTrigger) evaluate(event Event) {
+func (t *TimerTrigger) evaluate(event Event) {
 	if t.Condition != nil {
 		if t.Condition.Evaluate(event) {
 			t.resetChannel <- true
@@ -63,19 +65,19 @@ func (t *TimeTrigger) evaluate(event Event) {
 	}
 }
 
-func (t *TimeTrigger) Update(event Event) {
+func (t *TimerTrigger) Update(event Event) {
 	t.evaluate(event)
 }
 
-func (t *TimeTrigger) GetID() string {
+func (t *TimerTrigger) GetID() string {
 	return t.ID
 }
 
-func (t *TimeTrigger) SetID(id string) {
+func (t *TimerTrigger) SetID(id string) {
 	t.ID = id
 }
 
-func (t *TimeTrigger) UpdateCondition(newCondition string) error {
+func (t *TimerTrigger) UpdateCondition(newCondition string) error {
 	condition, err := BuildConditionFromString(newCondition)
 	if err != nil {
 		return err
@@ -84,20 +86,20 @@ func (t *TimeTrigger) UpdateCondition(newCondition string) error {
 	return nil
 }
 
-func (t *TimeTrigger) UpdateActions(actions []Action) error {
+func (t *TimerTrigger) UpdateActions(actions []Action) error {
 	t.Actions = actions
 	return nil
 }
 
-func (t *TimeTrigger) AddAction(a Action) {
+func (t *TimerTrigger) AddAction(a Action) {
 	t.Actions = append(t.Actions, a)
 }
 
-func (t *TimeTrigger) AddSubject(subject Subject) {
+func (t *TimerTrigger) AddSubject(subject Subject) {
 	t.observedSubjects = append(t.observedSubjects, subject)
 }
 
-func (t *TimeTrigger) StopWatching() {
+func (t *TimerTrigger) StopWatching() {
 	for _, subject := range t.observedSubjects {
 		subject.Deregister(t)
 	}

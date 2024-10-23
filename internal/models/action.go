@@ -7,6 +7,14 @@ type ActionFactory struct {
 	wsMessageChannel       chan string
 }
 
+type ActionType int
+
+const (
+	PRINT_ACTION ActionType = iota
+	MQTT_ACTION
+	WS_ACTION
+)
+
 func NewActionFactory(mqttMsgChan, wsMsgChan chan string) *ActionFactory {
 	return &ActionFactory{mqttMsgChan, wsMsgChan}
 }
