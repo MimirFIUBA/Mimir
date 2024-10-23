@@ -9,6 +9,10 @@ import (
 type TriggerFactory struct {
 }
 
+func NewTriggerFactory() *TriggerFactory {
+	return &TriggerFactory{}
+}
+
 type TriggerOptions struct {
 	Name        string
 	Frequency   time.Duration

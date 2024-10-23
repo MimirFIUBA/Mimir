@@ -1,12 +1,12 @@
 package triggers
 
 type EventTrigger struct {
-	ID               string    `json:"id"`
-	Name             string    `json:"name"`
-	Condition        Condition `json:"condition"`
+	ID               string
+	Name             string
+	Condition        Condition
 	stringCondition  string
-	IsActive         bool     `json:"active"`
-	Actions          []Action `json:"actions"`
+	IsActive         bool
+	Actions          []Action
 	observedSubjects []Subject
 }
 
@@ -66,4 +66,12 @@ func (t *EventTrigger) StopWatching() {
 	for _, subject := range t.observedSubjects {
 		subject.Deregister(t)
 	}
+}
+
+func (t *EventTrigger) Activate() {
+	t.IsActive = true
+}
+
+func (t *EventTrigger) Deactivate() {
+	t.IsActive = false
 }

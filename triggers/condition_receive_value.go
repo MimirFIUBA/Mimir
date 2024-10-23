@@ -7,6 +7,11 @@ type ReceiveValueCondition struct {
 	hasReceivedValue bool
 }
 
+func NewReceiveValueCondition(senderId string) *ReceiveValueCondition {
+	return &ReceiveValueCondition{senderId: senderId}
+
+}
+
 func (c *ReceiveValueCondition) GetEventId() string {
 	return c.eventId
 }

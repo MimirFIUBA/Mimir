@@ -3,6 +3,7 @@
     "name": "test fede 2",
     "filename": "",
     "active": true,
+    "type": "event",
     "topics": [
         "mimir/testWrite4"
     ],

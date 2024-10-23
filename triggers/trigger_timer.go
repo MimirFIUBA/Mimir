@@ -7,12 +7,12 @@ import (
 )
 
 type TimerTrigger struct {
-	ID               string        `json:"id"`
-	Name             string        `json:"name"`
-	IsActive         bool          `json:"active"`
-	Condition        Condition     `json:"condition"`
-	Actions          []Action      `json:"actions"`
-	Duration         time.Duration `json:"duration"`
+	ID               string
+	Name             string
+	IsActive         bool
+	Condition        Condition
+	Actions          []Action
+	Duration         time.Duration
 	ticker           *time.Ticker
 	resetChannel     chan bool
 	observedSubjects []Subject
@@ -103,4 +103,13 @@ func (t *TimerTrigger) StopWatching() {
 	for _, subject := range t.observedSubjects {
 		subject.Deregister(t)
 	}
+}
+
+func (t *TimerTrigger) Activate() {
+	t.IsActive = true
+	t.Start()
+}
+
+func (t *TimerTrigger) Deactivate() {
+	t.IsActive = false
 }

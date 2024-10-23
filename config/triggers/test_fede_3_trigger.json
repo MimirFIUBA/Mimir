@@ -3,6 +3,7 @@
     "name": "test fede 3",
     "filename": "",
     "active": true,
+    "type": "event",
     "topics": [
         "mimir/testFede3"
     ],

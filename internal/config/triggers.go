@@ -8,13 +8,21 @@ import (
 	"mimir/internal/consts"
 	"mimir/internal/db"
 	"mimir/internal/mimir"
+	"mimir/internal/models"
 	"mimir/internal/utils"
 	"mimir/triggers"
 	"os"
+	"time"
 
 	"github.com/gookit/ini/v2"
 	"go.mongodb.org/mongo-driver/bson"
 )
+
+var triggerTypeByName = map[string]triggers.TriggerType{
+	"event":     triggers.EVENT_TRIGGER,
+	"timer":     triggers.TIMER_TRIGGER,
+	"frequency": triggers.FREQUENCY_TRIGGER,
+}
 
 func BuildTriggers(mimirProcessor *mimir.MimirProcessor) error {
 	dir := ini.String(consts.TRIGGERS_DIR_CONFIG_NAME)
@@ -37,7 +45,7 @@ func BuildTriggers(mimirProcessor *mimir.MimirProcessor) error {
 			triggerData.Filename = filename
 			triggersToUpsert = append(triggersToUpsert, triggerData)
 
-			trigger, err := BuildTriggerObserver(triggerData, mimirProcessor)
+			trigger, err := BuildTrigger(triggerData, mimirProcessor)
 			if err == nil {
 				triggersByFilename[filename] = trigger
 				topicsByFilename[filename] = triggerData.Topics
@@ -77,15 +85,28 @@ func BuildTriggers(mimirProcessor *mimir.MimirProcessor) error {
 	return nil
 }
 
-func BuildTriggerObserver(t db.Trigger, mimirProcessor *mimir.MimirProcessor) (triggers.Trigger, error) {
-	trigger := triggers.NewEventTrigger(t.Name)
-	trigger.SetID(t.ID.Hex())
-	trigger.IsActive = t.IsActive
-	condition, err := triggers.BuildConditionFromString(string(t.Condition))
+func BuildTrigger(t db.Trigger, mimirProcessor *mimir.MimirProcessor) (triggers.Trigger, error) {
+
+	triggerType, exists := triggerTypeByName[t.Type]
+	if !exists {
+		return nil, fmt.Errorf("trigger type is missing")
+	}
+	trigger, err := mimir.TriggerFactory.BuildTrigger(models.TriggerOptions{
+		Name:        t.Name,
+		TriggerType: triggerType,
+		Timeout:     time.Duration(t.Timeout) * time.Second,
+		Frequency:   time.Duration(t.Frequency) * time.Second,
+	})
+
 	if err != nil {
 		return nil, err
 	}
-	trigger.Condition = condition
+	trigger.SetID(t.ID.Hex())
+	trigger.Activate()
+	err = trigger.UpdateCondition(string(t.Condition))
+	if err != nil {
+		return nil, err
+	}
 	BuildActions(t, trigger, mimirProcessor)
 
 	return trigger, nil

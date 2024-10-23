@@ -25,6 +25,9 @@ type Trigger struct {
 	Topics    []string           `json:"topics" bson:"topics"`
 	Condition Condition          `json:"condition" bson:"condition"`
 	Actions   []Action           `json:"actions" bson:"actions,omitempty"`
+	Type      string             `json:"type" bson:"type"`
+	Timeout   int                `json:"timeout,omitempty" bson:"timeout,omitempty"`
+	Frequency int                `json:"frequency,omitempty" bson:"frequency,omitempty"`
 }
 
 type Condition string

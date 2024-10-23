@@ -9,6 +9,8 @@ type Trigger interface {
 	AddAction(Action)
 	AddSubject(Subject)
 	StopWatching()
+	Activate()
+	Deactivate()
 }
 
 type Subject interface {

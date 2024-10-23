@@ -8,11 +8,11 @@ import (
 
 // TODO: ver si podemos integrar las conditions, y si tiene sentido. Ahora no se estan usando.
 type FrequencyTrigger struct {
-	ID                string    `json:"id"`
-	Name              string    `json:"name"`
-	IsActive          string    `json:"active"`
-	Condition         Condition `json:"condition"`
-	Actions           []Action  `json:"actions"`
+	ID                string
+	Name              string
+	IsActive          bool
+	Condition         Condition
+	Actions           []Action
 	Frequency         time.Duration
 	lastExecuteTime   time.Time
 	lastEventReceived *Event
@@ -89,4 +89,12 @@ func (t *FrequencyTrigger) StopWatching() {
 	for _, subject := range t.observedSubjects {
 		subject.Deregister(t)
 	}
+}
+
+func (t *FrequencyTrigger) Activate() {
+	t.IsActive = true
+}
+
+func (t *FrequencyTrigger) Deactivate() {
+	t.IsActive = false
 }
