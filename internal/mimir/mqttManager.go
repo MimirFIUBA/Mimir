@@ -30,7 +30,7 @@ func NewMQTTManager(mqttClient mqtt.Client, readingsChannel chan models.SensorRe
 func onMessageReceived(client mqtt.Client, message mqtt.Message) {
 	fmt.Printf("Received message: %s from topic: %s\n", message.Payload(), message.Topic())
 
-	processor, exists := MessageProcessors.GetProcessor(message.Topic())
+	processor, exists := MessageProcessors.GetHandler(message.Topic())
 	if exists {
 		go func() {
 			err := processor.ProcessMessage(message.Topic(), message.Payload())

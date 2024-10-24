@@ -12,19 +12,19 @@ import (
 	"github.com/gookit/ini/v2"
 )
 
-func (d *DatabaseManager) SaveProcessor(processor processors.MessageProcessor) {
-	jsonString, err := json.MarshalIndent(processor, "", "    ")
+func (d *DatabaseManager) SaveHandler(handler processors.MessageHandler) {
+	jsonString, err := json.MarshalIndent(handler, "", "    ")
 	if err != nil {
 		fmt.Println("Error ", err)
 	}
 
-	fileName := ini.String(consts.PROCESSORS_DIR_CONFIG_NAME) + "/" + processor.GetConfigFilename()
+	fileName := ini.String(consts.HANDLERS_DIR_CONFIG_NAME) + "/" + handler.GetConfigFilename()
 
 	os.WriteFile(fileName, jsonString, os.ModePerm)
 }
 
-func (d *DatabaseManager) DeleteProcessor(processor processors.MessageProcessor) {
-	fileName := ini.String(consts.PROCESSORS_DIR_CONFIG_NAME) + "/" + processor.GetConfigFilename()
+func (d *DatabaseManager) DeleteHandler(handler processors.MessageHandler) {
+	fileName := ini.String(consts.HANDLERS_DIR_CONFIG_NAME) + "/" + handler.GetConfigFilename()
 	newName := strings.Replace(fileName, ".json", "_deleted.json", 1)
 	err := os.Rename(fileName, newName)
 	if err != nil {

@@ -3,10 +3,10 @@ package consts
 const (
 	INI_CONFIG_FILENAME = "config/config.ini"
 
-	PROCESSORS_DIR_CONFIG_NAME = "processors_dir"
-	PROCESSORS_FILE_SUFFIX     = "_processor.json"
-	TRIGGERS_DIR_CONFIG_NAME   = "triggers_dir"
-	TRIGGERS_FILE_SUFFIX       = "_trigger.json"
+	HANDLERS_DIR_CONFIG_NAME = "handlers_dir"
+	HANDLERS_FILE_SUFFIX     = "_handler.json"
+	TRIGGERS_DIR_CONFIG_NAME = "triggers_dir"
+	TRIGGERS_FILE_SUFFIX     = "_trigger.json"
 
 	MONGO_CONFIGURATION_FILE_CONFIG_NAME  = "mongodb_configuration_file"
 	INFLUX_CONFIGURATION_FILE_CONFIG_NAME = "influxdb_configuration_file"

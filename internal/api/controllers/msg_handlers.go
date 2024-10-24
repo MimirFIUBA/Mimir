@@ -15,59 +15,59 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func GetProcessors(w http.ResponseWriter, r *http.Request) {
-	processors := mimir.MessageProcessors.GetProcessors()
+func GetHandlers(w http.ResponseWriter, r *http.Request) {
+	handlers := mimir.MessageProcessors.GetHandlers()
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(processors)
+	json.NewEncoder(w).Encode(handlers)
 }
 
-func GetProcessor(w http.ResponseWriter, r *http.Request) {
+func GetHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
 
-	processor, exists := mimir.MessageProcessors.GetProcessor(strings.ReplaceAll(id, ".", "/"))
+	handler, exists := mimir.MessageProcessors.GetHandler(strings.ReplaceAll(id, ".", "/"))
 	if exists {
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(processor)
+		json.NewEncoder(w).Encode(handler)
 	} else {
 		w.WriteHeader(http.StatusNotFound)
 	}
 }
 
-func CreateProcessor(w http.ResponseWriter, r *http.Request) {
+func CreateHandler(w http.ResponseWriter, r *http.Request) {
 	logger := middlewares.ContextWithLogger(r.Context())
 
-	var requestBody responses.Processor
+	var requestBody responses.Handler
 	err := utils.DecodeJsonToMap(r.Body, &requestBody)
 	if err != nil {
 		logger.Error("Error updating processor", "body", r.Body, "error", err)
 		responses.SendErrorResponse(w, http.StatusBadRequest, responses.ProcessorErrorCodes.InvalidSchema)
 	}
 
-	_, exists := mimir.MessageProcessors.GetProcessor(requestBody.Topic)
+	_, exists := mimir.MessageProcessors.GetHandler(requestBody.Topic)
 	if exists {
 		logger.Error("Error creating new processor", "body", r.Body, "error", "processor for topic "+requestBody.Topic+" already exists")
 		responses.SendErrorResponse(w, http.StatusBadRequest, responses.ProcessorErrorCodes.AlreadyExists)
 		return
 	}
 
-	var messageProcessor processors.MessageProcessor
-	switch requestBody.ProcessorType {
+	var messageHandler processors.MessageHandler
+	switch requestBody.HandlerType {
 	case "json":
-		jsonProcessor, err := createJSONProcessor(requestBody)
+		jsonHandler, err := createJSONHandler(requestBody)
 		if err != nil {
 			logger.Error("Error creating new processor", "body", r.Body, "error", err)
 			responses.SendErrorResponse(w, http.StatusBadRequest, responses.ProcessorErrorCodes.InvalidSchema)
 		}
-		messageProcessor = jsonProcessor
+		messageHandler = jsonHandler
 	case "bytes":
-		bytesProcessor, err := createBytesProcessor(requestBody)
+		bytesHandler, err := createBytesHandler(requestBody)
 		if err != nil {
 			logger.Error("Error creating new processor", "body", r.Body, "error", err)
 			responses.SendErrorResponse(w, http.StatusBadRequest, responses.ProcessorErrorCodes.InvalidSchema)
 		}
-		messageProcessor = bytesProcessor
+		messageHandler = bytesHandler
 	}
 
 	_, err = db.SensorsData.GetSensorByTopic(requestBody.Topic)
@@ -77,14 +77,14 @@ func CreateProcessor(w http.ResponseWriter, r *http.Request) {
 		MimirProcessor.RegisterSensor(sensor)
 	}
 
-	mimir.MessageProcessors.RegisterProcessor(requestBody.Topic, messageProcessor)
+	mimir.MessageProcessors.RegisterHandler(requestBody.Topic, messageHandler)
 
-	db.Database.SaveProcessor(messageProcessor)
+	db.Database.SaveHandler(messageHandler)
 
 	err = responses.SendJSONResponse(w, http.StatusOK, responses.ItemsResponse{
 		Code:    0,
 		Message: "The new processor was created",
-		Items:   messageProcessor,
+		Items:   messageHandler,
 	})
 	if err != nil {
 		logger.Error("Error sending response", "error", err.Error())
@@ -93,7 +93,7 @@ func CreateProcessor(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func UpdateProcessor(w http.ResponseWriter, r *http.Request) {
+func UpdateHandler(w http.ResponseWriter, r *http.Request) {
 	logger := middlewares.ContextWithLogger(r.Context())
 
 	vars := mux.Vars(r)
@@ -107,47 +107,47 @@ func UpdateProcessor(w http.ResponseWriter, r *http.Request) {
 		responses.SendErrorResponse(w, http.StatusBadRequest, responses.ProcessorErrorCodes.InvalidSchema)
 	}
 
-	existingProcessor, exists := mimir.MessageProcessors.GetProcessor(topic)
+	existingHandler, exists := mimir.MessageProcessors.GetHandler(topic)
 	if !exists {
 		logger.Error("Error updating processor", "body", r.Body, "error", "processor for topic "+topic+" does not exist")
 		responses.SendErrorResponse(w, http.StatusNotFound, responses.ProcessorErrorCodes.NotFound)
 		return
 	}
 
-	err = existingProcessor.UpdateFields(requestBody)
+	err = existingHandler.UpdateFields(requestBody)
 	if err != nil {
 		logger.Error("Error updating processor", "body", r.Body, "error", err)
 		responses.SendErrorResponse(w, http.StatusBadRequest, responses.ProcessorErrorCodes.InvalidSchema)
 		return
 	}
-	db.Database.SaveProcessor(existingProcessor)
+	db.Database.SaveHandler(existingHandler)
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(existingProcessor)
+	json.NewEncoder(w).Encode(existingHandler)
 }
 
-func DeleteProcessor(w http.ResponseWriter, r *http.Request) {
+func DeleteHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
 
 	topic := strings.ReplaceAll(id, ".", "/")
-	processor, exists := mimir.MessageProcessors.GetProcessor(topic)
+	processor, exists := mimir.MessageProcessors.GetHandler(topic)
 	if !exists {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 
-	db.Database.DeleteProcessor(processor)
-	mimir.MessageProcessors.RemoveProcessor(topic)
+	db.Database.DeleteHandler(processor)
+	mimir.MessageProcessors.RemoveHandler(topic)
 
 	w.WriteHeader(http.StatusOK)
 }
 
-func createJSONProcessor(requestBody responses.Processor) (*processors.JSONProcessor, error) {
-	jsonProcessor := &processors.JSONProcessor{
+func createJSONHandler(requestBody responses.Handler) (*processors.JSONHandler, error) {
+	jsonHandler := &processors.JSONHandler{
 		Name:            requestBody.Name,
 		Topic:           requestBody.Topic,
-		Type:            requestBody.ProcessorType,
+		Type:            requestBody.HandlerType,
 		ReadingsChannel: MimirProcessor.ReadingChannel}
 	for _, configurationInterface := range requestBody.Configurations {
 		jsonConfigurationMap, ok := configurationInterface.(map[string]interface{})
@@ -156,17 +156,17 @@ func createJSONProcessor(requestBody responses.Processor) (*processors.JSONProce
 			if err != nil {
 				return nil, err
 			}
-			jsonProcessor.AddValueConfiguration(jsonConfiguration)
+			jsonHandler.AddValueConfiguration(jsonConfiguration)
 		}
 	}
-	return jsonProcessor, nil
+	return jsonHandler, nil
 }
 
-func createBytesProcessor(requestBody responses.Processor) (*processors.BytesProcessor, error) {
-	bytesProcessor := &processors.BytesProcessor{
+func createBytesHandler(requestBody responses.Handler) (*processors.BytesHandler, error) {
+	bytesHandler := &processors.BytesHandler{
 		Name:            requestBody.Name,
 		Topic:           requestBody.Topic,
-		Type:            requestBody.ProcessorType,
+		Type:            requestBody.HandlerType,
 		ReadingsChannel: MimirProcessor.ReadingChannel}
 	for _, configurationInterface := range requestBody.Configurations {
 		configurationMap, ok := configurationInterface.(map[string]interface{})
@@ -175,8 +175,8 @@ func createBytesProcessor(requestBody responses.Processor) (*processors.BytesPro
 			if err != nil {
 				return nil, err
 			}
-			bytesProcessor.AddBytesConfiguration(*byteConfiguration)
+			bytesHandler.AddBytesConfiguration(*byteConfiguration)
 		}
 	}
-	return bytesProcessor, nil
+	return bytesHandler, nil
 }

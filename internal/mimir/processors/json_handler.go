@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-type JSONProcessor struct {
+type JSONHandler struct {
 	SensorId                string                    `json:"sensorId,omitempty"`
 	Name                    string                    `json:"name"`
 	Topic                   string                    `json:"topic"`
@@ -29,19 +29,19 @@ func NewJSONValueConfiguration(idPath, valuePath string) *JSONValueConfiguration
 	return &JSONValueConfiguration{idPath, valuePath}
 }
 
-func NewJSONProcessor() *JSONProcessor {
-	return &JSONProcessor{}
+func NewJSONHandler() *JSONHandler {
+	return &JSONHandler{}
 }
 
-func (p *JSONProcessor) SetReadingsChannel(readingsChannel chan models.SensorReading) {
+func (p *JSONHandler) SetReadingsChannel(readingsChannel chan models.SensorReading) {
 	p.ReadingsChannel = readingsChannel
 }
 
-func (p *JSONProcessor) AddValueConfiguration(configuration *JSONValueConfiguration) {
+func (p *JSONHandler) AddValueConfiguration(configuration *JSONValueConfiguration) {
 	p.JsonValueConfigurations = append(p.JsonValueConfigurations, *configuration)
 }
 
-func (p *JSONProcessor) ProcessMessage(topic string, payload []byte) error {
+func (p *JSONHandler) ProcessMessage(topic string, payload []byte) error {
 	var jsonPayload = string(payload)
 	jsonDataReader := strings.NewReader(jsonPayload)
 	decoder := json.NewDecoder(jsonDataReader)
@@ -85,19 +85,19 @@ func (p *JSONProcessor) ProcessMessage(topic string, payload []byte) error {
 	return nil
 }
 
-func (p *JSONProcessor) GetConfigFilename() string {
-	return strings.ReplaceAll(p.Topic, "/", "_") + consts.PROCESSORS_FILE_SUFFIX
+func (p *JSONHandler) GetConfigFilename() string {
+	return strings.ReplaceAll(p.Topic, "/", "_") + consts.HANDLERS_FILE_SUFFIX
 }
 
-func (p *JSONProcessor) GetTopic() string {
+func (p *JSONHandler) GetTopic() string {
 	return p.Topic
 }
 
-func (p *JSONProcessor) GetType() ProcessorType {
-	return JSON_PROCESSOR
+func (p *JSONHandler) GetType() HandlerType {
+	return JSON_HANDLER
 }
 
-func (p *JSONProcessor) UpdateFields(fieldsToUpdate map[string]interface{}) error {
+func (p *JSONHandler) UpdateFields(fieldsToUpdate map[string]interface{}) error {
 	for k, v := range fieldsToUpdate {
 		switch k {
 		case "name":

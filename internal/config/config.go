@@ -35,6 +35,6 @@ func LoadConfigurationFile(filename string) {
 }
 
 func BuildInitialConfiguration(mimirProcessor *mimir.MimirProcessor) {
-	BuildProcessors(mimirProcessor)
+	BuildHandlers(mimirProcessor)
 	BuildTriggers(mimirProcessor)
 }

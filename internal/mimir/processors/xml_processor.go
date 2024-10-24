@@ -2,32 +2,32 @@ package processors
 
 import "mimir/internal/models"
 
-type XMLProcessor struct{}
+type XMLHandler struct{}
 
-func NewXMLProcessor() *XMLProcessor {
-	return &XMLProcessor{}
+func NewXMLHandler() *XMLHandler {
+	return &XMLHandler{}
 }
 
-func (p *XMLProcessor) ProcessMessage(topic string, payload []byte) error {
+func (p *XMLHandler) ProcessMessage(topic string, payload []byte) error {
 	panic("Missing implementation")
 }
 
-func (p *XMLProcessor) SetReadingsChannel(readingsChannel chan models.SensorReading) {
+func (p *XMLHandler) SetReadingsChannel(readingsChannel chan models.SensorReading) {
 	panic("Missing implementation")
 }
 
-func (p *XMLProcessor) GetConfigFilename() string {
+func (p *XMLHandler) GetConfigFilename() string {
 	panic("Missing implementation")
 }
 
-func (p *XMLProcessor) GetTopic() string {
+func (p *XMLHandler) GetTopic() string {
 	panic("Missing implementation")
 }
 
-func (p *XMLProcessor) GetType() ProcessorType {
-	return XML_PROCESSOR
+func (p *XMLHandler) GetType() HandlerType {
+	return XML_HANDLER
 }
 
-func (p *XMLProcessor) UpdateFields(map[string]interface{}) error {
+func (p *XMLHandler) UpdateFields(map[string]interface{}) error {
 	return nil
 }

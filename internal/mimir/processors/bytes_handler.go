@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-type BytesProcessor struct {
+type BytesHandler struct {
 	SensorId            string
 	Name                string
 	Topic               string
@@ -19,8 +19,8 @@ type BytesProcessor struct {
 	ReadingsChannel     chan models.SensorReading
 }
 
-func NewBytesProcessor() *BytesProcessor {
-	return &BytesProcessor{}
+func NewBytesHandler() *BytesHandler {
+	return &BytesHandler{}
 }
 
 type BytesConfiguration struct {
@@ -33,11 +33,11 @@ func NewBytesConfiguration(dataType string, endianess binary.ByteOrder, size int
 	return &BytesConfiguration{dataType, endianess, size}
 }
 
-func (p *BytesProcessor) AddBytesConfiguration(configuration BytesConfiguration) {
+func (p *BytesHandler) AddBytesConfiguration(configuration BytesConfiguration) {
 	p.BytesConfigurations = append(p.BytesConfigurations, configuration)
 }
 
-func (p *BytesProcessor) SetReadingsChannel(readingsChannel chan models.SensorReading) {
+func (p *BytesHandler) SetReadingsChannel(readingsChannel chan models.SensorReading) {
 	p.ReadingsChannel = readingsChannel
 }
 
@@ -50,7 +50,7 @@ func readBool(stream *bytes.Reader) (bool, error) {
 	return value != 0, nil
 }
 
-func (p *BytesProcessor) ProcessMessage(topic string, payload []byte) error {
+func (p *BytesHandler) ProcessMessage(topic string, payload []byte) error {
 	var sensorId string
 	if p.SensorId != "" {
 		sensorId = p.SensorId
@@ -88,18 +88,18 @@ func (p *BytesProcessor) ProcessMessage(topic string, payload []byte) error {
 	return nil
 }
 
-func (p *BytesProcessor) GetConfigFilename() string {
-	return strings.ReplaceAll(p.Topic, "/", "_") + consts.PROCESSORS_FILE_SUFFIX
+func (p *BytesHandler) GetConfigFilename() string {
+	return strings.ReplaceAll(p.Topic, "/", "_") + consts.HANDLERS_FILE_SUFFIX
 }
 
-func (p *BytesProcessor) GetTopic() string {
+func (p *BytesHandler) GetTopic() string {
 	return p.Topic
 }
 
-func (p *BytesProcessor) GetType() ProcessorType {
-	return BYTES_PROCESSOR
+func (p *BytesHandler) GetType() HandlerType {
+	return BYTES_HANDLER
 }
 
-func (p *BytesProcessor) UpdateFields(map[string]interface{}) error {
+func (p *BytesHandler) UpdateFields(map[string]interface{}) error {
 	return nil
 }
