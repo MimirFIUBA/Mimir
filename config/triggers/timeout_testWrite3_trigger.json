@@ -11,9 +11,9 @@
         {
             "Name": "timeout alert testWrite3",
             "Type": "print",
-            "Message": "testWrite3 timeout"
+            "Message": "testWrite3 timeout update"
         }
     ],
     "type": "timer",
-    "timeout": 1
+    "timeout": 10
 }

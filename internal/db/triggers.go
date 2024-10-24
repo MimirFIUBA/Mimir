@@ -9,6 +9,7 @@ import (
 	"mimir/triggers"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/gookit/ini/v2"
 	"go.mongodb.org/mongo-driver/bson"
@@ -123,7 +124,31 @@ func (d *DatabaseManager) UpdateTrigger(id string, triggerUpdate *Trigger, actio
 
 	for _, trigger := range ActiveTriggers {
 		if trigger.GetID() == id {
-			//Common update for different trigger types
+			switch trigger.GetType() {
+			case triggers.EVENT_TRIGGER:
+				eventTrigger, ok := trigger.(*triggers.EventTrigger)
+				if !ok {
+					return nil, fmt.Errorf("trigger type error")
+				}
+				eventTrigger.Name = triggerUpdate.Name
+			case triggers.TIMER_TRIGGER:
+				timerTrigger, ok := trigger.(*triggers.TimerTrigger)
+				if !ok {
+					return nil, fmt.Errorf("trigger type error")
+				}
+				timerTrigger.Name = triggerUpdate.Name
+				timerTrigger.UpdateTimeout(time.Duration(triggerUpdate.Timeout) * time.Second)
+			case triggers.FREQUENCY_TRIGGER:
+				frequencyTrigger, ok := trigger.(*triggers.FrequencyTrigger)
+				if !ok {
+					return nil, fmt.Errorf("trigger type error")
+				}
+				frequencyTrigger.Name = triggerUpdate.Name
+				frequencyTrigger.Frequency = time.Duration(triggerUpdate.Frequency) * time.Second
+			default:
+				return nil, fmt.Errorf("trigger type not recognized")
+			}
+
 			trigger.UpdateCondition(string(triggerUpdate.Condition))
 			trigger.UpdateActions(actions)
 			trigger.SetStatus(triggerUpdate.IsActive)

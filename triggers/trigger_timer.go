@@ -12,7 +12,7 @@ type TimerTrigger struct {
 	IsActive         bool
 	Condition        Condition
 	Actions          []Action
-	Duration         time.Duration
+	Timeout          time.Duration
 	ticker           *time.Ticker
 	resetChannel     chan bool
 	observedSubjects []Subject
@@ -22,7 +22,7 @@ func NewTimerTrigger(name string, timeout time.Duration) *TimerTrigger {
 	return &TimerTrigger{
 		ID:           uuid.New().String(),
 		Name:         name,
-		Duration:     timeout,
+		Timeout:      timeout,
 		ticker:       time.NewTicker(timeout),
 		resetChannel: make(chan bool),
 	}
@@ -30,6 +30,7 @@ func NewTimerTrigger(name string, timeout time.Duration) *TimerTrigger {
 
 func (t *TimerTrigger) Start() {
 	go func() {
+		//TODO: ADD CANCEL TO THIS
 		for {
 			select {
 			case <-t.resetChannel:
@@ -43,7 +44,7 @@ func (t *TimerTrigger) Start() {
 
 func (t *TimerTrigger) reset() {
 	if t.ticker != nil {
-		t.ticker.Reset(t.Duration)
+		t.ticker.Reset(t.Timeout)
 	}
 }
 
@@ -126,4 +127,9 @@ func (t *TimerTrigger) SetStatus(active bool) {
 			t.Deactivate()
 		}
 	}
+}
+
+func (t *TimerTrigger) UpdateTimeout(newTimeout time.Duration) {
+	t.Timeout = newTimeout
+	t.reset()
 }
