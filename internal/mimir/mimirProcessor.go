@@ -89,5 +89,6 @@ func (p *MimirProcessor) StartGateway() {
 func StartMimir() *MimirProcessor {
 	mp := NewMimirProcessor()
 	ActionFactory = models.NewActionFactory(mp.OutgoingMessagesChannel, mp.WsChannel)
+	TriggerFactory = models.NewTriggerFactory()
 	return mp
 }

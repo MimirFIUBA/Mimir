@@ -14,7 +14,7 @@ const (
 	TOKEN_AND TokenType = iota
 	TOKEN_OR
 	TOKEN_COMPARE
-	TOKEN_AVG
+	TOKEN_FUNC
 	TOKEN_LPAREN // (
 	TOKEN_RPAREN // )
 	TOKEN_LBRACE // [
@@ -31,6 +31,7 @@ const (
 	OR_STRING      = "OR"
 	AND_STRING     = "AND"
 	AVERAGE_STRING = "AVG"
+	VALUE_STRING   = "VALUE"
 )
 
 const (
@@ -93,8 +94,11 @@ func Tokenize(input string) []Token {
 			tokens = append(tokens, Token{Type: TOKEN_OR, Value: OR_STRING})
 			i += 2
 		case strings.HasPrefix(input[i:], AVERAGE_STRING):
-			tokens = append(tokens, Token{Type: TOKEN_AVG, Value: AVERAGE_STRING})
+			tokens = append(tokens, Token{Type: TOKEN_FUNC, Value: AVERAGE_STRING})
 			i += 3
+		case strings.HasPrefix(input[i:], VALUE_STRING):
+			tokens = append(tokens, Token{Type: TOKEN_FUNC, Value: VALUE_STRING})
+			i += 5
 		case input[i] == '$' && input[i+1] == '(':
 			start := i
 			i += 2
@@ -197,16 +201,43 @@ func parsePrimary(state *ParserState) (Condition, error) {
 		}
 		state.Advance()
 		return node, nil
-	case TOKEN_AVG:
-		averageCondition, err := parseAverageCondition(state)
+	case TOKEN_FUNC:
+		condition, err := parseFunction(state)
 		if err != nil {
 			return nil, err
 		}
 		state.Advance()
-		return averageCondition, nil
+		return condition, nil
 	default:
 		return nil, fmt.Errorf("unexpected token: %v", token)
 	}
+}
+
+func parseFunction(state *ParserState) (Condition, error) {
+	token := state.Current()
+	switch token.Value {
+	case VALUE_STRING:
+		return parseReceiveValue(state)
+	case AVERAGE_STRING:
+		return parseAverageCondition(state)
+	default:
+		return nil, fmt.Errorf("%s is not a valid function", token.Value)
+	}
+}
+
+func parseReceiveValue(state *ParserState) (Condition, error) {
+	state.Advance()
+	params, err := parseParameters(state)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(params) != 1 {
+		return nil, fmt.Errorf("expected only one parameter for value condition")
+	}
+
+	receiveValueCondition := NewReceiveValueCondition(params[0].getValue())
+	return receiveValueCondition, nil
 }
 
 func parseAverageCondition(state *ParserState) (Condition, error) {
@@ -261,7 +292,6 @@ func parseParameters(state *ParserState) ([]Token, error) {
 		currentToken = state.Current()
 		switch currentToken.Type {
 		case TOKEN_LPAREN:
-
 			if currentToken.Type != TOKEN_IDENT {
 				return nil, fmt.Errorf("wrong format for parameter, expecting identity")
 			}

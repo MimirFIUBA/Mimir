@@ -1,6 +1,5 @@
 {
     "name": "test",
-    "filename": "",
     "active": true,
     "topics": [
         "mimir/testWrite4"

@@ -46,5 +46,6 @@ func BuildProcessors(mimirProcessor *mimir.MimirProcessor) {
 		mimirProcessor.RegisterSensor(sensor)
 		sensors = append(sensors, *sensor)
 	}
+
 	db.SensorsData.LoadSensors(sensors)
 }

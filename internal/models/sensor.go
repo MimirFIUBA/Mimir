@@ -17,7 +17,7 @@ type Sensor struct {
 	Description string             `json:"description" bson:"description"`
 	IsActive    bool               `json:"isActive" bson:"is_active"`
 	Data        []SensorReading    `json:"data" bson:"data, omitempty"`
-	triggerList []triggers.TriggerObserver
+	triggerList []triggers.Trigger
 }
 
 type SensorReading struct {
@@ -51,15 +51,15 @@ func (s *Sensor) GetId() string {
 	return s.ID.String()
 }
 
-func (s *Sensor) Register(trigger triggers.TriggerObserver) {
+func (s *Sensor) Register(trigger triggers.Trigger) {
 	s.triggerList = append(s.triggerList, trigger)
 	trigger.AddSubject(s)
 }
 
-func (s *Sensor) Deregister(trigger triggers.TriggerObserver) {
+func (s *Sensor) Deregister(trigger triggers.Trigger) {
 	idToRemove := trigger.GetID()
 
-	s.triggerList = slices.DeleteFunc(s.triggerList, func(trigger triggers.TriggerObserver) bool {
+	s.triggerList = slices.DeleteFunc(s.triggerList, func(trigger triggers.Trigger) bool {
 		return trigger.GetID() == idToRemove
 	})
 }
@@ -77,6 +77,6 @@ func (s *Sensor) NotifyAll() {
 	}
 }
 
-func (s *Sensor) GetTriggers() []triggers.TriggerObserver {
+func (s *Sensor) GetTriggers() []triggers.Trigger {
 	return s.triggerList
 }

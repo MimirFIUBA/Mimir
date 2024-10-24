@@ -9,6 +9,7 @@ import (
 	"mimir/triggers"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/gookit/ini/v2"
 	"go.mongodb.org/mongo-driver/bson"
@@ -18,13 +19,16 @@ import (
 )
 
 type Trigger struct {
-	ID        primitive.ObjectID `json:"id" bson:"_id,omitempty"`
-	Name      string             `json:"name" bson:"name,omitempty"`
-	Filename  string             `json:"filename" bson:"filename,omitempty"`
+	ID        primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
+	Name      string             `json:"name,omitempty" bson:"name,omitempty"`
+	Filename  string             `json:"filename,omitempty" bson:"filename,omitempty"`
 	IsActive  bool               `json:"active" bson:"active"`
 	Topics    []string           `json:"topics" bson:"topics"`
 	Condition Condition          `json:"condition" bson:"condition"`
 	Actions   []Action           `json:"actions" bson:"actions,omitempty"`
+	Type      string             `json:"type" bson:"type"`
+	Timeout   int                `json:"timeout,omitempty" bson:"timeout,omitempty"`
+	Frequency int                `json:"frequency,omitempty" bson:"frequency,omitempty"`
 }
 
 type Condition string
@@ -43,8 +47,8 @@ func (t *Trigger) BuildFileName(suffix string) string {
 	return ini.String(consts.TRIGGERS_DIR_CONFIG_NAME) + "/" + filename + consts.TRIGGERS_FILE_SUFFIX
 }
 
-func (d *DatabaseManager) GetTriggers() []triggers.TriggerObserver {
-	var triggerList []triggers.TriggerObserver
+func (d *DatabaseManager) GetTriggers() []triggers.Trigger {
+	var triggerList []triggers.Trigger
 	for _, sensor := range SensorsData.sensors {
 		triggerList = append(triggerList, sensor.GetTriggers()...)
 	}
@@ -120,23 +124,49 @@ func (d *DatabaseManager) UpdateTrigger(id string, triggerUpdate *Trigger, actio
 
 	for _, trigger := range ActiveTriggers {
 		if trigger.GetID() == id {
-			//TODO Support for other triggertypes
-			trigger, ok := trigger.(*triggers.Trigger)
-			if ok {
-				trigger.Name = triggerUpdate.Name
-				trigger.IsActive = triggerUpdate.IsActive
+			switch trigger.GetType() {
+			case triggers.EVENT_TRIGGER:
+				eventTrigger, ok := trigger.(*triggers.EventTrigger)
+				if !ok {
+					return nil, fmt.Errorf("trigger type error")
+				}
+				eventTrigger.Name = triggerUpdate.Name
+			case triggers.TIMER_TRIGGER:
+				timerTrigger, ok := trigger.(*triggers.TimerTrigger)
+				if !ok {
+					return nil, fmt.Errorf("trigger type error")
+				}
+				timerTrigger.Name = triggerUpdate.Name
+				timerTrigger.UpdateTimeout(time.Duration(triggerUpdate.Timeout) * time.Second)
+			case triggers.FREQUENCY_TRIGGER:
+				frequencyTrigger, ok := trigger.(*triggers.FrequencyTrigger)
+				if !ok {
+					return nil, fmt.Errorf("trigger type error")
+				}
+				frequencyTrigger.Name = triggerUpdate.Name
+				frequencyTrigger.Frequency = time.Duration(triggerUpdate.Frequency) * time.Second
+			default:
+				return nil, fmt.Errorf("trigger type not recognized")
 			}
+
 			trigger.UpdateCondition(string(triggerUpdate.Condition))
 			trigger.UpdateActions(actions)
+			trigger.SetStatus(triggerUpdate.IsActive)
+
+			//TODO add more stuff to update
 		}
 	}
 
-	saveTriggerFile(triggerUpdate)
+	filename, exists := TriggerFilenamesById[id]
+	if exists {
+		triggerUpdate.Filename = filename
+		saveTriggerFile(triggerUpdate)
+	}
 
 	return triggerUpdate, nil
 }
 
-func RegisterTrigger(trigger triggers.TriggerObserver, topics []string) {
+func RegisterTrigger(trigger triggers.Trigger, topics []string) {
 	ActiveTriggers = append(ActiveTriggers, trigger)
 	for _, topic := range topics {
 		sensor, err := SensorsData.GetSensorByTopic(topic)
