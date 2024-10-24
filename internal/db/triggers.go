@@ -18,9 +18,9 @@ import (
 )
 
 type Trigger struct {
-	ID        primitive.ObjectID `json:"id" bson:"_id,omitempty"`
-	Name      string             `json:"name" bson:"name,omitempty"`
-	Filename  string             `json:"filename" bson:"filename,omitempty"`
+	ID        primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
+	Name      string             `json:"name,omitempty" bson:"name,omitempty"`
+	Filename  string             `json:"filename,omitempty" bson:"filename,omitempty"`
 	IsActive  bool               `json:"active" bson:"active"`
 	Topics    []string           `json:"topics" bson:"topics"`
 	Condition Condition          `json:"condition" bson:"condition"`
@@ -123,18 +123,20 @@ func (d *DatabaseManager) UpdateTrigger(id string, triggerUpdate *Trigger, actio
 
 	for _, trigger := range ActiveTriggers {
 		if trigger.GetID() == id {
-			//TODO Support for other triggertypes
-			trigger, ok := trigger.(*triggers.EventTrigger)
-			if ok {
-				trigger.Name = triggerUpdate.Name
-				trigger.IsActive = triggerUpdate.IsActive
-			}
+			//Common update for different trigger types
 			trigger.UpdateCondition(string(triggerUpdate.Condition))
 			trigger.UpdateActions(actions)
+			trigger.SetStatus(triggerUpdate.IsActive)
+
+			//TODO add more stuff to update
 		}
 	}
 
-	saveTriggerFile(triggerUpdate)
+	filename, exists := TriggerFilenamesById[id]
+	if exists {
+		triggerUpdate.Filename = filename
+		saveTriggerFile(triggerUpdate)
+	}
 
 	return triggerUpdate, nil
 }

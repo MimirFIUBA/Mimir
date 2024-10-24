@@ -1,11 +1,11 @@
 {
+    "id": "000000000000000000000000",
     "name": "test write 3 timeout",
+    "filename": "config/triggers/timeout_testWrite3_trigger.json",
     "active": true,
     "topics": [
         "mimir/testWrite3"
     ],
-    "type": "timer",
-    "timeout": 10,
     "condition": "VALUE($(mimir/testWrite3))",
     "actions": [
         {
@@ -13,5 +13,7 @@
             "Type": "print",
             "Message": "testWrite3 timeout"
         }
-    ]
+    ],
+    "type": "timer",
+    "timeout": 1
 }

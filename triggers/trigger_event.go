@@ -75,3 +75,17 @@ func (t *EventTrigger) Activate() {
 func (t *EventTrigger) Deactivate() {
 	t.IsActive = false
 }
+
+func (t *EventTrigger) GetType() TriggerType {
+	return EVENT_TRIGGER
+}
+
+func (t *EventTrigger) SetStatus(active bool) {
+	if t.IsActive != active {
+		if active {
+			t.Activate()
+		} else {
+			t.Deactivate()
+		}
+	}
+}

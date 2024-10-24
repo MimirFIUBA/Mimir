@@ -11,6 +11,8 @@ type Trigger interface {
 	StopWatching()
 	Activate()
 	Deactivate()
+	GetType() TriggerType
+	SetStatus(bool)
 }
 
 type Subject interface {

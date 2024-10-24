@@ -98,3 +98,17 @@ func (t *FrequencyTrigger) Activate() {
 func (t *FrequencyTrigger) Deactivate() {
 	t.IsActive = false
 }
+
+func (t *FrequencyTrigger) GetType() TriggerType {
+	return FREQUENCY_TRIGGER
+}
+
+func (t *FrequencyTrigger) SetStatus(active bool) {
+	if t.IsActive != active {
+		if active {
+			t.Activate()
+		} else {
+			t.Deactivate()
+		}
+	}
+}

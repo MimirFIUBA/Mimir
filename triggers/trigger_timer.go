@@ -113,3 +113,17 @@ func (t *TimerTrigger) Activate() {
 func (t *TimerTrigger) Deactivate() {
 	t.IsActive = false
 }
+
+func (t *TimerTrigger) GetType() TriggerType {
+	return TIMER_TRIGGER
+}
+
+func (t *TimerTrigger) SetStatus(active bool) {
+	if t.IsActive != active {
+		if active {
+			t.Activate()
+		} else {
+			t.Deactivate()
+		}
+	}
+}
