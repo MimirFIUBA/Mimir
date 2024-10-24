@@ -1,7 +1,5 @@
 {
-    "id": "000000000000000000000000",
     "name": "test id",
-    "filename": "",
     "active": true,
     "type": "event",
     "topics": [

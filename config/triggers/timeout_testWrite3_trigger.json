@@ -1,7 +1,5 @@
 {
-    "id": "000000000000000000000000",
     "name": "test write 3 timeout",
-    "filename": "config/triggers/timeout_testWrite3_trigger.json",
     "active": true,
     "topics": [
         "mimir/testWrite3"
