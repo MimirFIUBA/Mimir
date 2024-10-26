@@ -46,6 +46,16 @@ func loadStoredData(e *mimir.MimirEngine) {
 	config.BuildInitialConfiguration(e)
 }
 
+func gracefulShutdown(cancel context.CancelFunc, e *mimir.MimirEngine) {
+	slog.Info("closing application")
+
+	cancel()
+	e.Close()
+	slog.Info("close successful")
+
+	fmt.Println("Mimir is out of duty, bye!")
+}
+
 func main() {
 
 	initializeLogger()
@@ -73,14 +83,15 @@ func main() {
 		}()
 	}
 
-	mimirEngine := mimir.StartMimir()
 	ctx, cancel := context.WithCancel(context.Background())
+
+	mimirEngine := mimir.NewMimirEngine()
 	mimirEngine.Run(ctx)
 
 	loadStoredData(mimirEngine)
 
 	db.Run(ctx)
-	go api.Start(ctx, mimirEngine)
+	api.Start(ctx, mimirEngine)
 
 	fmt.Println("Everything up and running")
 
@@ -88,11 +99,5 @@ func main() {
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 	<-sigChan
 
-	slog.Info("closing application")
-
-	cancel()
-	mimirEngine.Close()
-	slog.Info("close successful")
-
-	fmt.Println("Mimir is out of duty, bye!")
+	gracefulShutdown(cancel, mimirEngine)
 }

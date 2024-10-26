@@ -54,6 +54,7 @@ func NewMimirEngine() *MimirEngine {
 		gateway,
 		NewPublisher(gateway.GetClient(), outgoingMessagesChannel),
 	}
+	Mimir = &engine
 	return &engine
 }
 
@@ -98,12 +99,6 @@ func (e *MimirEngine) RegisterSensor(sensor *models.Sensor) {
 	fmt.Println("Register sensor ", sensor.Topic)
 	sensor.IsActive = true
 	e.TopicChannel <- []string{sensor.Topic}
-}
-
-func StartMimir() *MimirEngine {
-	engine := NewMimirEngine()
-	Mimir = engine
-	return engine
 }
 
 func (e *MimirEngine) BuildTrigger(trigger models.TriggerOptions) (triggers.Trigger, error) {
