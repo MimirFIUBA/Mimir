@@ -8,26 +8,26 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func loadTopology() {
+func LoadTopology() {
 	mongoDBClient := Database.getMongoClient()
 	loadGroups(mongoDBClient)
 	loadNodes(mongoDBClient)
 }
 
-func loadGroups(mongoDBClient *mongo.Client) {
+func loadGroups(mongoDBClient *mongo.Client) error {
 	if mongoDBClient != nil {
 		filter := bson.D{}
 		topicsCollection := mongoDBClient.Database(MONGO_DB_MIMIR).Collection(GROUPS_COLLECTION)
 		cursor, err := topicsCollection.Find(context.TODO(), filter)
 		if err != nil {
-			panic(err)
+			return err
 		} else {
 			defer cursor.Close(context.TODO())
 		}
 
 		var results []models.Group
 		if err = cursor.All(context.TODO(), &results); err != nil {
-			panic(err)
+			return err
 		}
 
 		if len(results) > 0 {
@@ -35,24 +35,25 @@ func loadGroups(mongoDBClient *mongo.Client) {
 				GroupsData.AddGroup(&group)
 			}
 		}
+		return nil
 	}
+	return nil
 }
 
-func loadNodes(mongoDBClient *mongo.Client) {
+func loadNodes(mongoDBClient *mongo.Client) error {
 	if mongoDBClient != nil {
-
 		filter := bson.D{}
 		topicsCollection := mongoDBClient.Database(MONGO_DB_MIMIR).Collection(NODES_COLLECTION)
 		cursor, err := topicsCollection.Find(context.TODO(), filter)
 		if err != nil {
-			panic(err)
+			return err
 		} else {
 			defer cursor.Close(context.TODO())
 		}
 
 		var results []models.Node
 		if err = cursor.All(context.TODO(), &results); err != nil {
-			panic(err)
+			return err
 		}
 
 		if len(results) > 0 {
@@ -61,4 +62,5 @@ func loadNodes(mongoDBClient *mongo.Client) {
 			}
 		}
 	}
+	return nil
 }

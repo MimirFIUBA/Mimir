@@ -1,4 +1,4 @@
-package processors
+package handlers
 
 import (
 	"bytes"
@@ -50,7 +50,7 @@ func readBool(stream *bytes.Reader) (bool, error) {
 	return value != 0, nil
 }
 
-func (p *BytesHandler) ProcessMessage(topic string, payload []byte) error {
+func (p *BytesHandler) HandleMessage(msg Message) error {
 	var sensorId string
 	if p.SensorId != "" {
 		sensorId = p.SensorId
@@ -58,7 +58,7 @@ func (p *BytesHandler) ProcessMessage(topic string, payload []byte) error {
 
 	i := 0
 	for _, configuration := range p.BytesConfigurations {
-		dataBytes := payload[i : configuration.Size+i]
+		dataBytes := msg.Payload[i : configuration.Size+i]
 		var data interface{}
 		switch configuration.DataType {
 		case "id":
@@ -79,7 +79,7 @@ func (p *BytesHandler) ProcessMessage(topic string, payload []byte) error {
 		}
 
 		if sensorId != "" && configuration.DataType != "id" {
-			sensorReading := models.SensorReading{SensorID: sensorId, Value: data, Time: time.Now(), Topic: topic}
+			sensorReading := models.SensorReading{SensorID: sensorId, Value: data, Time: time.Now(), Topic: msg.Topic}
 			p.ReadingsChannel <- sensorReading
 		}
 

@@ -59,7 +59,7 @@ func CreateTrigger(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	trigger, err := config.BuildTrigger(*newTrigger, MimirProcessor)
+	trigger, err := config.BuildTrigger(*newTrigger, MimirEngine)
 	if err != nil {
 		//TODO: En general aca falla cuando hay una bad condition, hay que agregar esos detalles
 		logger.Error("Error creating trigger", "body", r.Body, "error", err)

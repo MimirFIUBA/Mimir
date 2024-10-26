@@ -1,4 +1,4 @@
-package processors
+package handlers
 
 import "fmt"
 

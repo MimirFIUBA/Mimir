@@ -303,3 +303,27 @@ func removeTriggerFromWokflow(id string) {
 		ActiveTriggers = append(ActiveTriggers[:indexToRemove], ActiveTriggers[indexToRemove+1:]...)
 	}
 }
+
+func (d *DatabaseManager) DeactivateTriggers(ctx context.Context) {
+	mongoClient := d.getMongoClient()
+	if mongoClient != nil {
+		filter := buildTriggerIdFilter(ActiveTriggers)
+		update := bson.D{{Key: "$set", Value: bson.D{{Key: "active", Value: false}}}}
+		triggersCollection := mongoClient.Database(MONGO_DB_MIMIR).Collection(TRIGGERS_COLLECTION)
+		triggersCollection.UpdateMany(ctx, filter, update)
+	}
+}
+
+func buildTriggerIdFilter(triggers []triggers.Trigger) bson.D {
+	values := bson.A{}
+	for _, trigger := range triggers {
+		id, err := primitive.ObjectIDFromHex(trigger.GetID())
+		if err != nil {
+			slog.Warn("could not set object id for trigger", "id", trigger.GetID())
+			continue
+		}
+		values = append(values, id)
+	}
+
+	return bson.D{{Key: "_id", Value: bson.D{{Key: "$in", Value: values}}}}
+}

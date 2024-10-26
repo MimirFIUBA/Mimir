@@ -1,8 +1,8 @@
 package db
 
 import (
-	"fmt"
-	"log"
+	"context"
+	"log/slog"
 	influxdb "mimir/db/influxdb"
 	"mimir/db/mongodb"
 	"mimir/internal/consts"
@@ -47,33 +47,29 @@ type DatabaseClient struct {
 	isConnected bool
 }
 
-func Run() {
-	loadTopology()
-	go processPoints()
+func Run(ctx context.Context) {
+	go processPoints(ctx)
 }
 
 func (d *DatabaseManager) ConnectToInfluxDB() (*influxdb3.Client, error) {
 	godotenv.Load(ini.String(consts.INFLUX_CONFIGURATION_FILE_CONFIG_NAME))
 	dbClient, err := influxdb.ConnectToInfluxDB()
 	if err != nil {
-		log.Fatal("Error connecting to InfluxDB ", err)
+		slog.Error("Error connecting to InfluxDB ", "error", err)
 		return nil, err
-	} else {
-		d.AddInfluxClient(dbClient)
-		return dbClient, nil
 	}
+	d.AddInfluxClient(dbClient)
+	return dbClient, nil
 }
 
 func (d *DatabaseManager) ConnectToMongo() (*mongo.Client, error) {
 	godotenv.Load(ini.String(consts.MONGO_CONFIGURATION_FILE_CONFIG_NAME))
 	client, err := mongodb.Connect()
 	if err != nil {
-		fmt.Println("Failed to connect to mongo: ", err)
+		slog.Error("Error connecting to Mongo ", "error", err)
 		return nil, err
-	} else {
-		d.AddMongoClient(client)
 	}
-
+	d.AddMongoClient(client)
 	return client, nil
 }
 

@@ -1,4 +1,4 @@
-package processors
+package handlers
 
 import "mimir/internal/models"
 
@@ -8,7 +8,7 @@ func NewXMLHandler() *XMLHandler {
 	return &XMLHandler{}
 }
 
-func (p *XMLHandler) ProcessMessage(topic string, payload []byte) error {
+func (p *XMLHandler) HandleMessage(msg Message) error {
 	panic("Missing implementation")
 }
 

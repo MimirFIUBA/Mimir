@@ -24,7 +24,7 @@ var triggerTypeByName = map[string]triggers.TriggerType{
 	"frequency": triggers.FREQUENCY_TRIGGER,
 }
 
-func BuildTriggers(mimirProcessor *mimir.MimirProcessor) error {
+func BuildTriggers(mimirEngine *mimir.MimirEngine) error {
 	dir := ini.String(consts.TRIGGERS_DIR_CONFIG_NAME)
 	files := utils.ListFilesWithSuffix(dir, "*"+consts.TRIGGERS_FILE_SUFFIX)
 
@@ -45,7 +45,7 @@ func BuildTriggers(mimirProcessor *mimir.MimirProcessor) error {
 			triggerData.Filename = filename
 			triggersToUpsert = append(triggersToUpsert, triggerData)
 
-			trigger, err := BuildTrigger(triggerData, mimirProcessor)
+			trigger, err := BuildTrigger(triggerData, mimirEngine)
 			if err == nil {
 				triggersByFilename[filename] = trigger
 				topicsByFilename[filename] = triggerData.Topics
@@ -85,13 +85,13 @@ func BuildTriggers(mimirProcessor *mimir.MimirProcessor) error {
 	return nil
 }
 
-func BuildTrigger(t db.Trigger, mimirProcessor *mimir.MimirProcessor) (triggers.Trigger, error) {
+func BuildTrigger(t db.Trigger, mimirEngine *mimir.MimirEngine) (triggers.Trigger, error) {
 
 	triggerType, exists := triggerTypeByName[t.Type]
 	if !exists {
 		return nil, fmt.Errorf("trigger type is missing")
 	}
-	trigger, err := mimir.TriggerFactory.BuildTrigger(models.TriggerOptions{
+	trigger, err := mimirEngine.BuildTrigger(models.TriggerOptions{
 		Name:        t.Name,
 		TriggerType: triggerType,
 		Timeout:     time.Duration(t.Timeout) * time.Second,
@@ -107,12 +107,12 @@ func BuildTrigger(t db.Trigger, mimirProcessor *mimir.MimirProcessor) (triggers.
 	if err != nil {
 		return nil, err
 	}
-	BuildActions(t, trigger, mimirProcessor)
+	BuildActions(t, trigger)
 
 	return trigger, nil
 }
 
-func BuildActions(triggerData db.Trigger, trigger triggers.Trigger, mimirProcessor *mimir.MimirProcessor) {
+func BuildActions(triggerData db.Trigger, trigger triggers.Trigger) {
 	for _, action := range triggerData.Actions {
 		triggerAction := ToTriggerAction(action)
 		trigger.AddAction(triggerAction)
@@ -129,11 +129,11 @@ func ToTriggerAction(a db.Action) triggers.Action {
 		action.Name = a.Name
 		triggerAction = action
 	case "alert":
-		action := mimir.ActionFactory.NewSendMQTTMessageAction(a.Message)
+		action := mimir.Mimir.ActionFactory.NewSendMQTTMessageAction(a.Message)
 		action.Message = a.Message
 		triggerAction = &action
 	case "webSocket":
-		action := mimir.ActionFactory.NewSendWebSocketMessageAction(a.Message)
+		action := mimir.Mimir.ActionFactory.NewSendWebSocketMessageAction(a.Message)
 		action.Message = a.Message
 		triggerAction = &action
 	default:

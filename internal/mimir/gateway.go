@@ -3,10 +3,15 @@ package mimir
 import (
 	"context"
 	"fmt"
+	"log/slog"
+	"math"
+	"mimir/internal/handlers"
 	"mimir/internal/models"
+	"sync"
 	"time"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
+	"golang.org/x/sync/errgroup"
 )
 
 type Gateway struct {
@@ -14,11 +19,12 @@ type Gateway struct {
 	client       mqtt.Client
 	done         chan struct{}
 	readingsChan chan models.SensorReading
-	topicsChan   chan string
 	timeout      time.Duration
 	quiesce      uint
 	retries      int
 	qos          byte
+	topics       *sync.Map
+	msgs         MessageChannel
 }
 
 type GatewayOptions struct {
@@ -30,7 +36,7 @@ type GatewayOptions struct {
 	QoS     byte
 }
 
-func NewGateway(msgs chan models.SensorReading, opts *GatewayOptions) (*Gateway, error) {
+func NewGateway(readingsChannel chan models.SensorReading, msgs MessageChannel, opts *GatewayOptions) (*Gateway, error) {
 	mqttOptions := mqtt.NewClientOptions()
 	mqttOptions.AddBroker(opts.Broker)
 	mqttOptions.SetProtocolVersion(4)
@@ -43,85 +49,87 @@ func NewGateway(msgs chan models.SensorReading, opts *GatewayOptions) (*Gateway,
 	return &Gateway{
 		id:           opts.ID,
 		client:       client,
-		readingsChan: msgs,
+		readingsChan: readingsChannel,
 		retries:      opts.Retries,
 		done:         make(chan struct{}, 1),
 		timeout:      opts.Timeout,
 		quiesce:      opts.Quiesce,
 		qos:          opts.QoS,
+		topics:       new(sync.Map),
+		msgs:         msgs,
 	}, nil
 }
 
-// func (g *Gateway) Start(topics <-chan []string, ctx context.Context) {
-// 	var subscribed []string
-// 	for {
-// 		select {
-// 		case newTopics := <-topics:
-// 			newSet := SetFromSlice(newTopics)
-// 			new, deleted := newSet.GetNewAndDeletedTopics(subscribed)
-// 			subscribed = newTopics
-// 			// NOTE(juan): Try a number of times if it fails, the
-// 			// correct way would be to do an exponential
-// 			// backoff
-// 			for i := 0; i < g.retries; i++ {
-// 				if err := trySubscribeToTopics(ctx, new, g); err != nil {
-// 					slog.Error("subscribe", "error", err)
-// 					continue
-// 				}
-// 				break
-// 			}
-// 			for i := 0; i < g.retries; i++ {
-// 				if err := tryUnsubscribeToTopics(deleted, g); err != nil {
-// 					slog.Error("unsubscribe", "error", err)
-// 					continue
-// 				}
-// 				break
-// 			}
-// 		case <-ctx.Done():
-// 			slog.Error("context", "error", ctx.Err())
-// 			return
-// 		}
-// 	}
-// }
+func (g *Gateway) Start(topics <-chan []string, ctx context.Context) {
+	for {
+		select {
+		case newTopics := <-topics:
+			topicsToSubscribe := make([]string, 0)
+			for _, topic := range newTopics {
+				isSubscribed, exists := g.topics.Load(topic)
 
-// func onMessageReceived2(ch MessageChannel) mqtt.MessageHandler {
-// 	return func(c mqtt.Client, m mqtt.Message) {
-// 		payload := m.Payload()
-// 		topic := m.Topic()
-// 		msg := Message{topic, payload}
-// 		ch <- msg
-// 		m.Ack()
-// 		return
-// 	}
-// }
+				if !exists {
+					topicsToSubscribe = append(topicsToSubscribe, topic)
+				} else {
+					isSubscribedBool, ok := isSubscribed.(bool)
+					if !ok {
+						slog.Error("wrong value topic subscribed", "topic", topic)
+						continue
+					}
+					if !isSubscribedBool {
+						topicsToSubscribe = append(topicsToSubscribe, topic)
+					}
+				}
+			}
 
-// func trySubscribeToTopics(ctx context.Context, topics []string, g *Gateway) error {
-// 	eg, ctx := errgroup.WithContext(ctx)
-// 	for _, topic := range topics {
-// 		topic := topic
-// 		eg.Go(func() error {
-// 			token := g.client.Subscribe(topic, g.qos, onMessageReceived2(g.msgs))
-// 			if token.WaitTimeout(g.timeout) {
-// 				if err := token.Error(); err != nil {
-// 					return fmt.Errorf("couldn't subscribe to topic %q: %w", topic, err)
-// 				}
-// 			}
-// 			return nil
-// 		})
-// 	}
-// 	if err := eg.Wait(); err != nil {
-// 		return err
-// 	}
-// 	return nil
-// }
+			g.trySubscribeToTopics(ctx, topicsToSubscribe)
 
-// func (g *Gateway) Done() <-chan struct{} {
-// 	return g.done
-// }
+		case <-ctx.Done():
+			slog.Error("context", "error", ctx.Err())
+			return
+		}
+	}
+}
 
-// func (g *Gateway) Shutdown() {
-// 	g.client.Disconnect(g.quiesce)
-// }
+func (g *Gateway) trySubscribeToTopics(ctx context.Context, topics []string) error {
+	eg, _ := errgroup.WithContext(ctx)
+	for _, topic := range topics {
+		topic := topic
+		eg.Go(func() error {
+			token := g.client.Subscribe(topic, g.qos, onMessageReceived(g.msgs))
+			var lastError error
+			for i := 0; i < g.retries; i++ {
+				timeout := time.Duration(math.Pow(2, float64(i))) * g.timeout
+				if token.WaitTimeout(timeout) {
+					if err := token.Error(); err != nil {
+						lastError = err
+						continue
+					}
+					g.topics.Store(topic, true)
+					break
+				}
+			}
+			if lastError != nil {
+				return fmt.Errorf("couldn't subscribe to topic %q: %w", topic, lastError)
+			}
+			return nil
+		})
+	}
+	if err := eg.Wait(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func onMessageReceived(ch MessageChannel) mqtt.MessageHandler {
+	return func(c mqtt.Client, m mqtt.Message) {
+		fmt.Println("Received message: ", m)
+		msg := handlers.Message{Topic: m.Topic(), Payload: m.Payload()}
+		ch <- msg
+		m.Ack() //TODO: check if the ack is necessary
+	}
+
+}
 
 func tryConnectToBroker(ctx context.Context, client mqtt.Client) error {
 	token := client.Connect()
@@ -131,4 +139,40 @@ func tryConnectToBroker(ctx context.Context, client mqtt.Client) error {
 	case <-token.Done():
 		return token.Error()
 	}
+}
+
+func (g *Gateway) GetClient() mqtt.Client {
+	return g.client
+}
+
+func (g *Gateway) CloseConnection() {
+	topicsToUnsuscribe := make([]string, 0)
+	g.topics.Range(func(key, value any) bool {
+		isSubscribed, ok := value.(bool)
+		if ok && isSubscribed {
+			topic, ok := key.(string)
+			if ok {
+				topicsToUnsuscribe = append(topicsToUnsuscribe, topic)
+			}
+		}
+		return true
+	})
+	var lastError error
+	for i := 0; i < g.retries; i++ {
+		timeout := time.Duration(math.Pow(2, float64(i))) * g.timeout
+		token := g.client.Unsubscribe(topicsToUnsuscribe...)
+		if token.WaitTimeout(timeout) {
+			if err := token.Error(); err != nil {
+				lastError = err
+				continue
+			}
+			break
+		}
+	}
+
+	if lastError != nil {
+		slog.Error("could not unsuscribe to topics", "error", lastError)
+	}
+
+	g.client.Disconnect(g.quiesce)
 }

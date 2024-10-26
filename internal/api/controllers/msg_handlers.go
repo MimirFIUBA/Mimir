@@ -5,8 +5,8 @@ import (
 	"mimir/internal/api/middlewares"
 	"mimir/internal/api/responses"
 	"mimir/internal/db"
+	"mimir/internal/handlers"
 	"mimir/internal/mimir"
-	"mimir/internal/mimir/processors"
 	"mimir/internal/models"
 	"mimir/internal/utils"
 	"net/http"
@@ -16,7 +16,7 @@ import (
 )
 
 func GetHandlers(w http.ResponseWriter, r *http.Request) {
-	handlers := mimir.MessageProcessors.GetHandlers()
+	handlers := mimir.Mimir.MsgProcessor.GetHandlers()
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(handlers)
@@ -26,7 +26,7 @@ func GetHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
 
-	handler, exists := mimir.MessageProcessors.GetHandler(strings.ReplaceAll(id, ".", "/"))
+	handler, exists := mimir.Mimir.MsgProcessor.GetHandler(strings.ReplaceAll(id, ".", "/"))
 	if exists {
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(handler)
@@ -45,14 +45,14 @@ func CreateHandler(w http.ResponseWriter, r *http.Request) {
 		responses.SendErrorResponse(w, http.StatusBadRequest, responses.ProcessorErrorCodes.InvalidSchema)
 	}
 
-	_, exists := mimir.MessageProcessors.GetHandler(requestBody.Topic)
+	_, exists := mimir.Mimir.MsgProcessor.GetHandler(requestBody.Topic)
 	if exists {
 		logger.Error("Error creating new processor", "body", r.Body, "error", "processor for topic "+requestBody.Topic+" already exists")
 		responses.SendErrorResponse(w, http.StatusBadRequest, responses.ProcessorErrorCodes.AlreadyExists)
 		return
 	}
 
-	var messageHandler processors.MessageHandler
+	var messageHandler handlers.MessageHandler
 	switch requestBody.HandlerType {
 	case "json":
 		jsonHandler, err := createJSONHandler(requestBody)
@@ -74,10 +74,10 @@ func CreateHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		sensor := models.NewSensor(requestBody.Topic)
 		sensor.Topic = requestBody.Topic
-		MimirProcessor.RegisterSensor(sensor)
+		MimirEngine.RegisterSensor(sensor)
 	}
 
-	mimir.MessageProcessors.RegisterHandler(requestBody.Topic, messageHandler)
+	mimir.Mimir.MsgProcessor.RegisterHandler(requestBody.Topic, messageHandler)
 
 	db.Database.SaveHandler(messageHandler)
 
@@ -107,7 +107,7 @@ func UpdateHandler(w http.ResponseWriter, r *http.Request) {
 		responses.SendErrorResponse(w, http.StatusBadRequest, responses.ProcessorErrorCodes.InvalidSchema)
 	}
 
-	existingHandler, exists := mimir.MessageProcessors.GetHandler(topic)
+	existingHandler, exists := mimir.Mimir.MsgProcessor.GetHandler(topic)
 	if !exists {
 		logger.Error("Error updating processor", "body", r.Body, "error", "processor for topic "+topic+" does not exist")
 		responses.SendErrorResponse(w, http.StatusNotFound, responses.ProcessorErrorCodes.NotFound)
@@ -131,28 +131,29 @@ func DeleteHandler(w http.ResponseWriter, r *http.Request) {
 	id := vars["id"]
 
 	topic := strings.ReplaceAll(id, ".", "/")
-	processor, exists := mimir.MessageProcessors.GetHandler(topic)
+	processor, exists := mimir.Mimir.MsgProcessor.GetHandler(topic)
 	if !exists {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 
 	db.Database.DeleteHandler(processor)
-	mimir.MessageProcessors.RemoveHandler(topic)
+	mimir.Mimir.MsgProcessor.RemoveHandler(topic)
 
 	w.WriteHeader(http.StatusOK)
 }
 
-func createJSONHandler(requestBody responses.Handler) (*processors.JSONHandler, error) {
-	jsonHandler := &processors.JSONHandler{
+// TODO: pasar esto a un handler factory con el reading channel para sacarlo de mimir engine
+func createJSONHandler(requestBody responses.Handler) (*handlers.JSONHandler, error) {
+	jsonHandler := &handlers.JSONHandler{
 		Name:            requestBody.Name,
 		Topic:           requestBody.Topic,
 		Type:            requestBody.HandlerType,
-		ReadingsChannel: MimirProcessor.ReadingChannel}
+		ReadingsChannel: MimirEngine.ReadingChannel}
 	for _, configurationInterface := range requestBody.Configurations {
 		jsonConfigurationMap, ok := configurationInterface.(map[string]interface{})
 		if ok {
-			jsonConfiguration, err := processors.JsonMapToJsonConfiguration(jsonConfigurationMap)
+			jsonConfiguration, err := handlers.JsonMapToJsonConfiguration(jsonConfigurationMap)
 			if err != nil {
 				return nil, err
 			}
@@ -162,16 +163,17 @@ func createJSONHandler(requestBody responses.Handler) (*processors.JSONHandler, 
 	return jsonHandler, nil
 }
 
-func createBytesHandler(requestBody responses.Handler) (*processors.BytesHandler, error) {
-	bytesHandler := &processors.BytesHandler{
+// TODO: pasar esto a un handler factory con el reading channel para sacarlo de mimir engine
+func createBytesHandler(requestBody responses.Handler) (*handlers.BytesHandler, error) {
+	bytesHandler := &handlers.BytesHandler{
 		Name:            requestBody.Name,
 		Topic:           requestBody.Topic,
 		Type:            requestBody.HandlerType,
-		ReadingsChannel: MimirProcessor.ReadingChannel}
+		ReadingsChannel: MimirEngine.ReadingChannel}
 	for _, configurationInterface := range requestBody.Configurations {
 		configurationMap, ok := configurationInterface.(map[string]interface{})
 		if ok {
-			byteConfiguration, err := processors.JsonMapToByteConfiguration(configurationMap)
+			byteConfiguration, err := handlers.JsonMapToByteConfiguration(configurationMap)
 			if err != nil {
 				return nil, err
 			}

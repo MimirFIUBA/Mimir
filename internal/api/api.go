@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"log"
 
 	"mimir/internal/api/controllers"
@@ -9,10 +10,10 @@ import (
 	"net/http"
 )
 
-func Start(mimirProcessor *mimir.MimirProcessor) {
+func Start(ctx context.Context, mimirEngine *mimir.MimirEngine) {
 	router := routes.CreateRouter()
-	controllers.SetWebSocketBroadcastChan(mimirProcessor.WsChannel)
-	controllers.SetMimirProcessor(mimirProcessor)
-	go controllers.HandleWebSocketMessages()
-	log.Fatal(http.ListenAndServe(":8080", router))
+	controllers.SetWebSocketBroadcastChan(mimirEngine.WsChannel)
+	controllers.SetMimirEngine(mimirEngine)
+	go controllers.HandleWebSocketMessages(ctx)
+	go log.Fatal(http.ListenAndServe(":8080", router))
 }

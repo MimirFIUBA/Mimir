@@ -1,7 +1,9 @@
 package websocket
 
 import (
+	"context"
 	"fmt"
+	"log/slog"
 	"mimir/internal/api/responses"
 	"net/http"
 
@@ -41,16 +43,21 @@ func (h *Handler) BroadcastMessage(msg responses.WSMessage) {
 }
 
 // HandleWebSocketMessages listens to the broadcastChan and sends the message received from it to all clients.
-func (h *Handler) HandleMessages() {
+func (h *Handler) HandleMessages(ctx context.Context) {
 	for {
-		msg := <-h.BroadcastChan
-
-		for client := range h.Clients {
-			err := client.WriteJSON(msg)
-			if err != nil {
-				fmt.Println(err)
-				h.CloseConnection(client)
+		select {
+		case msg := <-h.BroadcastChan:
+			for client := range h.Clients {
+				err := client.WriteJSON(msg)
+				if err != nil {
+					fmt.Println(err)
+					h.CloseConnection(client)
+				}
 			}
+		case <-ctx.Done():
+			slog.Info("web socket context done, closing web socket handler", "error", ctx.Err())
+			return
 		}
+
 	}
 }

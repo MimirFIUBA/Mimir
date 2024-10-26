@@ -33,9 +33,9 @@ func (g mqttGenerator) generateIntData(n int, id int) {
 	g.c <- 0
 }
 
-func (g mqttGenerator) generateFloatData(n int, id string, mps int, multiplier float64, suma float64) {
+func (g mqttGenerator) generateFloatData(n int, id string, mps int, multiplier float64, offset float64) {
 	for i := 1; i <= n; i++ {
-		message := fmt.Sprintf(`{"id": "%s", "data": %.2f, "time": "%s"}`, id, rand.Float64()*multiplier+suma, time.Now())
+		message := fmt.Sprintf(`{"id": "%s", "data": %.2f, "time": "%s"}`, id, rand.Float64()*multiplier+offset, time.Now())
 		token := g.client.Publish(g.topic, 0, false, message)
 		token.Wait()
 

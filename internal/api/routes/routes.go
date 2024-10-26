@@ -1,8 +1,6 @@
 package routes
 
 import (
-	"mimir/internal/api/controllers"
-
 	"github.com/gorilla/mux"
 )
 
@@ -15,8 +13,6 @@ func CreateRouter() *mux.Router {
 	AddHandlersRoutes(router)
 	AddTriggersRoutes(router)
 	AddWebSocketRoutes(router)
-
-	go controllers.HandleWebSocketMessages() //TODO (#26)
 
 	return router
 }

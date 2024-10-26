@@ -1,4 +1,4 @@
-package processors
+package handlers
 
 import (
 	"encoding/json"
@@ -41,8 +41,8 @@ func (p *JSONHandler) AddValueConfiguration(configuration *JSONValueConfiguratio
 	p.JsonValueConfigurations = append(p.JsonValueConfigurations, *configuration)
 }
 
-func (p *JSONHandler) ProcessMessage(topic string, payload []byte) error {
-	var jsonPayload = string(payload)
+func (p *JSONHandler) HandleMessage(msg Message) error {
+	var jsonPayload = string(msg.Payload)
 	jsonDataReader := strings.NewReader(jsonPayload)
 	decoder := json.NewDecoder(jsonDataReader)
 	var jsonMap map[string]interface{}
@@ -79,7 +79,7 @@ func (p *JSONHandler) ProcessMessage(topic string, payload []byte) error {
 			return ValueNotFoundError{configuration.ValuePath}
 		}
 
-		sensorReading := models.SensorReading{SensorID: sensorId, Value: valueInterface, Time: time.Now(), Topic: topic}
+		sensorReading := models.SensorReading{SensorID: sensorId, Value: valueInterface, Time: time.Now(), Topic: msg.Topic}
 		p.ReadingsChannel <- sensorReading
 	}
 	return nil

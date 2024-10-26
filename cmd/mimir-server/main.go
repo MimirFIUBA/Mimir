@@ -11,37 +11,17 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/InfluxCommunity/influxdb3-go/influxdb3"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func main() {
-
-	handlerOpts := &slog.HandlerOptions{
-		Level: slog.LevelInfo,
-	}
-	logger := slog.New(slog.NewTextHandler(os.Stderr, handlerOpts))
-	slog.SetDefault(logger)
-
-	slog.Info("Starting")
-	fmt.Println("MiMiR starting")
-
-	config.LoadIni()
-	slog.Info("ini config file loaded")
-
-	// mimirProcessor := mimir.NewMimirProcessor()
-	mimirProcessor := mimir.StartMimir()
-	mimirProcessor.StartGateway()
-	slog.Info("gateway started")
-
+func initializeDatabase() (*mongo.Client, *influxdb3.Client) {
 	mongoClient, err := db.Database.ConnectToMongo()
 	if err != nil {
 		slog.Error("error connecting to mongo", "error", err)
 	} else {
 		slog.Info("connection to mongo succesfully established")
-		defer func() {
-			if err = mongoClient.Disconnect(context.TODO()); err != nil {
-				panic(err)
-			}
-		}()
 	}
 
 	influxClient, err := db.Database.ConnectToInfluxDB()
@@ -49,15 +29,58 @@ func main() {
 		slog.Error("error connecting to influx db", "error", err)
 	} else {
 		slog.Info("connection to influxdb succesfully established")
-		defer influxClient.Close()
+	}
+	return mongoClient, influxClient
+}
+
+func initializeLogger() {
+	handlerOpts := &slog.HandlerOptions{
+		Level: slog.LevelInfo,
+	}
+	logger := slog.New(slog.NewTextHandler(os.Stderr, handlerOpts))
+	slog.SetDefault(logger)
+}
+
+func loadStoredData(e *mimir.MimirEngine) {
+	db.LoadTopology()
+	config.BuildInitialConfiguration(e)
+}
+
+func main() {
+
+	initializeLogger()
+
+	slog.Info("Starting")
+	fmt.Println("Mimir starting")
+
+	config.LoadIni()
+	slog.Info("ini config file loaded")
+
+	mongoClient, influxClient := initializeDatabase()
+	if mongoClient != nil {
+		defer func() {
+			if err := mongoClient.Disconnect(context.TODO()); err != nil {
+				slog.Error("error disconnecting from mongo", "error", err)
+			}
+		}()
 	}
 
-	config.BuildInitialConfiguration(mimirProcessor)
-	slog.Info("succesfully built environment based on configuration")
-	db.Run()
+	if influxClient != nil {
+		defer func() {
+			if err := influxClient.Close(); err != nil {
+				slog.Error("error disconnecting from influx", "error", err)
+			}
+		}()
+	}
 
-	go mimirProcessor.Run()
-	go api.Start(mimirProcessor)
+	mimirEngine := mimir.StartMimir()
+	ctx, cancel := context.WithCancel(context.Background())
+	mimirEngine.Run(ctx)
+
+	loadStoredData(mimirEngine)
+
+	db.Run(ctx)
+	go api.Start(ctx, mimirEngine)
 
 	fmt.Println("Everything up and running")
 
@@ -66,7 +89,9 @@ func main() {
 	<-sigChan
 
 	slog.Info("closing application")
-	mimir.CloseConnection()
+
+	cancel()
+	mimirEngine.Close()
 	slog.Info("close successful")
 
 	fmt.Println("Mimir is out of duty, bye!")

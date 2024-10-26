@@ -1,4 +1,4 @@
-package processors
+package handlers
 
 import (
 	"encoding/binary"
@@ -162,19 +162,19 @@ func (p *JSONHandler) setType(jsonMap map[string]interface{}) error {
 }
 
 func jsonToJsonHandler(jsonMap map[string]interface{}) (MessageHandler, error) {
-	processor := NewJSONHandler()
+	handler := NewJSONHandler()
 
-	err := processor.setName(jsonMap)
+	err := handler.setName(jsonMap)
 	if err != nil {
 		return nil, err
 	}
 
-	err = processor.setTopic(jsonMap)
+	err = handler.setTopic(jsonMap)
 	if err != nil {
 		return nil, err
 	}
 
-	err = processor.setType(jsonMap)
+	err = handler.setType(jsonMap)
 	if err != nil {
 		return nil, err
 	}
@@ -198,9 +198,9 @@ func jsonToJsonHandler(jsonMap map[string]interface{}) (MessageHandler, error) {
 		if err != nil {
 			return nil, err
 		}
-		processor.AddValueConfiguration(configuration)
+		handler.AddValueConfiguration(configuration)
 	}
-	return processor, nil
+	return handler, nil
 }
 
 func JsonMapToJsonConfiguration(jsonMap map[string]interface{}) (*JSONValueConfiguration, error) {
@@ -219,6 +219,6 @@ func JsonMapToJsonConfiguration(jsonMap map[string]interface{}) (*JSONValueConfi
 }
 
 func jsonToXMLHandler() (MessageHandler, error) {
-	processor := NewXMLHandler()
-	return processor, nil
+	handler := NewXMLHandler()
+	return handler, nil
 }
