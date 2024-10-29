@@ -8,6 +8,7 @@ import (
 	"mimir/internal/consts"
 	"mimir/internal/models"
 	"mimir/triggers"
+	"sync"
 
 	"github.com/InfluxCommunity/influxdb3-go/influxdb3"
 	"github.com/gookit/ini/v2"
@@ -32,10 +33,33 @@ var (
 	ActiveTriggers       = make([]triggers.Trigger, 0)
 	TriggerFilenamesById = make(map[string]string, 0)
 
-	ReadingsDBBuffer = make([]models.SensorReading, 0)
+	ReadingsBuffer = ReadingsSyncBuffer{
+		make([]models.SensorReading, 0),
+		sync.Mutex{},
+	}
 
 	Database = DatabaseManager{}
 )
+
+type ReadingsSyncBuffer struct {
+	buffer []models.SensorReading
+	mutex  sync.Mutex
+}
+
+func (b *ReadingsSyncBuffer) AddReading(reading models.SensorReading) {
+	b.mutex.Lock()
+	b.buffer = append(b.buffer, reading)
+	b.mutex.Unlock()
+}
+
+func (b *ReadingsSyncBuffer) Dump() []models.SensorReading {
+	b.mutex.Lock()
+	dumpBuffer := make([]models.SensorReading, len(b.buffer))
+	copy(dumpBuffer, b.buffer)
+	b.buffer = b.buffer[:0]
+	b.mutex.Unlock()
+	return dumpBuffer
+}
 
 type DatabaseManager struct {
 	InfluxDBClient DatabaseClient
@@ -47,8 +71,8 @@ type DatabaseClient struct {
 	isConnected bool
 }
 
-func Run(ctx context.Context) {
-	go processPoints(ctx)
+func Run(ctx context.Context, wg *sync.WaitGroup) {
+	processPoints(ctx, wg)
 }
 
 func (d *DatabaseManager) ConnectToInfluxDB() (*influxdb3.Client, error) {

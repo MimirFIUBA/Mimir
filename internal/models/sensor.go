@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"mimir/triggers"
 	"slices"
 	"time"
@@ -65,7 +66,8 @@ func (s *Sensor) Deregister(trigger triggers.Trigger) {
 }
 
 func (s *Sensor) NotifyAll() {
-	for _, observer := range s.triggerList {
+	fmt.Println("notify all")
+	for _, trigger := range s.triggerList {
 		reading := s.Data[len(s.Data)-1]
 		event := triggers.Event{
 			Name:      "new reading event",
@@ -73,7 +75,9 @@ func (s *Sensor) NotifyAll() {
 			Data:      reading.Value,
 			SenderId:  reading.Topic,
 		}
-		observer.Update(event) //TODO: need to send the last value
+		fmt.Println("update")
+		trigger.Update(event) //TODO: need to send the last value
+		fmt.Println("finish update")
 	}
 }
 

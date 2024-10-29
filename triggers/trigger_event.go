@@ -1,5 +1,7 @@
 package triggers
 
+import "fmt"
+
 type EventTrigger struct {
 	ID               string
 	Name             string
@@ -16,9 +18,12 @@ func NewEventTrigger(name string) *EventTrigger {
 }
 
 func (t *EventTrigger) Update(event Event) {
+	fmt.Println("Trigger Update")
 	if t.IsActive && t.Condition.Evaluate(event) {
 		for _, action := range t.Actions {
+			fmt.Println("Action Execute")
 			action.Execute(event)
+			fmt.Println("Finish Action Execute")
 		}
 	}
 }

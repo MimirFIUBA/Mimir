@@ -10,6 +10,7 @@ import (
 	"mimir/internal/mimir"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 
 	"github.com/InfluxCommunity/influxdb3-go/influxdb3"
@@ -46,11 +47,13 @@ func loadStoredData(e *mimir.MimirEngine) {
 	config.BuildInitialConfiguration(e)
 }
 
-func gracefulShutdown(cancel context.CancelFunc, e *mimir.MimirEngine) {
+func gracefulShutdown(cancel context.CancelFunc, wg *sync.WaitGroup, e *mimir.MimirEngine) {
 	slog.Info("closing application")
 
 	cancel()
+	wg.Wait()
 	e.Close()
+	fmt.Println("Waiting for all processes to finsih")
 	slog.Info("close successful")
 
 	fmt.Println("Mimir is out of duty, bye!")
@@ -84,20 +87,33 @@ func main() {
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
+	var wg sync.WaitGroup
 
 	mimirEngine := mimir.NewMimirEngine()
 	mimirEngine.Run(ctx)
 
 	loadStoredData(mimirEngine)
 
-	db.Run(ctx)
+	db.Run(ctx, &wg)
+	fmt.Println("DB RUNNING")
 	api.Start(ctx, mimirEngine)
+	fmt.Println("API STARTED")
 
 	fmt.Println("Everything up and running")
 
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 	<-sigChan
+	close(sigChan)
 
-	gracefulShutdown(cancel, mimirEngine)
+	slog.Info("closing application")
+
+	mimirEngine.Close()
+
+	cancel()
+	wg.Wait()
+	fmt.Println("Waiting for all processes to finsih")
+	slog.Info("close successful")
+
+	fmt.Println("Mimir is out of duty, bye!")
 }

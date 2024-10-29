@@ -8,6 +8,8 @@ import (
 	"mimir/internal/db"
 	"mimir/internal/models"
 	"mimir/triggers"
+	"sync"
+	"time"
 
 	"github.com/gookit/ini/v2"
 )
@@ -21,6 +23,10 @@ type MimirEngine struct {
 	MsgProcessor   *MessageProcessor
 	gateway        *Gateway
 	publisher      *Publisher
+	firstCancel    context.CancelFunc
+	secondCancel   context.CancelFunc
+	firstWg        *sync.WaitGroup
+	secondWg       *sync.WaitGroup
 }
 
 func NewMimirEngine() *MimirEngine {
@@ -45,41 +51,63 @@ func NewMimirEngine() *MimirEngine {
 	}
 
 	engine := MimirEngine{
-		readingsChannel,
-		topicChannel,
-		webSocketMessageChannel,
-		models.NewActionFactory(outgoingMessagesChannel, webSocketMessageChannel),
-		models.NewTriggerFactory(),
-		NewMessageProcessor(msgChannel),
-		gateway,
-		NewPublisher(gateway.GetClient(), outgoingMessagesChannel),
+		ReadingChannel: readingsChannel,
+		TopicChannel:   topicChannel,
+		WsChannel:      webSocketMessageChannel,
+		ActionFactory:  models.NewActionFactory(outgoingMessagesChannel, webSocketMessageChannel),
+		TriggerFactory: models.NewTriggerFactory(),
+		MsgProcessor:   NewMessageProcessor(msgChannel),
+		gateway:        gateway,
+		publisher:      NewPublisher(gateway.GetClient(), outgoingMessagesChannel),
 	}
 	Mimir = &engine
 	return &engine
 }
 
 func (e *MimirEngine) Run(ctx context.Context) {
-	go e.gateway.Start(e.TopicChannel, ctx)
-	go e.publisher.Run(ctx)
-	go e.MsgProcessor.Run(ctx)
-	go e.processReadings(ctx)
+	publisherCtx, publisherCancel := context.WithCancel(ctx)
+	generalCtx, cancel := context.WithCancel(publisherCtx)
+	e.firstCancel = cancel
+	e.secondCancel = publisherCancel
+	e.firstWg = &sync.WaitGroup{}
+	e.secondWg = &sync.WaitGroup{}
+
+	go e.publisher.Run(publisherCtx, e.secondWg)
+	go e.MsgProcessor.Run(generalCtx, e.firstWg)
+	go e.processReadings(generalCtx, e.firstWg)
+	go e.gateway.Start(e.TopicChannel, generalCtx, e.firstWg)
 }
 
-func (e *MimirEngine) processReadings(ctx context.Context) {
+func (e *MimirEngine) processReadings(ctx context.Context, wg *sync.WaitGroup) {
 	for {
 		select {
 		case reading := <-e.ReadingChannel:
+			wg.Add(1)
 			go func() {
+				defer wg.Done()
+				fmt.Println("**** store reading")
+				time.Sleep(20 * time.Second)
+				fmt.Println("store reading awake")
 				db.StoreReading(reading)
+				fmt.Println("**** end store reading")
 			}()
 		case <-ctx.Done():
-			slog.Info("context done", "error", ctx.Err())
+			slog.Info("context done, processReadings", "error", ctx.Err())
 			return
 		}
 	}
 }
 
 func (e *MimirEngine) Close() {
+	fmt.Println("First cancel")
+	e.firstCancel()
+	e.firstWg.Wait()
+
+	fmt.Println("Second cancel")
+	e.secondCancel()
+	e.secondWg.Wait()
+	fmt.Println("finish wait")
+
 	e.gateway.CloseConnection()
 	setTriggersInactive()
 	setTopicsInactive()

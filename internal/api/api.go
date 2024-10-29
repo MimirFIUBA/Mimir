@@ -15,5 +15,7 @@ func Start(ctx context.Context, mimirEngine *mimir.MimirEngine) {
 	controllers.SetWebSocketBroadcastChan(mimirEngine.WsChannel)
 	controllers.SetMimirEngine(mimirEngine)
 	go controllers.HandleWebSocketMessages(ctx)
-	go log.Fatal(http.ListenAndServe(":8080", router))
+	go func() {
+		log.Fatal(http.ListenAndServe(":8080", router))
+	}()
 }

@@ -60,32 +60,35 @@ func NewGateway(readingsChannel chan models.SensorReading, msgs MessageChannel, 
 	}, nil
 }
 
-func (g *Gateway) Start(topics <-chan []string, ctx context.Context) {
+func (g *Gateway) Start(topics <-chan []string, ctx context.Context, wg *sync.WaitGroup) {
 	for {
 		select {
 		case newTopics := <-topics:
-			topicsToSubscribe := make([]string, 0)
-			for _, topic := range newTopics {
-				isSubscribed, exists := g.topics.Load(topic)
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				topicsToSubscribe := make([]string, 0)
+				for _, topic := range newTopics {
+					isSubscribed, exists := g.topics.Load(topic)
 
-				if !exists {
-					topicsToSubscribe = append(topicsToSubscribe, topic)
-				} else {
-					isSubscribedBool, ok := isSubscribed.(bool)
-					if !ok {
-						slog.Error("wrong value topic subscribed", "topic", topic)
-						continue
-					}
-					if !isSubscribedBool {
+					if !exists {
 						topicsToSubscribe = append(topicsToSubscribe, topic)
+					} else {
+						isSubscribedBool, ok := isSubscribed.(bool)
+						if !ok {
+							slog.Error("wrong value topic subscribed", "topic", topic)
+							continue
+						}
+						if !isSubscribedBool {
+							topicsToSubscribe = append(topicsToSubscribe, topic)
+						}
 					}
 				}
-			}
 
-			g.trySubscribeToTopics(ctx, topicsToSubscribe)
-
+				g.trySubscribeToTopics(ctx, topicsToSubscribe)
+			}()
 		case <-ctx.Done():
-			slog.Error("context", "error", ctx.Err())
+			slog.Error("context done, gateway", "error", ctx.Err())
 			return
 		}
 	}
@@ -112,6 +115,7 @@ func (g *Gateway) trySubscribeToTopics(ctx context.Context, topics []string) err
 			if lastError != nil {
 				return fmt.Errorf("couldn't subscribe to topic %q: %w", topic, lastError)
 			}
+			fmt.Println("end try subscribe")
 			return nil
 		})
 	}
