@@ -48,7 +48,7 @@ func (s *Sensor) Update(newData *Sensor) {
 }
 
 func (s *Sensor) GetId() string {
-	return s.ID.String()
+	return s.ID.Hex()
 }
 
 func (s *Sensor) Register(trigger triggers.Trigger) {
