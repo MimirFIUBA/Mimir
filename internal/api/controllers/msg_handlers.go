@@ -70,12 +70,12 @@ func CreateHandler(w http.ResponseWriter, r *http.Request) {
 		messageHandler = bytesHandler
 	}
 
-	_, err = db.SensorsData.GetSensorByTopic(requestBody.Topic)
+	sensor, err := db.SensorsData.GetSensorByTopic(requestBody.Topic)
 	if err != nil {
-		sensor := models.NewSensor(requestBody.Topic)
+		sensor = models.NewSensor(requestBody.Topic)
 		sensor.Topic = requestBody.Topic
-		MimirEngine.RegisterSensor(sensor)
 	}
+	MimirEngine.RegisterSensor(sensor)
 
 	mimir.Mimir.MsgProcessor.RegisterHandler(requestBody.Topic, messageHandler)
 
