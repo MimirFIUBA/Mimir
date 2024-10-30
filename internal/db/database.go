@@ -8,10 +8,12 @@ import (
 	"mimir/internal/consts"
 	"mimir/internal/models"
 	"mimir/triggers"
+	"os"
 	"sync"
 
-	"github.com/InfluxCommunity/influxdb3-go/influxdb3"
 	"github.com/gookit/ini/v2"
+	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
+	"github.com/influxdata/influxdb-client-go/v2/api"
 	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -72,10 +74,10 @@ type DatabaseClient struct {
 }
 
 func Run(ctx context.Context, wg *sync.WaitGroup) {
-	processPoints(ctx, wg)
+	go processPoints(ctx, wg)
 }
 
-func (d *DatabaseManager) ConnectToInfluxDB() (*influxdb3.Client, error) {
+func (d *DatabaseManager) ConnectToInfluxDB() (influxdb2.Client, error) {
 	godotenv.Load(ini.String(consts.INFLUX_CONFIGURATION_FILE_CONFIG_NAME))
 	dbClient, err := influxdb.ConnectToInfluxDB()
 	if err != nil {
@@ -101,7 +103,7 @@ func (d *DatabaseManager) AddMongoClient(mongoClient *mongo.Client) {
 	d.MongoDBClient = DatabaseClient{mongoClient, true}
 }
 
-func (d *DatabaseManager) AddInfluxClient(influxDbClient *influxdb3.Client) {
+func (d *DatabaseManager) AddInfluxClient(influxDbClient influxdb2.Client) {
 	d.InfluxDBClient = DatabaseClient{influxDbClient, true}
 }
 
@@ -116,13 +118,21 @@ func (d *DatabaseManager) getMongoClient() *mongo.Client {
 	return nil
 }
 
-func (d *DatabaseManager) getInfluxDBClient() *influxdb3.Client {
+func (d *DatabaseManager) getInfluxDBClient() influxdb2.Client {
 	if d.InfluxDBClient.isConnected {
-		client, ok := d.InfluxDBClient.client.(*influxdb3.Client)
+		client, ok := d.InfluxDBClient.client.(influxdb2.Client)
 		if !ok {
 			panic("error getting influx db client")
 		}
 		return client
+	}
+	return nil
+}
+
+func (d *DatabaseManager) getInfluxWriteApi() api.WriteAPIBlocking {
+	client := d.getInfluxDBClient()
+	if client != nil {
+		return client.WriteAPIBlocking(os.Getenv("INFLUXDB_ORG"), os.Getenv("INFLUXDB_BUCKET"))
 	}
 	return nil
 }

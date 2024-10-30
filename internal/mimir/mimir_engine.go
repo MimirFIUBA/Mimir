@@ -9,7 +9,6 @@ import (
 	"mimir/internal/models"
 	"mimir/triggers"
 	"sync"
-	"time"
 
 	"github.com/gookit/ini/v2"
 )
@@ -85,11 +84,7 @@ func (e *MimirEngine) processReadings(ctx context.Context, wg *sync.WaitGroup) {
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
-				fmt.Println("**** store reading")
-				time.Sleep(20 * time.Second)
-				fmt.Println("store reading awake")
 				db.StoreReading(reading)
-				fmt.Println("**** end store reading")
 			}()
 		case <-ctx.Done():
 			slog.Info("context done, processReadings", "error", ctx.Err())

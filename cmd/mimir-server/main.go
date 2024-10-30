@@ -13,11 +13,11 @@ import (
 	"sync"
 	"syscall"
 
-	"github.com/InfluxCommunity/influxdb3-go/influxdb3"
+	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func initializeDatabase() (*mongo.Client, *influxdb3.Client) {
+func initializeDatabase() (*mongo.Client, influxdb2.Client) {
 	mongoClient, err := db.Database.ConnectToMongo()
 	if err != nil {
 		slog.Error("error connecting to mongo", "error", err)
@@ -79,11 +79,7 @@ func main() {
 	}
 
 	if influxClient != nil {
-		defer func() {
-			if err := influxClient.Close(); err != nil {
-				slog.Error("error disconnecting from influx", "error", err)
-			}
-		}()
+		defer influxClient.Close()
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
