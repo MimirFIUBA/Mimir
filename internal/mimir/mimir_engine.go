@@ -2,7 +2,6 @@ package mimir
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 	"mimir/internal/consts"
 	"mimir/internal/db"
@@ -119,7 +118,7 @@ func setTriggersInactive() {
 
 // TODO: ver de sacar esto de aca
 func (e *MimirEngine) RegisterSensor(sensor *models.Sensor) {
-	fmt.Println("Register sensor ", sensor.Topic)
+	slog.Info("Registering sensor", "topic", sensor.Topic)
 	sensor.IsActive = true
 	e.TopicChannel <- []string{sensor.Topic}
 }
