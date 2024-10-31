@@ -10,40 +10,40 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-type Handler struct {
+type WebSocketHandler struct {
 	BroadcastChan chan string
 	Clients       map[*websocket.Conn]bool
 	Upgrader      websocket.Upgrader
 }
 
-func NewHandler() *Handler {
+func NewHandler() *WebSocketHandler {
 	upgrader := websocket.Upgrader{
 		CheckOrigin: func(r *http.Request) bool {
 			return true
 		},
 	}
-	return &Handler{nil, make(map[*websocket.Conn]bool), upgrader}
+	return &WebSocketHandler{nil, make(map[*websocket.Conn]bool), upgrader}
 }
 
-func (h *Handler) Upgrade(w http.ResponseWriter, r *http.Request) (*websocket.Conn, error) {
+func (h *WebSocketHandler) Upgrade(w http.ResponseWriter, r *http.Request) (*websocket.Conn, error) {
 	return h.Upgrader.Upgrade(w, r, nil)
 }
 
-func (h *Handler) NewConnection(conn *websocket.Conn) {
+func (h *WebSocketHandler) NewConnection(conn *websocket.Conn) {
 	h.Clients[conn] = true
 }
 
-func (h *Handler) CloseConnection(client *websocket.Conn) {
+func (h *WebSocketHandler) CloseConnection(client *websocket.Conn) {
 	client.Close()
 	delete(h.Clients, client)
 }
 
-func (h *Handler) BroadcastMessage(msg responses.WSMessage) {
+func (h *WebSocketHandler) BroadcastMessage(msg responses.WSMessage) {
 	h.BroadcastChan <- fmt.Sprintf("%#v", msg)
 }
 
 // HandleWebSocketMessages listens to the broadcastChan and sends the message received from it to all clients.
-func (h *Handler) HandleMessages(ctx context.Context) {
+func (h *WebSocketHandler) HandleMessages(ctx context.Context) {
 	for {
 		select {
 		case msg := <-h.BroadcastChan:
