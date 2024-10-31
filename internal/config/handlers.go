@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"log/slog"
 	"mimir/internal/consts"
 	"mimir/internal/db"
 	"mimir/internal/handlers"
@@ -20,6 +21,7 @@ func BuildHandlers(mimirEngine *mimir.MimirEngine) {
 	files := utils.ListFilesWithSuffix(dir, "*"+consts.HANDLERS_FILE_SUFFIX)
 	sensors := make([]models.Sensor, 0)
 	for _, v := range files {
+		slog.Info("building handler", "file", v)
 		byteValue, err := os.ReadFile(v)
 		if err != nil {
 			log.Fatal(err)

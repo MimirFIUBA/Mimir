@@ -93,14 +93,10 @@ func (e *MimirEngine) processReadings(ctx context.Context, wg *sync.WaitGroup) {
 }
 
 func (e *MimirEngine) Close() {
-	fmt.Println("First cancel")
 	e.firstCancel()
 	e.firstWg.Wait()
-
-	fmt.Println("Second cancel")
 	e.secondCancel()
 	e.secondWg.Wait()
-	fmt.Println("finish wait")
 
 	e.gateway.CloseConnection()
 	setTriggersInactive()
