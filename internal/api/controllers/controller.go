@@ -3,9 +3,9 @@ package controllers
 import "mimir/internal/mimir"
 
 var (
-	MimirProcessor *mimir.MimirProcessor
+	MimirEngine *mimir.MimirEngine
 )
 
-func SetMimirProcessor(mimirProcessor *mimir.MimirProcessor) {
-	MimirProcessor = mimirProcessor
+func SetMimirEngine(mimirProcessor *mimir.MimirEngine) {
+	MimirEngine = mimirProcessor
 }

@@ -1,11 +1,11 @@
-package processors
+package handlers
 
 import (
 	"encoding/binary"
 	"fmt"
 )
 
-func JsonToProcessor(jsonMap map[string]interface{}) (MessageProcessor, error) {
+func JsonToHandler(jsonMap map[string]interface{}) (MessageHandler, error) {
 	processorType, ok := jsonMap["type"].(string)
 	if !ok {
 		panic("bad configuration")
@@ -13,17 +13,17 @@ func JsonToProcessor(jsonMap map[string]interface{}) (MessageProcessor, error) {
 
 	switch processorType {
 	case "bytes":
-		return jsonMapToBytesProcessor(jsonMap)
+		return jsonMapToBytesHandler(jsonMap)
 	case "json":
-		return jsonToJsonProcessor(jsonMap)
+		return jsonToJsonHandler(jsonMap)
 	case "xml":
-		return jsonToXMLProcessor()
+		return jsonToXMLHandler()
 	default:
 		return nil, fmt.Errorf("type must be json, bytes or xml")
 	}
 }
 
-func (p *BytesProcessor) setSensorId(jsonMap map[string]interface{}) bool {
+func (p *BytesHandler) setSensorId(jsonMap map[string]interface{}) bool {
 	sensorIdValue, exists := jsonMap["sensorId"]
 	if exists {
 		sensorId, ok := sensorIdValue.(string)
@@ -36,7 +36,7 @@ func (p *BytesProcessor) setSensorId(jsonMap map[string]interface{}) bool {
 	return true
 }
 
-func (p *BytesProcessor) setConfigurations(jsonMap map[string]interface{}) error {
+func (p *BytesHandler) setConfigurations(jsonMap map[string]interface{}) error {
 	configurationsValue, exists := jsonMap["configurations"]
 	if !exists {
 		return RequiredFieldError{"configurations"}
@@ -106,23 +106,23 @@ func JsonMapToByteConfiguration(jsonMap map[string]interface{}) (*BytesConfigura
 	return NewBytesConfiguration(dataTypeValue, byteOrder, int(sizeValue)), nil
 }
 
-func jsonMapToBytesProcessor(jsonMap map[string]interface{}) (MessageProcessor, error) {
-	bytesProcessor := NewBytesProcessor()
-	ok := bytesProcessor.setSensorId(jsonMap)
+func jsonMapToBytesHandler(jsonMap map[string]interface{}) (MessageHandler, error) {
+	bytesHandler := NewBytesHandler()
+	ok := bytesHandler.setSensorId(jsonMap)
 	if !ok {
 		return nil, WrongFormatError{"sensorId"}
 	}
 
-	err := bytesProcessor.setConfigurations(jsonMap)
+	err := bytesHandler.setConfigurations(jsonMap)
 	if err != nil {
 		return nil, err
 	}
 
-	return bytesProcessor, nil
+	return bytesHandler, nil
 
 }
 
-func (p *JSONProcessor) setName(jsonMap map[string]interface{}) error {
+func (p *JSONHandler) setName(jsonMap map[string]interface{}) error {
 	nameInterface, exists := jsonMap["name"]
 	if !exists {
 		return RequiredFieldError{"name"}
@@ -135,7 +135,7 @@ func (p *JSONProcessor) setName(jsonMap map[string]interface{}) error {
 	return nil
 }
 
-func (p *JSONProcessor) setTopic(jsonMap map[string]interface{}) error {
+func (p *JSONHandler) setTopic(jsonMap map[string]interface{}) error {
 	topicInterface, exists := jsonMap["topic"]
 	if !exists {
 		return RequiredFieldError{"topic"}
@@ -148,7 +148,7 @@ func (p *JSONProcessor) setTopic(jsonMap map[string]interface{}) error {
 	return nil
 }
 
-func (p *JSONProcessor) setType(jsonMap map[string]interface{}) error {
+func (p *JSONHandler) setType(jsonMap map[string]interface{}) error {
 	typeInterface, exists := jsonMap["type"]
 	if !exists {
 		return RequiredFieldError{"type"}
@@ -161,20 +161,20 @@ func (p *JSONProcessor) setType(jsonMap map[string]interface{}) error {
 	return nil
 }
 
-func jsonToJsonProcessor(jsonMap map[string]interface{}) (MessageProcessor, error) {
-	processor := NewJSONProcessor()
+func jsonToJsonHandler(jsonMap map[string]interface{}) (MessageHandler, error) {
+	handler := NewJSONHandler()
 
-	err := processor.setName(jsonMap)
+	err := handler.setName(jsonMap)
 	if err != nil {
 		return nil, err
 	}
 
-	err = processor.setTopic(jsonMap)
+	err = handler.setTopic(jsonMap)
 	if err != nil {
 		return nil, err
 	}
 
-	err = processor.setType(jsonMap)
+	err = handler.setType(jsonMap)
 	if err != nil {
 		return nil, err
 	}
@@ -198,9 +198,9 @@ func jsonToJsonProcessor(jsonMap map[string]interface{}) (MessageProcessor, erro
 		if err != nil {
 			return nil, err
 		}
-		processor.AddValueConfiguration(configuration)
+		handler.AddValueConfiguration(configuration)
 	}
-	return processor, nil
+	return handler, nil
 }
 
 func JsonMapToJsonConfiguration(jsonMap map[string]interface{}) (*JSONValueConfiguration, error) {
@@ -218,7 +218,7 @@ func JsonMapToJsonConfiguration(jsonMap map[string]interface{}) (*JSONValueConfi
 
 }
 
-func jsonToXMLProcessor() (MessageProcessor, error) {
-	processor := NewXMLProcessor()
-	return processor, nil
+func jsonToXMLHandler() (MessageHandler, error) {
+	handler := NewXMLHandler()
+	return handler, nil
 }

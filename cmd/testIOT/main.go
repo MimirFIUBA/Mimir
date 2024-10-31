@@ -42,7 +42,7 @@ func onMessageReceived(client mqtt.Client, message mqtt.Message) {
 }
 
 func getTopics() []string {
-	topics := []string{consts.AlertTopic}
+	topics := []string{consts.MQTT_ALERT_TOPIC}
 	return topics
 }
 

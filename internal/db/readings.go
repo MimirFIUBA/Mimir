@@ -19,7 +19,7 @@ func StoreReading(reading models.SensorReading) error {
 		sensor.AddReading(reading)
 	}
 
-	ReadingsDBBuffer = append(ReadingsDBBuffer, reading)
+	ReadingsBuffer.AddReading(reading)
 
 	return nil
 }

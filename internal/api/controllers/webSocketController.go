@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"context"
 	"fmt"
 	"mimir/internal/api/responses"
 	websocket "mimir/internal/api/webSocket"
@@ -36,6 +37,6 @@ func HandleConnections(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func HandleWebSocketMessages() {
-	handler.HandleMessages()
+func HandleWebSocketMessages(ctx context.Context) {
+	handler.HandleMessages(ctx)
 }

@@ -48,7 +48,7 @@ func (s *Sensor) Update(newData *Sensor) {
 }
 
 func (s *Sensor) GetId() string {
-	return s.ID.String()
+	return s.ID.Hex()
 }
 
 func (s *Sensor) Register(trigger triggers.Trigger) {
@@ -65,7 +65,7 @@ func (s *Sensor) Deregister(trigger triggers.Trigger) {
 }
 
 func (s *Sensor) NotifyAll() {
-	for _, observer := range s.triggerList {
+	for _, trigger := range s.triggerList {
 		reading := s.Data[len(s.Data)-1]
 		event := triggers.Event{
 			Name:      "new reading event",
@@ -73,7 +73,7 @@ func (s *Sensor) NotifyAll() {
 			Data:      reading.Value,
 			SenderId:  reading.Topic,
 		}
-		observer.Update(event) //TODO: need to send the last value
+		trigger.Update(event) //TODO: need to send the last value
 	}
 }
 

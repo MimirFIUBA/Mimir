@@ -1,9 +1,9 @@
 package responses
 
-type Processor struct {
+type Handler struct {
 	Name           string        `json:"name"`
 	Topic          string        `json:"topic"`
-	ProcessorType  string        `json:"type"`
+	HandlerType    string        `json:"type"`
 	SensorId       string        `json:"sensorId,omitempty"`
 	Configurations []interface{} `json:"configurations,omitempty"`
 }
@@ -18,6 +18,6 @@ type BytesConfiguration struct {
 	Size       int    `json:"size"`
 }
 
-func NewProcessorResponse(name, topic, processorType string) *Processor {
-	return &Processor{Name: name, Topic: topic, ProcessorType: processorType}
+func NewHandlerResponse(name, topic, handlerType string) *Handler {
+	return &Handler{Name: name, Topic: topic, HandlerType: handlerType}
 }

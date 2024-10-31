@@ -4,10 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"log/slog"
 	"mimir/internal/consts"
 	"mimir/internal/db"
+	"mimir/internal/handlers"
 	"mimir/internal/mimir"
-	"mimir/internal/mimir/processors"
 	"mimir/internal/models"
 	"mimir/internal/utils"
 	"os"
@@ -15,11 +16,12 @@ import (
 	"github.com/gookit/ini/v2"
 )
 
-func BuildProcessors(mimirProcessor *mimir.MimirProcessor) {
-	dir := ini.String(consts.PROCESSORS_DIR_CONFIG_NAME)
-	files := utils.ListFilesWithSuffix(dir, "*"+consts.PROCESSORS_FILE_SUFFIX)
+func BuildHandlers(mimirEngine *mimir.MimirEngine) {
+	dir := ini.String(consts.HANDLERS_DIR_CONFIG_NAME)
+	files := utils.ListFilesWithSuffix(dir, "*"+consts.HANDLERS_FILE_SUFFIX)
 	sensors := make([]models.Sensor, 0)
 	for _, v := range files {
+		slog.Info("building handler", "file", v)
 		byteValue, err := os.ReadFile(v)
 		if err != nil {
 			log.Fatal(err)
@@ -33,17 +35,17 @@ func BuildProcessors(mimirProcessor *mimir.MimirProcessor) {
 			panic("bad configuration")
 		}
 
-		processor, err := processors.JsonToProcessor(jsonMap)
+		processor, err := handlers.JsonToHandler(jsonMap)
 		if err != nil {
 			fmt.Println(err)
 			panic("bad configuration")
 		}
 
-		processor.SetReadingsChannel(mimirProcessor.ReadingChannel)
-		mimir.MessageProcessors.RegisterProcessor(topic, processor)
+		processor.SetReadingsChannel(mimirEngine.ReadingChannel)
+		mimir.Mimir.MsgProcessor.RegisterHandler(topic, processor)
 		sensor := models.NewSensor(topic)
 		sensor.Topic = topic
-		mimirProcessor.RegisterSensor(sensor)
+		mimirEngine.RegisterSensor(sensor)
 		sensors = append(sensors, *sensor)
 	}
 

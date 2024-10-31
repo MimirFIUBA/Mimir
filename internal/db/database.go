@@ -1,16 +1,19 @@
 package db
 
 import (
-	"fmt"
-	"log"
+	"context"
+	"log/slog"
 	influxdb "mimir/db/influxdb"
 	"mimir/db/mongodb"
 	"mimir/internal/consts"
 	"mimir/internal/models"
 	"mimir/triggers"
+	"os"
+	"sync"
 
-	"github.com/InfluxCommunity/influxdb3-go/influxdb3"
 	"github.com/gookit/ini/v2"
+	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
+	"github.com/influxdata/influxdb-client-go/v2/api"
 	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -32,10 +35,33 @@ var (
 	ActiveTriggers       = make([]triggers.Trigger, 0)
 	TriggerFilenamesById = make(map[string]string, 0)
 
-	ReadingsDBBuffer = make([]models.SensorReading, 0)
+	ReadingsBuffer = ReadingsSyncBuffer{
+		make([]models.SensorReading, 0),
+		sync.Mutex{},
+	}
 
 	Database = DatabaseManager{}
 )
+
+type ReadingsSyncBuffer struct {
+	buffer []models.SensorReading
+	mutex  sync.Mutex
+}
+
+func (b *ReadingsSyncBuffer) AddReading(reading models.SensorReading) {
+	b.mutex.Lock()
+	b.buffer = append(b.buffer, reading)
+	b.mutex.Unlock()
+}
+
+func (b *ReadingsSyncBuffer) Dump() []models.SensorReading {
+	b.mutex.Lock()
+	dumpBuffer := make([]models.SensorReading, len(b.buffer))
+	copy(dumpBuffer, b.buffer)
+	b.buffer = b.buffer[:0]
+	b.mutex.Unlock()
+	return dumpBuffer
+}
 
 type DatabaseManager struct {
 	InfluxDBClient DatabaseClient
@@ -47,33 +73,29 @@ type DatabaseClient struct {
 	isConnected bool
 }
 
-func Run() {
-	loadTopology()
-	go processPoints()
+func Run(ctx context.Context, wg *sync.WaitGroup) {
+	go processPoints(ctx, wg)
 }
 
-func (d *DatabaseManager) ConnectToInfluxDB() (*influxdb3.Client, error) {
+func (d *DatabaseManager) ConnectToInfluxDB() (influxdb2.Client, error) {
 	godotenv.Load(ini.String(consts.INFLUX_CONFIGURATION_FILE_CONFIG_NAME))
 	dbClient, err := influxdb.ConnectToInfluxDB()
 	if err != nil {
-		log.Fatal("Error connecting to InfluxDB ", err)
+		slog.Error("Error connecting to InfluxDB ", "error", err)
 		return nil, err
-	} else {
-		d.AddInfluxClient(dbClient)
-		return dbClient, nil
 	}
+	d.AddInfluxClient(dbClient)
+	return dbClient, nil
 }
 
 func (d *DatabaseManager) ConnectToMongo() (*mongo.Client, error) {
 	godotenv.Load(ini.String(consts.MONGO_CONFIGURATION_FILE_CONFIG_NAME))
 	client, err := mongodb.Connect()
 	if err != nil {
-		fmt.Println("Failed to connect to mongo: ", err)
+		slog.Error("Error connecting to Mongo ", "error", err)
 		return nil, err
-	} else {
-		d.AddMongoClient(client)
 	}
-
+	d.AddMongoClient(client)
 	return client, nil
 }
 
@@ -81,7 +103,7 @@ func (d *DatabaseManager) AddMongoClient(mongoClient *mongo.Client) {
 	d.MongoDBClient = DatabaseClient{mongoClient, true}
 }
 
-func (d *DatabaseManager) AddInfluxClient(influxDbClient *influxdb3.Client) {
+func (d *DatabaseManager) AddInfluxClient(influxDbClient influxdb2.Client) {
 	d.InfluxDBClient = DatabaseClient{influxDbClient, true}
 }
 
@@ -96,13 +118,21 @@ func (d *DatabaseManager) getMongoClient() *mongo.Client {
 	return nil
 }
 
-func (d *DatabaseManager) getInfluxDBClient() *influxdb3.Client {
+func (d *DatabaseManager) getInfluxDBClient() influxdb2.Client {
 	if d.InfluxDBClient.isConnected {
-		client, ok := d.InfluxDBClient.client.(*influxdb3.Client)
+		client, ok := d.InfluxDBClient.client.(influxdb2.Client)
 		if !ok {
 			panic("error getting influx db client")
 		}
 		return client
+	}
+	return nil
+}
+
+func (d *DatabaseManager) getInfluxWriteApi() api.WriteAPIBlocking {
+	client := d.getInfluxDBClient()
+	if client != nil {
+		return client.WriteAPIBlocking(os.Getenv("INFLUXDB_ORG"), os.Getenv("INFLUXDB_BUCKET"))
 	}
 	return nil
 }
