@@ -92,7 +92,7 @@ func main() {
 
 	db.Run(ctx, &wg)
 	fmt.Println("DB RUNNING")
-	api.Start(ctx, mimirEngine)
+	api.Start(ctx, &wg, mimirEngine)
 	fmt.Println("API STARTED")
 
 	fmt.Println("Everything up and running")

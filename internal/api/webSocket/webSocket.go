@@ -6,54 +6,59 @@ import (
 	"log/slog"
 	"mimir/internal/api/responses"
 	"net/http"
+	"sync"
 
-	"github.com/gorilla/websocket"
+	gws "github.com/gorilla/websocket"
 )
 
 type WebSocketHandler struct {
-	BroadcastChan chan string
-	Clients       map[*websocket.Conn]bool
-	Upgrader      websocket.Upgrader
+	broadcastChan chan string
+	clients       map[*gws.Conn]bool
+	upgrader      gws.Upgrader
 }
 
-func NewHandler() *WebSocketHandler {
-	upgrader := websocket.Upgrader{
+func NewHandler(broadcastChan chan string) *WebSocketHandler {
+	upgrader := gws.Upgrader{
 		CheckOrigin: func(r *http.Request) bool {
 			return true
 		},
 	}
-	return &WebSocketHandler{nil, make(map[*websocket.Conn]bool), upgrader}
+	return &WebSocketHandler{broadcastChan, make(map[*gws.Conn]bool), upgrader}
 }
 
-func (h *WebSocketHandler) Upgrade(w http.ResponseWriter, r *http.Request) (*websocket.Conn, error) {
-	return h.Upgrader.Upgrade(w, r, nil)
+func (h *WebSocketHandler) Upgrade(w http.ResponseWriter, r *http.Request) (*gws.Conn, error) {
+	return h.upgrader.Upgrade(w, r, nil)
 }
 
-func (h *WebSocketHandler) NewConnection(conn *websocket.Conn) {
-	h.Clients[conn] = true
+func (h *WebSocketHandler) NewConnection(conn *gws.Conn) {
+	h.clients[conn] = true
 }
 
-func (h *WebSocketHandler) CloseConnection(client *websocket.Conn) {
+func (h *WebSocketHandler) CloseConnection(client *gws.Conn) {
 	client.Close()
-	delete(h.Clients, client)
+	delete(h.clients, client)
 }
 
 func (h *WebSocketHandler) BroadcastMessage(msg responses.WSMessage) {
-	h.BroadcastChan <- fmt.Sprintf("%#v", msg)
+	h.broadcastChan <- fmt.Sprintf("%#v", msg)
 }
 
 // HandleWebSocketMessages listens to the broadcastChan and sends the message received from it to all clients.
-func (h *WebSocketHandler) HandleMessages(ctx context.Context) {
+func (h *WebSocketHandler) HandleMessages(ctx context.Context, wg *sync.WaitGroup) {
 	for {
 		select {
-		case msg := <-h.BroadcastChan:
-			for client := range h.Clients {
-				err := client.WriteJSON(msg)
-				if err != nil {
-					fmt.Println(err)
-					h.CloseConnection(client)
+		case msg := <-h.broadcastChan:
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				for client := range h.clients {
+					err := client.WriteJSON(msg)
+					if err != nil {
+						fmt.Println(err)
+						h.CloseConnection(client)
+					}
 				}
-			}
+			}()
 		case <-ctx.Done():
 			slog.Info("web socket context done, closing web socket handler", "error", ctx.Err())
 			return

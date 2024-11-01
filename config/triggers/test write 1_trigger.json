@@ -10,7 +10,9 @@
         {
             "Name": "print test",
             "Type": "print",
-            "Message": "test action"
+            "Message": "test schedule fede 2"
         }
-    ]
+    ],
+    "scheduled": true,
+    "cron": "* * * * *"
 }

@@ -72,12 +72,12 @@ func (t *FrequencyTrigger) UpdateCondition(newCondition string) error {
 	return nil
 }
 
-func (t *FrequencyTrigger) UpdateActions(actions []Action) error {
+func (t *FrequencyTrigger) UpdateActions(actions []Action, _ TriggerOptions) error {
 	t.Actions = actions
 	return nil
 }
 
-func (t *FrequencyTrigger) AddAction(a Action) {
+func (t *FrequencyTrigger) AddAction(a Action, _ TriggerOptions) {
 	t.Actions = append(t.Actions, a)
 }
 
@@ -111,4 +111,8 @@ func (t *FrequencyTrigger) SetStatus(active bool) {
 			t.Deactivate()
 		}
 	}
+}
+
+func (t *FrequencyTrigger) SetScheduled(scheduled bool) {
+	panic("cannot schedule frequency trigger")
 }

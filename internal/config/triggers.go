@@ -20,6 +20,7 @@ import (
 
 var triggerTypeByName = map[string]triggers.TriggerType{
 	"event":     triggers.EVENT_TRIGGER,
+	"switch":    triggers.SWITCH_TRIGGER,
 	"timer":     triggers.TIMER_TRIGGER,
 	"frequency": triggers.FREQUENCY_TRIGGER,
 }
@@ -89,7 +90,7 @@ func BuildTrigger(t db.Trigger, mimirEngine *mimir.MimirEngine) (triggers.Trigge
 
 	triggerType, exists := triggerTypeByName[t.Type]
 	if !exists {
-		return nil, fmt.Errorf("trigger type is missing")
+		return nil, fmt.Errorf("wrong trigger type")
 	}
 	trigger, err := mimirEngine.BuildTrigger(models.TriggerOptions{
 		Name:        t.Name,
@@ -108,14 +109,30 @@ func BuildTrigger(t db.Trigger, mimirEngine *mimir.MimirEngine) (triggers.Trigge
 		return nil, err
 	}
 	BuildActions(t, trigger)
+	trigger.SetScheduled(t.Scheduled)
+	if t.Scheduled {
+		mimirEngine.Scheduler.ScheduleTrigger(t.CronExpr, trigger)
+	}
 
 	return trigger, nil
 }
 
 func BuildActions(triggerData db.Trigger, trigger triggers.Trigger) {
+	if trigger.GetType() == triggers.SWITCH_TRIGGER {
+		for _, trueAction := range triggerData.TrueActions {
+			triggerAction := ToTriggerAction(trueAction)
+			trigger.AddAction(triggerAction, triggers.TriggerOptions{ActionsEventType: triggers.ACTIVE})
+		}
+		for _, falseAction := range triggerData.FalseActions {
+			triggerAction := ToTriggerAction(falseAction)
+			trigger.AddAction(triggerAction, triggers.TriggerOptions{ActionsEventType: triggers.INACTIVE})
+		}
+		return
+	}
+
 	for _, action := range triggerData.Actions {
 		triggerAction := ToTriggerAction(action)
-		trigger.AddAction(triggerAction)
+		trigger.AddAction(triggerAction, triggers.TriggerOptions{})
 	}
 }
 

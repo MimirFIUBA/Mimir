@@ -25,6 +25,7 @@ type MimirEngine struct {
 	secondCancel   context.CancelFunc
 	firstWg        *sync.WaitGroup
 	secondWg       *sync.WaitGroup
+	Scheduler      *triggers.Scheduler
 }
 
 func NewMimirEngine() *MimirEngine {
@@ -48,6 +49,11 @@ func NewMimirEngine() *MimirEngine {
 		slog.Error("Error creating new gateway", "error", err)
 	}
 
+	scheduler, err := triggers.NewScheduler()
+	if err != nil {
+		slog.Error("Fail to create scheduler", "error", err)
+	}
+
 	engine := MimirEngine{
 		ReadingChannel: readingsChannel,
 		TopicChannel:   topicChannel,
@@ -57,6 +63,7 @@ func NewMimirEngine() *MimirEngine {
 		MsgProcessor:   NewMessageProcessor(msgChannel),
 		gateway:        gateway,
 		publisher:      NewPublisher(gateway.GetClient(), outgoingMessagesChannel),
+		Scheduler:      scheduler,
 	}
 	Mimir = &engine
 	return &engine
@@ -74,6 +81,7 @@ func (e *MimirEngine) Run(ctx context.Context) {
 	go e.MsgProcessor.Run(generalCtx, e.firstWg)
 	go e.processReadings(generalCtx, e.firstWg)
 	go e.gateway.Start(e.TopicChannel, generalCtx, e.firstWg)
+	e.Scheduler.Start()
 }
 
 func (e *MimirEngine) processReadings(ctx context.Context, wg *sync.WaitGroup) {
@@ -93,6 +101,7 @@ func (e *MimirEngine) processReadings(ctx context.Context, wg *sync.WaitGroup) {
 }
 
 func (e *MimirEngine) Close() {
+	e.Scheduler.Shutdown()
 	e.firstCancel()
 	e.firstWg.Wait()
 	e.secondCancel()

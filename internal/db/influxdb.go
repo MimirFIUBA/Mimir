@@ -55,8 +55,8 @@ func savePoints() {
 				splittedTopic := strings.Split(topic, `/`)
 				unit := splittedTopic[len(splittedTopic)-1]
 				fmt.Println(unit)
-				last, mean, _, _, max, min, _ := calculateStatistics(values)
-				writeApi.WriteRecord(ctx, fmt.Sprintf("%s,unit=%s avg=%f,last=%f,max=%f,min=%f", topic, unit, mean, last, max, min))
+				last, avg, _, _, max, min, _ := calculateStatistics(values)
+				writeApi.WriteRecord(ctx, fmt.Sprintf("%s,unit=%s avg=%f,last=%f,max=%f,min=%f", topic, unit, avg, last, max, min))
 			}
 		}
 		writeApi.Flush(ctx)

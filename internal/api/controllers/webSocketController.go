@@ -1,28 +1,25 @@
 package controllers
 
 import (
-	"context"
 	"fmt"
 	"mimir/internal/api/responses"
-	websocket "mimir/internal/api/webSocket"
+	"mimir/internal/api/websocket"
 	"net/http"
 )
 
-var handler = websocket.NewHandler()
-
-func SetWebSocketBroadcastChan(broadcastChan chan string) {
-	handler.BroadcastChan = broadcastChan
-}
+var (
+	WebSocketHandler *websocket.WebSocketHandler
+)
 
 func HandleConnections(w http.ResponseWriter, r *http.Request) {
-	conn, err := handler.Upgrade(w, r)
+	conn, err := WebSocketHandler.Upgrade(w, r)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 	defer conn.Close()
 
-	handler.NewConnection(conn)
+	WebSocketHandler.NewConnection(conn)
 
 	// TODO: solo para testing, broadcasteo los mensajes que recibo
 	for {
@@ -30,13 +27,9 @@ func HandleConnections(w http.ResponseWriter, r *http.Request) {
 		err := conn.ReadJSON(&msg)
 		if err != nil {
 			fmt.Println(err)
-			handler.CloseConnection(conn)
+			WebSocketHandler.CloseConnection(conn)
 			return
 		}
-		handler.BroadcastMessage(msg)
+		WebSocketHandler.BroadcastMessage(msg)
 	}
-}
-
-func HandleWebSocketMessages(ctx context.Context) {
-	handler.HandleMessages(ctx)
 }

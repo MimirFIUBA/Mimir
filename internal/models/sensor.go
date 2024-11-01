@@ -69,6 +69,7 @@ func (s *Sensor) NotifyAll() {
 		reading := s.Data[len(s.Data)-1]
 		event := triggers.Event{
 			Name:      "new reading event",
+			Type:      triggers.NEW_READING,
 			Timestamp: time.Now(),
 			Data:      reading.Value,
 			SenderId:  reading.Topic,

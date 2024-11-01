@@ -19,16 +19,20 @@ import (
 )
 
 type Trigger struct {
-	ID        primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
-	Name      string             `json:"name,omitempty" bson:"name,omitempty"`
-	Filename  string             `json:"filename,omitempty" bson:"filename,omitempty"`
-	IsActive  bool               `json:"active" bson:"active"`
-	Topics    []string           `json:"topics" bson:"topics"`
-	Condition Condition          `json:"condition" bson:"condition"`
-	Actions   []Action           `json:"actions" bson:"actions,omitempty"`
-	Type      string             `json:"type" bson:"type"`
-	Timeout   int                `json:"timeout,omitempty" bson:"timeout,omitempty"`
-	Frequency int                `json:"frequency,omitempty" bson:"frequency,omitempty"`
+	ID           primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
+	Name         string             `json:"name,omitempty" bson:"name,omitempty"`
+	Filename     string             `json:"filename,omitempty" bson:"filename,omitempty"`
+	IsActive     bool               `json:"active" bson:"active"`
+	Topics       []string           `json:"topics" bson:"topics"`
+	Condition    Condition          `json:"condition" bson:"condition"`
+	Actions      []Action           `json:"actions" bson:"actions,omitempty"`
+	TrueActions  []Action           `json:"trueActions" bson:"trueActions,omitempty"`
+	FalseActions []Action           `json:"falseActions" bson:"falseActions,omitempty"`
+	Type         string             `json:"type" bson:"type"`
+	Timeout      int                `json:"timeout,omitempty" bson:"timeout,omitempty"`
+	Frequency    int                `json:"frequency,omitempty" bson:"frequency,omitempty"`
+	Scheduled    bool               `json:"scheduled" bson:"scheduled"`
+	CronExpr     string             `json:"cron,omitempty" bson:"cron,omitempty"`
 }
 
 type Condition string
@@ -150,7 +154,7 @@ func (d *DatabaseManager) UpdateTrigger(id string, triggerUpdate *Trigger, actio
 			}
 
 			trigger.UpdateCondition(string(triggerUpdate.Condition))
-			trigger.UpdateActions(actions)
+			trigger.UpdateActions(actions, triggers.TriggerOptions{})
 			trigger.SetStatus(triggerUpdate.IsActive)
 
 			//TODO add more stuff to update

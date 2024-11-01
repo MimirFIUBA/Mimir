@@ -1,18 +1,28 @@
 package triggers
 
+type TriggerType int
+
+const (
+	EVENT_TRIGGER TriggerType = iota
+	SWITCH_TRIGGER
+	TIMER_TRIGGER
+	FREQUENCY_TRIGGER
+)
+
 type Trigger interface {
 	Update(Event)
 	GetID() string
 	SetID(string)
 	UpdateCondition(string) error
-	UpdateActions([]Action) error
-	AddAction(Action)
+	UpdateActions([]Action, TriggerOptions) error
+	AddAction(Action, TriggerOptions)
 	AddSubject(Subject)
 	StopWatching()
 	Activate()
 	Deactivate()
 	GetType() TriggerType
 	SetStatus(bool)
+	SetScheduled(bool)
 }
 
 type Subject interface {
@@ -21,10 +31,6 @@ type Subject interface {
 	NotifyAll()
 }
 
-type TriggerType int
-
-const (
-	EVENT_TRIGGER TriggerType = iota
-	TIMER_TRIGGER
-	FREQUENCY_TRIGGER
-)
+type TriggerOptions struct {
+	ActionsEventType ActionEventType
+}

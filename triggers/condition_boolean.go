@@ -82,8 +82,10 @@ func (c *CompareCondition) Evaluate(event Event) bool {
 
 func (c *CompareCondition) SetEvent(event Event) {
 	if event.MatchesCondition(c) {
-		c.hasTestValue = true
-		c.TestValue = event.Data
+		if event.Type != SCHEDULER_ACTIVE {
+			c.hasTestValue = true
+			c.TestValue = event.Data
+		}
 	}
 }
 

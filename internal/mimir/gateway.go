@@ -115,7 +115,6 @@ func (g *Gateway) trySubscribeToTopics(ctx context.Context, topics []string) err
 			if lastError != nil {
 				return fmt.Errorf("couldn't subscribe to topic %q: %w", topic, lastError)
 			}
-			fmt.Println("end try subscribe")
 			return nil
 		})
 	}
