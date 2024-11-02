@@ -20,7 +20,7 @@ func NewScheduler() (*Scheduler, error) {
 
 func (s *Scheduler) ScheduleTrigger(cronExpresion string, trigger Trigger) {
 	s.gocronScheduler.NewJob(
-		gocron.CronJob(cronExpresion, false),
+		gocron.CronJob(cronExpresion, true),
 		gocron.NewTask(
 			func() {
 				trigger.Update(Event{

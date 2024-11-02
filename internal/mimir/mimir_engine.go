@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"mimir/internal/consts"
 	"mimir/internal/db"
+	"mimir/internal/factories"
 	"mimir/internal/models"
 	"mimir/triggers"
 	"sync"
@@ -16,8 +17,8 @@ type MimirEngine struct {
 	ReadingChannel chan models.SensorReading
 	TopicChannel   chan []string
 	WsChannel      chan string
-	ActionFactory  *models.ActionFactory
-	TriggerFactory *models.TriggerFactory
+	ActionFactory  *factories.ActionFactory
+	TriggerFactory *factories.TriggerFactory
 	MsgProcessor   *MessageProcessor
 	gateway        *Gateway
 	publisher      *Publisher
@@ -58,8 +59,8 @@ func NewMimirEngine() *MimirEngine {
 		ReadingChannel: readingsChannel,
 		TopicChannel:   topicChannel,
 		WsChannel:      webSocketMessageChannel,
-		ActionFactory:  models.NewActionFactory(outgoingMessagesChannel, webSocketMessageChannel),
-		TriggerFactory: models.NewTriggerFactory(),
+		ActionFactory:  factories.NewActionFactory(outgoingMessagesChannel, webSocketMessageChannel),
+		TriggerFactory: factories.NewTriggerFactory(),
 		MsgProcessor:   NewMessageProcessor(msgChannel),
 		gateway:        gateway,
 		publisher:      NewPublisher(gateway.GetClient(), outgoingMessagesChannel),
@@ -128,6 +129,6 @@ func (e *MimirEngine) RegisterSensor(sensor *models.Sensor) {
 	e.TopicChannel <- []string{sensor.Topic}
 }
 
-func (e *MimirEngine) BuildTrigger(trigger models.TriggerOptions) (triggers.Trigger, error) {
+func (e *MimirEngine) BuildTrigger(trigger factories.TriggerOptions) (triggers.Trigger, error) {
 	return e.TriggerFactory.BuildTrigger(trigger)
 }

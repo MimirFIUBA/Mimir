@@ -7,6 +7,7 @@ import (
 	"mimir/db/mongodb"
 	"mimir/internal/consts"
 	"mimir/internal/models"
+
 	"mimir/triggers"
 	"os"
 	"sync"
@@ -133,6 +134,15 @@ func (d *DatabaseManager) getInfluxWriteApi() api.WriteAPIBlocking {
 	client := d.getInfluxDBClient()
 	if client != nil {
 		return client.WriteAPIBlocking(os.Getenv("INFLUXDB_ORG"), os.Getenv("INFLUXDB_BUCKET"))
+	}
+	return nil
+}
+
+func GetTriggerByName(name string) triggers.Trigger {
+	for _, trigger := range ActiveTriggers {
+		if trigger.GetName() == name {
+			return trigger
+		}
 	}
 	return nil
 }

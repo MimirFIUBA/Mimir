@@ -1,4 +1,4 @@
-package websocket
+package controllers
 
 import (
 	"context"
@@ -11,13 +11,40 @@ import (
 	gws "github.com/gorilla/websocket"
 )
 
+var (
+	Handler *WebSocketHandler
+)
+
+func HandleConnections(w http.ResponseWriter, r *http.Request) {
+	conn, err := Handler.Upgrade(w, r)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer conn.Close()
+
+	Handler.NewConnection(conn)
+
+	// TODO: solo para testing, broadcasteo los mensajes que recibo
+	for {
+		var msg responses.WSMessage
+		err := conn.ReadJSON(&msg)
+		if err != nil {
+			fmt.Println(err)
+			Handler.CloseConnection(conn)
+			return
+		}
+		Handler.BroadcastMessage(msg)
+	}
+}
+
 type WebSocketHandler struct {
 	broadcastChan chan string
 	clients       map[*gws.Conn]bool
 	upgrader      gws.Upgrader
 }
 
-func NewHandler(broadcastChan chan string) *WebSocketHandler {
+func NewWebSocketHandler(broadcastChan chan string) *WebSocketHandler {
 	upgrader := gws.Upgrader{
 		CheckOrigin: func(r *http.Request) bool {
 			return true

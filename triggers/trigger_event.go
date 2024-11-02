@@ -96,3 +96,7 @@ func (t *EventTrigger) SetStatus(active bool) {
 func (t *EventTrigger) SetScheduled(scheduled bool) {
 	t.isScheduled = scheduled
 }
+
+func (t *EventTrigger) GetName() string {
+	return t.Name
+}

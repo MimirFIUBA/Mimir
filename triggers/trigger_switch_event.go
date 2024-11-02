@@ -115,3 +115,7 @@ func (t *SwitchTrigger) SetStatus(active bool) {
 func (t *SwitchTrigger) SetScheduled(scheduled bool) {
 	t.isScheduled = scheduled
 }
+
+func (t *SwitchTrigger) GetName() string {
+	return t.Name
+}

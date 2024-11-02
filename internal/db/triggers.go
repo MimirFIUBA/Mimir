@@ -38,9 +38,13 @@ type Trigger struct {
 type Condition string
 
 type Action struct {
-	Name    string `bson:"name"`
-	Type    string `bson:"type"`
-	Message string `bson:"message,omitempty"`
+	Name          string `json:"name" bson:"name"`
+	Type          string `json:"type" bson:"type"`
+	Message       string `json:"message,omitempty" bson:"message,omitempty"`
+	Command       string `json:"command,omitempty" bson:"command,omitempty"`
+	CommandArgs   string `json:"args,omitempty" bson:"args,omitempty"`
+	TriggerName   string `json:"triggerName,omitempty" bson:"triggerName,omitempty"`
+	TriggerStatus bool   `json:"triggerStatus,omitempty" bson:"triggerStatus,omitempty"`
 }
 
 func (t *Trigger) BuildFileName(suffix string) string {

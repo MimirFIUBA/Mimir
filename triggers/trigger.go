@@ -13,6 +13,7 @@ type Trigger interface {
 	Update(Event)
 	GetID() string
 	SetID(string)
+	GetName() string
 	UpdateCondition(string) error
 	UpdateActions([]Action, TriggerOptions) error
 	AddAction(Action, TriggerOptions)
@@ -33,4 +34,11 @@ type Subject interface {
 
 type TriggerOptions struct {
 	ActionsEventType ActionEventType
+}
+
+type TriggerData struct {
+	ID          string
+	Name        string
+	IsActive    bool
+	IsScheduled bool
 }

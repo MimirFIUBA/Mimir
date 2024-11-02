@@ -116,3 +116,7 @@ func (t *FrequencyTrigger) SetStatus(active bool) {
 func (t *FrequencyTrigger) SetScheduled(scheduled bool) {
 	panic("cannot schedule frequency trigger")
 }
+
+func (t *FrequencyTrigger) GetName() string {
+	return t.Name
+}

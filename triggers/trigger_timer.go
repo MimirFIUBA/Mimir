@@ -137,3 +137,7 @@ func (t *TimerTrigger) UpdateTimeout(newTimeout time.Duration) {
 func (t *TimerTrigger) SetScheduled(scheduled bool) {
 	panic("cannot schedule time trigger")
 }
+
+func (t *TimerTrigger) GetName() string {
+	return t.Name
+}

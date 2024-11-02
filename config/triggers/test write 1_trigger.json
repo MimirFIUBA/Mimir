@@ -1,5 +1,5 @@
 {
-    "name": "test id",
+    "name": "trigger to deactivate",
     "active": true,
     "type": "event",
     "topics": [
@@ -8,11 +8,11 @@
     "condition": "",
     "actions": [
         {
-            "Name": "print test",
-            "Type": "print",
-            "Message": "test schedule fede 2"
+            "name": "print test",
+            "type": "print",
+            "message": "test schedule fede 2"
         }
     ],
     "scheduled": true,
-    "cron": "* * * * *"
+    "cron": "* * * * * *"
 }

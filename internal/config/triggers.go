@@ -3,12 +3,11 @@ package config
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"log/slog"
 	"mimir/internal/consts"
 	"mimir/internal/db"
+	"mimir/internal/factories"
 	"mimir/internal/mimir"
-	"mimir/internal/models"
 	"mimir/internal/utils"
 	"mimir/triggers"
 	"os"
@@ -38,7 +37,7 @@ func BuildTriggers(mimirEngine *mimir.MimirEngine) error {
 			slog.Info("Building trigger", "trigger", filename)
 			byteValue, err := os.ReadFile(filename)
 			if err != nil {
-				log.Fatal(err)
+				slog.Error("error reading trigger file", "file", filename, "error", err)
 				return fmt.Errorf("error reading trigger file %s", filename)
 			}
 			var triggerData db.Trigger
@@ -92,7 +91,7 @@ func BuildTrigger(t db.Trigger, mimirEngine *mimir.MimirEngine) (triggers.Trigge
 	if !exists {
 		return nil, fmt.Errorf("wrong trigger type")
 	}
-	trigger, err := mimirEngine.BuildTrigger(models.TriggerOptions{
+	trigger, err := mimirEngine.BuildTrigger(factories.TriggerOptions{
 		Name:        t.Name,
 		TriggerType: triggerType,
 		Timeout:     time.Duration(t.Timeout) * time.Second,
@@ -148,11 +147,15 @@ func ToTriggerAction(a db.Action) triggers.Action {
 	case "alert":
 		action := mimir.Mimir.ActionFactory.NewSendMQTTMessageAction(a.Message)
 		action.Message = a.Message
-		triggerAction = &action
+		triggerAction = action
 	case "webSocket":
 		action := mimir.Mimir.ActionFactory.NewSendWebSocketMessageAction(a.Message)
 		action.Message = a.Message
-		triggerAction = &action
+		triggerAction = action
+	case "command":
+		triggerAction = mimir.Mimir.ActionFactory.NewCommandAction(a.Command, a.CommandArgs)
+	case "triggerStatus":
+		triggerAction = mimir.Mimir.ActionFactory.NewChangeTriggerStatus(a.TriggerName, a.TriggerStatus)
 	default:
 		//TODO see if returning nil is fine or we need some error here
 		slog.Warn("action type not recognized while creating trigger action", "type", a.Type)
