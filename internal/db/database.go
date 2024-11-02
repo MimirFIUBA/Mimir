@@ -136,3 +136,12 @@ func (d *DatabaseManager) getInfluxWriteApi() api.WriteAPIBlocking {
 	}
 	return nil
 }
+
+func GetTriggerByName(name string) triggers.Trigger {
+	for _, trigger := range ActiveTriggers {
+		if trigger.GetName() == name {
+			return trigger
+		}
+	}
+	return nil
+}
