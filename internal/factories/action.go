@@ -60,6 +60,6 @@ func (f *ActionFactory) NewChangeTriggerStatus(triggerName string, status bool) 
 }
 
 func (f *ActionFactory) NewCommandAction(command string, args string) *triggers.CommandAction {
-	return &triggers.CommandAction{command, args}
+	return &triggers.CommandAction{Command: command, CommandArgs: args}
 
 }
