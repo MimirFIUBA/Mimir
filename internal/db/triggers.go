@@ -19,24 +19,32 @@ import (
 )
 
 type Trigger struct {
-	ID        primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
-	Name      string             `json:"name,omitempty" bson:"name,omitempty"`
-	Filename  string             `json:"filename,omitempty" bson:"filename,omitempty"`
-	IsActive  bool               `json:"active" bson:"active"`
-	Topics    []string           `json:"topics" bson:"topics"`
-	Condition Condition          `json:"condition" bson:"condition"`
-	Actions   []Action           `json:"actions" bson:"actions,omitempty"`
-	Type      string             `json:"type" bson:"type"`
-	Timeout   int                `json:"timeout,omitempty" bson:"timeout,omitempty"`
-	Frequency int                `json:"frequency,omitempty" bson:"frequency,omitempty"`
+	ID           primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
+	Name         string             `json:"name,omitempty" bson:"name,omitempty"`
+	Filename     string             `json:"filename,omitempty" bson:"filename,omitempty"`
+	IsActive     bool               `json:"active" bson:"active"`
+	Topics       []string           `json:"topics" bson:"topics"`
+	Condition    Condition          `json:"condition" bson:"condition"`
+	Actions      []Action           `json:"actions" bson:"actions,omitempty"`
+	TrueActions  []Action           `json:"trueActions" bson:"trueActions,omitempty"`
+	FalseActions []Action           `json:"falseActions" bson:"falseActions,omitempty"`
+	Type         string             `json:"type" bson:"type"`
+	Timeout      int                `json:"timeout,omitempty" bson:"timeout,omitempty"`
+	Frequency    int                `json:"frequency,omitempty" bson:"frequency,omitempty"`
+	Scheduled    bool               `json:"scheduled" bson:"scheduled"`
+	CronExpr     string             `json:"cron,omitempty" bson:"cron,omitempty"`
 }
 
 type Condition string
 
 type Action struct {
-	Name    string `bson:"name"`
-	Type    string `bson:"type"`
-	Message string `bson:"message,omitempty"`
+	Name          string `json:"name" bson:"name"`
+	Type          string `json:"type" bson:"type"`
+	Message       string `json:"message,omitempty" bson:"message,omitempty"`
+	Command       string `json:"command,omitempty" bson:"command,omitempty"`
+	CommandArgs   string `json:"args,omitempty" bson:"args,omitempty"`
+	TriggerName   string `json:"triggerName,omitempty" bson:"triggerName,omitempty"`
+	TriggerStatus bool   `json:"triggerStatus,omitempty" bson:"triggerStatus,omitempty"`
 }
 
 func (t *Trigger) BuildFileName(suffix string) string {
@@ -150,7 +158,7 @@ func (d *DatabaseManager) UpdateTrigger(id string, triggerUpdate *Trigger, actio
 			}
 
 			trigger.UpdateCondition(string(triggerUpdate.Condition))
-			trigger.UpdateActions(actions)
+			trigger.UpdateActions(actions, triggers.TriggerOptions{})
 			trigger.SetStatus(triggerUpdate.IsActive)
 
 			//TODO add more stuff to update

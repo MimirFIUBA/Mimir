@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"mimir/internal/consts"
 	"mimir/internal/db"
+	"mimir/internal/factories"
 	"mimir/internal/models"
 	"mimir/triggers"
 	"sync"
@@ -16,8 +17,8 @@ type MimirEngine struct {
 	ReadingChannel chan models.SensorReading
 	TopicChannel   chan []string
 	WsChannel      chan string
-	ActionFactory  *models.ActionFactory
-	TriggerFactory *models.TriggerFactory
+	ActionFactory  *factories.ActionFactory
+	TriggerFactory *factories.TriggerFactory
 	MsgProcessor   *MessageProcessor
 	gateway        *Gateway
 	publisher      *Publisher
@@ -25,6 +26,7 @@ type MimirEngine struct {
 	secondCancel   context.CancelFunc
 	firstWg        *sync.WaitGroup
 	secondWg       *sync.WaitGroup
+	Scheduler      *triggers.Scheduler
 }
 
 func NewMimirEngine() *MimirEngine {
@@ -48,15 +50,21 @@ func NewMimirEngine() *MimirEngine {
 		slog.Error("Error creating new gateway", "error", err)
 	}
 
+	scheduler, err := triggers.NewScheduler()
+	if err != nil {
+		slog.Error("Fail to create scheduler", "error", err)
+	}
+
 	engine := MimirEngine{
 		ReadingChannel: readingsChannel,
 		TopicChannel:   topicChannel,
 		WsChannel:      webSocketMessageChannel,
-		ActionFactory:  models.NewActionFactory(outgoingMessagesChannel, webSocketMessageChannel),
-		TriggerFactory: models.NewTriggerFactory(),
+		ActionFactory:  factories.NewActionFactory(outgoingMessagesChannel, webSocketMessageChannel),
+		TriggerFactory: factories.NewTriggerFactory(),
 		MsgProcessor:   NewMessageProcessor(msgChannel),
 		gateway:        gateway,
 		publisher:      NewPublisher(gateway.GetClient(), outgoingMessagesChannel),
+		Scheduler:      scheduler,
 	}
 	Mimir = &engine
 	return &engine
@@ -74,6 +82,7 @@ func (e *MimirEngine) Run(ctx context.Context) {
 	go e.MsgProcessor.Run(generalCtx, e.firstWg)
 	go e.processReadings(generalCtx, e.firstWg)
 	go e.gateway.Start(e.TopicChannel, generalCtx, e.firstWg)
+	e.Scheduler.Start()
 }
 
 func (e *MimirEngine) processReadings(ctx context.Context, wg *sync.WaitGroup) {
@@ -93,6 +102,7 @@ func (e *MimirEngine) processReadings(ctx context.Context, wg *sync.WaitGroup) {
 }
 
 func (e *MimirEngine) Close() {
+	e.Scheduler.Shutdown()
 	e.firstCancel()
 	e.firstWg.Wait()
 	e.secondCancel()
@@ -119,6 +129,6 @@ func (e *MimirEngine) RegisterSensor(sensor *models.Sensor) {
 	e.TopicChannel <- []string{sensor.Topic}
 }
 
-func (e *MimirEngine) BuildTrigger(trigger models.TriggerOptions) (triggers.Trigger, error) {
+func (e *MimirEngine) BuildTrigger(trigger factories.TriggerOptions) (triggers.Trigger, error) {
 	return e.TriggerFactory.BuildTrigger(trigger)
 }

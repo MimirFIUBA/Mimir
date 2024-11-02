@@ -87,12 +87,12 @@ func (t *TimerTrigger) UpdateCondition(newCondition string) error {
 	return nil
 }
 
-func (t *TimerTrigger) UpdateActions(actions []Action) error {
+func (t *TimerTrigger) UpdateActions(actions []Action, _ TriggerOptions) error {
 	t.Actions = actions
 	return nil
 }
 
-func (t *TimerTrigger) AddAction(a Action) {
+func (t *TimerTrigger) AddAction(a Action, _ TriggerOptions) {
 	t.Actions = append(t.Actions, a)
 }
 
@@ -132,4 +132,12 @@ func (t *TimerTrigger) SetStatus(active bool) {
 func (t *TimerTrigger) UpdateTimeout(newTimeout time.Duration) {
 	t.Timeout = newTimeout
 	t.reset()
+}
+
+func (t *TimerTrigger) SetScheduled(scheduled bool) {
+	panic("cannot schedule time trigger")
+}
+
+func (t *TimerTrigger) GetName() string {
+	return t.Name
 }

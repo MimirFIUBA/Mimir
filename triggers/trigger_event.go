@@ -8,6 +8,7 @@ type EventTrigger struct {
 	IsActive         bool
 	Actions          []Action
 	observedSubjects []Subject
+	isScheduled      bool
 }
 
 func NewEventTrigger(name string) *EventTrigger {
@@ -17,8 +18,10 @@ func NewEventTrigger(name string) *EventTrigger {
 
 func (t *EventTrigger) Update(event Event) {
 	if t.IsActive && t.Condition.Evaluate(event) {
-		for _, action := range t.Actions {
-			action.Execute(event)
+		if !t.isScheduled || event.Type == SCHEDULER_ACTIVE {
+			for _, action := range t.Actions {
+				action.Execute(event)
+			}
 		}
 	}
 }
@@ -35,7 +38,7 @@ func (t *EventTrigger) SetCondition(c Condition) {
 	t.Condition = c
 }
 
-func (t *EventTrigger) AddAction(a Action) {
+func (t *EventTrigger) AddAction(a Action, _ TriggerOptions) {
 	t.Actions = append(t.Actions, a)
 }
 
@@ -53,7 +56,7 @@ func (t *EventTrigger) UpdateCondition(newCondition string) error {
 	return nil
 }
 
-func (t *EventTrigger) UpdateActions(actions []Action) error {
+func (t *EventTrigger) UpdateActions(actions []Action, _ TriggerOptions) error {
 	t.Actions = actions
 	return nil
 }
@@ -88,4 +91,12 @@ func (t *EventTrigger) SetStatus(active bool) {
 			t.Deactivate()
 		}
 	}
+}
+
+func (t *EventTrigger) SetScheduled(scheduled bool) {
+	t.isScheduled = scheduled
+}
+
+func (t *EventTrigger) GetName() string {
+	return t.Name
 }

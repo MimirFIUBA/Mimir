@@ -6,12 +6,21 @@ import (
 	"github.com/google/uuid"
 )
 
+type EventType int
+
+const (
+	SCHEDULER_ACTIVE EventType = iota
+	NEW_READING
+	STATISTIC_CALCULATION
+)
+
 type Event struct {
 	Name      string
 	Timestamp time.Time
 	Data      interface{}
 	Id        string
 	SenderId  string
+	Type      EventType
 }
 
 func NewEvent() *Event {
@@ -27,6 +36,7 @@ func NewFloatEvent(data float64) *Event {
 	return &Event{
 		Id:        uuid.New().String(),
 		Timestamp: time.Now(),
+		Type:      STATISTIC_CALCULATION,
 		Data:      data,
 	}
 }
