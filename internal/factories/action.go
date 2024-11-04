@@ -68,9 +68,9 @@ func (f *ActionFactory) NewCommandAction(command string, args string) *triggers.
 
 func (f *ActionFactory) NewAlertMessageAction(message string) *triggers.ExecuteFunctionAction {
 	params := map[string]interface{}{"message": message}
-	actionPrint := triggers.NewPrintAction(message)
+	actionWS := f.NewSendWebSocketMessageAction(message)
 	actionMqtt := f.NewSendMQTTMessageAction(message)
-	actionPrint.NextAction = actionMqtt
+	actionMqtt.NextAction = actionWS
 	actionCreateMessage := &triggers.ExecuteFunctionAction{
 		Func: func(event triggers.Event, params map[string]interface{}) triggers.Event {
 
@@ -95,7 +95,7 @@ func (f *ActionFactory) NewAlertMessageAction(message string) *triggers.ExecuteF
 			return event
 		},
 		Params:     params,
-		NextAction: actionPrint,
+		NextAction: actionMqtt,
 	}
 	return actionCreateMessage
 }
