@@ -140,11 +140,10 @@ func ToTriggerAction(a db.Action) triggers.Action {
 
 	switch a.Type {
 	case "print":
-		action := triggers.NewPrintAction()
-		action.Message = a.Message
+		action := triggers.NewPrintAction(a.Message)
 		action.Name = a.Name
 		triggerAction = action
-	case "alert":
+	case "mqttMessage":
 		action := mimir.Mimir.ActionFactory.NewSendMQTTMessageAction(a.Message)
 		action.Message = a.Message
 		triggerAction = action
@@ -156,6 +155,8 @@ func ToTriggerAction(a db.Action) triggers.Action {
 		triggerAction = mimir.Mimir.ActionFactory.NewCommandAction(a.Command, a.CommandArgs)
 	case "triggerStatus":
 		triggerAction = mimir.Mimir.ActionFactory.NewChangeTriggerStatus(a.TriggerName, a.TriggerStatus)
+	case "alert":
+		triggerAction = mimir.Mimir.ActionFactory.NewAlertMessageAction(a.Message)
 	default:
 		//TODO see if returning nil is fine or we need some error here
 		slog.Warn("action type not recognized while creating trigger action", "type", a.Type)

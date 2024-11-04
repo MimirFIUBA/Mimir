@@ -6,10 +6,11 @@ type PrintAction struct {
 	Name              string
 	messageContructor func(Event) string
 	Message           string
+	NextAction        Action
 }
 
-func NewPrintAction() *PrintAction {
-	return &PrintAction{}
+func NewPrintAction(message string) *PrintAction {
+	return &PrintAction{Message: message}
 }
 
 func (a *PrintAction) SetMessage(message string) {
@@ -26,4 +27,7 @@ func (action *PrintAction) Execute(event Event) {
 		message = action.messageContructor(event)
 	}
 	fmt.Println(message)
+	if action.NextAction != nil {
+		action.NextAction.Execute(event)
+	}
 }

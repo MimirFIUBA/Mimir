@@ -7,4 +7,5 @@ const (
 	TOPICS_COLLECTION     = "topics"
 	TRIGGERS_COLLECTION   = "triggers"
 	PROCESSORS_COLLECTION = "processors"
+	MESSAGES_COLLECTION   = "messages"
 )

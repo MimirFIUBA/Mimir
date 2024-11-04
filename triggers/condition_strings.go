@@ -34,7 +34,7 @@ func (c *MatchesCondition) SetSenderId(id string) {
 
 func (c *MatchesCondition) SetEvent(event Event) {
 	if event.MatchesCondition(c) {
-		switch data := event.Data.(type) {
+		switch data := event.Value.(type) {
 		case string:
 			c.testValue = data
 		case []byte:

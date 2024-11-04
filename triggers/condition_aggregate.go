@@ -40,7 +40,7 @@ func (c *AverageCondition) calculateAverage() float64 {
 	var sum float64
 	for i := range c.eventCount {
 		event := c.EventBuffer[(c.start+i)%c.MaxSize]
-		data := event.Data
+		data := event.Value
 		switch data := data.(type) {
 		case int:
 			sum += float64(data)

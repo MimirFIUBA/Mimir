@@ -67,10 +67,13 @@ func (s *Sensor) Deregister(trigger triggers.Trigger) {
 func (s *Sensor) NotifyAll() {
 	for _, trigger := range s.triggerList {
 		reading := s.Data[len(s.Data)-1]
+		data := make(map[string]interface{})
+
 		event := triggers.Event{
 			Name:      "new reading event",
 			Timestamp: time.Now(),
-			Data:      reading.Value,
+			Data:      data,
+			Value:     reading.Value,
 			SenderId:  reading.Topic,
 		}
 		trigger.Update(event) //TODO: need to send the last value

@@ -34,7 +34,7 @@ func (c *DeltaCondition) Evaluate(event Event) bool {
 func (c *DeltaCondition) SetEvent(e Event) {
 	if e.MatchesCondition(c) {
 		c.PreviousValue = c.CurrentValue
-		c.CurrentValue = e.Data
+		c.CurrentValue = e.Value
 	}
 }
 
