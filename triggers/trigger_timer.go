@@ -67,7 +67,9 @@ func (t *TimerTrigger) evaluate(event Event) {
 }
 
 func (t *TimerTrigger) Update(event Event) {
-	t.evaluate(event)
+	if t.IsActive {
+		t.evaluate(event)
+	}
 }
 
 func (t *TimerTrigger) GetID() string {

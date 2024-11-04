@@ -102,7 +102,9 @@ func BuildTrigger(t db.Trigger, mimirEngine *mimir.MimirEngine) (triggers.Trigge
 		return nil, err
 	}
 	trigger.SetID(t.ID.Hex())
-	trigger.Activate()
+	if t.IsActive {
+		trigger.Activate()
+	}
 	err = trigger.UpdateCondition(string(t.Condition))
 	if err != nil {
 		return nil, err

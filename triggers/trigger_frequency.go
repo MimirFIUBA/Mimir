@@ -32,18 +32,20 @@ func NewFrequencyTrigger(name string, frequency time.Duration) *FrequencyTrigger
 }
 
 func (t *FrequencyTrigger) Update(event Event) {
-	t.lastEventReceived = &event
-	if time.Since(t.lastExecuteTime) >= t.Frequency && !t.isTickerActive {
-		t.execute(event)
-	} else {
-		if !t.isTickerActive {
-			t.isTickerActive = true
-			t.Ticker = time.NewTicker(t.Frequency)
-			go func() {
-				<-t.Ticker.C
-				t.execute(*t.lastEventReceived)
-				t.isTickerActive = false
-			}()
+	if t.IsActive {
+		t.lastEventReceived = &event
+		if time.Since(t.lastExecuteTime) >= t.Frequency && !t.isTickerActive {
+			t.execute(event)
+		} else {
+			if !t.isTickerActive {
+				t.isTickerActive = true
+				t.Ticker = time.NewTicker(t.Frequency)
+				go func() {
+					<-t.Ticker.C
+					t.execute(*t.lastEventReceived)
+					t.isTickerActive = false
+				}()
+			}
 		}
 	}
 }
