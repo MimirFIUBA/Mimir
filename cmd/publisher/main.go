@@ -83,7 +83,7 @@ func main() {
 
 	generator := mqttGenerator{"mimir/testWrite4", client, c}
 	// go generator.generateFloatData(100, "1", 1, 50, 50)
-	go generator.GenerateBytes("1", 0, 0, 0, 4, 64, 0, 0, 0)
+	go generator.GenerateBytes("1", 0, 0, 0, 4, 64, 0, 0)
 
 	// message := fmt.Sprintf(`{"id": "%s", "data": %.2f, "time": "%s"}`, "0", 15.0, time.Now())
 	// token := client.Publish("mimir/esp32/waterTemp", 0, false, message)

@@ -28,7 +28,15 @@ func (p *MessageProcessor) Run(ctx context.Context, wg *sync.WaitGroup) {
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
-				p.handlers[topic].HandleMessage(message)
+				defer func() {
+					if r := recover(); r != nil {
+						slog.Warn("recovered from message handling")
+					}
+				}()
+				err := p.handlers[topic].HandleMessage(message)
+				if err != nil {
+					slog.Error("error processing message", "error", err)
+				}
 			}()
 		case <-ctx.Done():
 			slog.Error("context done, message processor", "error", ctx.Err())
