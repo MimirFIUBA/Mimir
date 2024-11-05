@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"mimir/internal/models"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -41,6 +42,7 @@ func (n *NodesManager) CreateNode(node *models.Node) error {
 	// TODO(#20) - Add Body validation
 	node, err := Database.insertNode(node)
 	if err != nil {
+		slog.Error("error inserting node", "error", err)
 		return err
 	}
 
@@ -101,13 +103,12 @@ func (d *DatabaseManager) insertNode(node *models.Node) (*models.Node, error) {
 		nodesCollection := mongoClient.Database(MONGO_DB_MIMIR).Collection(NODES_COLLECTION)
 		result, err := nodesCollection.InsertOne(context.TODO(), node)
 		if err != nil {
-			fmt.Println("error inserting group ", err)
 			return nil, err
 		}
 
 		nodeId, ok := result.InsertedID.(primitive.ObjectID)
 		if !ok {
-			return nil, fmt.Errorf("error converting id for group")
+			return nil, fmt.Errorf("error converting id for node")
 		}
 		node.ID = nodeId
 	}

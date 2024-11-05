@@ -1,8 +1,6 @@
 package triggers
 
 import (
-	"fmt"
-	"log"
 	"os/exec"
 )
 
@@ -14,11 +12,11 @@ type CommandAction struct {
 
 func (a *CommandAction) Execute(event Event) {
 	cmd := exec.Command(a.Command, a.CommandArgs)
-	out, err := cmd.CombinedOutput()
+	_, err := cmd.CombinedOutput()
 	if err != nil {
-		log.Fatal(err)
+		return //TODO: see if we can do something with error
 	}
-	fmt.Printf("%s\n", out)
+	//TODO: see if we can do something with the output
 
 	if a.NextAction != nil {
 		a.NextAction.Execute(event)

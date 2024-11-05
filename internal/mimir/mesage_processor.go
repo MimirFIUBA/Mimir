@@ -23,6 +23,7 @@ func (p *MessageProcessor) Run(ctx context.Context, wg *sync.WaitGroup) {
 	for {
 		select {
 		case message := <-p.messages:
+			//TODO: remove
 			fmt.Printf("New message from: %s - payload: %s\n", message.Topic, message.Payload)
 			topic := message.Topic
 			wg.Add(1)

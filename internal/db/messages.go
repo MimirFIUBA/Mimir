@@ -14,7 +14,6 @@ func (d *DatabaseManager) InsertMessage(message *models.Message) (*models.Messag
 		topicsCollection := mongoClient.Database(MONGO_DB_MIMIR).Collection(MESSAGES_COLLECTION)
 		result, err := topicsCollection.InsertOne(context.TODO(), message)
 		if err != nil {
-			fmt.Println("error inserting message", err)
 			return nil, err
 		}
 

@@ -1,6 +1,7 @@
 package factories
 
 import (
+	"log/slog"
 	"mimir/internal/db"
 	"mimir/internal/models"
 	"mimir/triggers"
@@ -89,7 +90,10 @@ func (f *ActionFactory) NewAlertMessageAction(message string) *triggers.ExecuteF
 						AdditionalDetails: additionalDetails,
 						CreatedDate:       time.Now(),
 					}
-					db.Database.InsertMessage(message)
+					_, err := db.Database.InsertMessage(message)
+					if err != nil {
+						slog.Error("error inserting message", "error", err)
+					}
 				}
 			}
 			return event

@@ -3,7 +3,7 @@ package db
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 	"mimir/internal/models"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -53,13 +53,14 @@ func (s *SensorsManager) CreateSensor(sensor *models.Sensor) error {
 
 	sensor, err := Database.insertTopic(sensor)
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("error inserting topic", "error", err, "topic", sensor)
 		return err
 	}
 
 	s.sensors = append(s.sensors, *sensor)
 	err = NodesData.AddSensorToNodeById(sensor.NodeID, sensor)
 	if err != nil {
+		slog.Error("error adding sensor to node", "error", err, "topic", sensor)
 		return err
 	}
 	return nil
@@ -115,7 +116,7 @@ func (s *SensorsManager) LoadSensors(sensors []models.Sensor) {
 		filter := buildTopicFilter(sensors)
 		results, err := Database.findTopics(filter)
 		if err != nil {
-			log.Fatal(err)
+			slog.Error("fail to find topics", "sensors", sensors)
 			return
 		}
 
@@ -144,13 +145,12 @@ func (d *DatabaseManager) insertTopic(topic *models.Sensor) (*models.Sensor, err
 		topicsCollection := mongoClient.Database(MONGO_DB_MIMIR).Collection(TOPICS_COLLECTION)
 		result, err := topicsCollection.InsertOne(context.TODO(), topic)
 		if err != nil {
-			fmt.Println("error inserting group ", err)
 			return nil, err
 		}
 
 		topicId, ok := result.InsertedID.(primitive.ObjectID)
 		if !ok {
-			return nil, fmt.Errorf("error converting id for group")
+			return nil, fmt.Errorf("error converting id for node")
 		}
 		topic.ID = topicId
 	}
@@ -164,7 +164,8 @@ func (d *DatabaseManager) insertTopics(topics []interface{}) {
 		topicsCollection := mongoClient.Database(MONGO_DB_MIMIR).Collection(TOPICS_COLLECTION)
 		_, err := topicsCollection.InsertMany(context.TODO(), topics)
 		if err != nil {
-			log.Fatal(err)
+			slog.Error("fail to insert topics", "topcis", topics)
+			return
 		}
 	}
 }
@@ -177,7 +178,8 @@ func (d *DatabaseManager) DeactivateTopics(sensors []models.Sensor) {
 		topicsCollection := mongoClient.Database(MONGO_DB_MIMIR).Collection(TOPICS_COLLECTION)
 		_, err := topicsCollection.UpdateMany(context.TODO(), filter, update)
 		if err != nil {
-			log.Fatal(err)
+			slog.Error("fail to update topics", "topcis", sensors)
+			return
 		}
 	}
 }

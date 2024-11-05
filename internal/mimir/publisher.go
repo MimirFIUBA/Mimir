@@ -2,7 +2,6 @@ package mimir
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 	"mimir/internal/consts"
 	"sync"
@@ -29,8 +28,7 @@ func (p *Publisher) Run(ctx context.Context, wg *sync.WaitGroup) {
 				topic := consts.MQTT_ALERT_TOPIC
 				token := p.client.Publish(topic, 0, false, outgoingMessage)
 				token.Wait()
-
-				fmt.Printf("Published topic %s: %s\n", topic, outgoingMessage)
+				slog.Info("publish message to topic", "topic", topic, "message", outgoingMessage)
 			}()
 		case <-ctx.Done():
 			slog.Error("context done, publisher", "error", ctx.Err())

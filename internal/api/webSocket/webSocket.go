@@ -79,7 +79,7 @@ func (h *WebSocketHandler) closeClients() {
 			}
 		}
 	}
-	fmt.Println("All clients closed")
+	slog.Info("web socket clients closed")
 }
 
 func (h *WebSocketHandler) Stop() {

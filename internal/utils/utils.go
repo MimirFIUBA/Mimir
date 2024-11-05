@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"io"
 	"io/fs"
-	"log"
 	"os"
 	"path"
 	"strings"
@@ -32,7 +31,7 @@ func ListFilesWithSuffix(dir, suffix string) []string {
 	mdFiles, err := fs.Glob(root, suffix)
 
 	if err != nil {
-		log.Fatal(err)
+		return nil
 	}
 
 	var files []string

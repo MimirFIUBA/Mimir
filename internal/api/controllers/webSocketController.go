@@ -2,7 +2,7 @@ package controllers
 
 import (
 	"context"
-	"fmt"
+	"log/slog"
 	"mimir/internal/api/responses"
 	websocket "mimir/internal/api/webSocket"
 	"net/http"
@@ -17,7 +17,7 @@ func SetWebSocketBroadcastChan(broadcastChan chan string) {
 func HandleConnections(w http.ResponseWriter, r *http.Request) {
 	conn, err := WSHandler.Upgrade(w, r)
 	if err != nil {
-		fmt.Println(err)
+		slog.Error("error on websocket upgrade", "error", err)
 		return
 	}
 	defer conn.Close()
@@ -29,7 +29,7 @@ func HandleConnections(w http.ResponseWriter, r *http.Request) {
 		var msg responses.WSMessage
 		err := conn.ReadJSON(&msg)
 		if err != nil {
-			fmt.Println(err)
+			slog.Error("error reading json from websocket client", "error", err)
 			WSHandler.CloseConnection(conn)
 			return
 		}

@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"mimir/internal/models"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -97,7 +98,7 @@ func (d *DatabaseManager) insertGroup(group *models.Group) (*models.Group, error
 		groupsCollection := mongoClient.Database(MONGO_DB_MIMIR).Collection(GROUPS_COLLECTION)
 		result, err := groupsCollection.InsertOne(context.TODO(), group)
 		if err != nil {
-			fmt.Println("error inserting group ", err)
+			slog.Error("error inserting group", "error", err)
 			return nil, err
 		}
 
