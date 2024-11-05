@@ -9,7 +9,7 @@
     "actions": [
         {
             "Name": "print test",
-            "Type": "print",
+            "Type": "alert",
             "Message": "test action"
         }
     ]

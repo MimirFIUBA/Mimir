@@ -83,7 +83,7 @@ func (c *CompareCondition) Evaluate(event Event) bool {
 func (c *CompareCondition) SetEvent(event Event) {
 	if event.MatchesCondition(c) {
 		c.hasTestValue = true
-		c.TestValue = event.Data
+		c.TestValue = event.Value
 	}
 }
 

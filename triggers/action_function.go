@@ -1,10 +1,19 @@
 package triggers
 
 type ExecuteFunctionAction struct {
-	Func   func(event Event, params map[string]interface{})
-	Params map[string]interface{}
+	Func       func(event Event, params map[string]interface{}) Event
+	Params     map[string]interface{}
+	NextAction Action
+}
+
+func NewExecuteFunctionAction(function func(event Event, params map[string]interface{})) *ExecuteFunctionAction {
+	return &ExecuteFunctionAction{}
 }
 
 func (a *ExecuteFunctionAction) Execute(event Event) {
-	a.Func(event, a.Params)
+	nextEvent := a.Func(event, a.Params)
+
+	if a.NextAction != nil {
+		a.NextAction.Execute(nextEvent)
+	}
 }
