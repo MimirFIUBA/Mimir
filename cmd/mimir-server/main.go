@@ -108,6 +108,7 @@ func main() {
 
 	cancel()
 	wg.Wait()
+	api.Stop()
 	fmt.Println("Waiting for all processes to finsih")
 	slog.Info("close successful")
 

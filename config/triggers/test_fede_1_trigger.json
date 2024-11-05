@@ -8,9 +8,9 @@
     "condition": "COUNT($(mimir/testWrite4))[0 11 20] > 10",
     "actions": [
         {
-            "Name": "print test",
-            "Type": "print",
-            "Message": "count > 10"
+            "name": "print test",
+            "type": "alert",
+            "message": "count > 10"
         }
     ]
 }

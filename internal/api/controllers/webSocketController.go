@@ -8,21 +8,21 @@ import (
 	"net/http"
 )
 
-var handler = websocket.NewHandler()
+var WSHandler = websocket.NewHandler()
 
 func SetWebSocketBroadcastChan(broadcastChan chan string) {
-	handler.BroadcastChan = broadcastChan
+	WSHandler.BroadcastChan = broadcastChan
 }
 
 func HandleConnections(w http.ResponseWriter, r *http.Request) {
-	conn, err := handler.Upgrade(w, r)
+	conn, err := WSHandler.Upgrade(w, r)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 	defer conn.Close()
 
-	handler.NewConnection(conn)
+	WSHandler.NewConnection(conn)
 
 	// TODO: solo para testing, broadcasteo los mensajes que recibo
 	for {
@@ -30,13 +30,13 @@ func HandleConnections(w http.ResponseWriter, r *http.Request) {
 		err := conn.ReadJSON(&msg)
 		if err != nil {
 			fmt.Println(err)
-			handler.CloseConnection(conn)
+			WSHandler.CloseConnection(conn)
 			return
 		}
-		handler.BroadcastMessage(msg)
+		WSHandler.BroadcastMessage(msg)
 	}
 }
 
 func HandleWebSocketMessages(ctx context.Context) {
-	handler.HandleMessages(ctx)
+	WSHandler.HandleMessages(ctx)
 }

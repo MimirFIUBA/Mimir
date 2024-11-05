@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"mimir/internal/api/responses"
 	"net/http"
+	"sync"
 
 	"github.com/gorilla/websocket"
 )
@@ -14,6 +15,7 @@ type WebSocketHandler struct {
 	BroadcastChan chan string
 	Clients       map[*websocket.Conn]bool
 	Upgrader      websocket.Upgrader
+	wg            sync.WaitGroup
 }
 
 func NewHandler() *WebSocketHandler {
@@ -22,7 +24,10 @@ func NewHandler() *WebSocketHandler {
 			return true
 		},
 	}
-	return &WebSocketHandler{nil, make(map[*websocket.Conn]bool), upgrader}
+	return &WebSocketHandler{
+		Clients:  make(map[*websocket.Conn]bool),
+		Upgrader: upgrader,
+	}
 }
 
 func (h *WebSocketHandler) Upgrade(w http.ResponseWriter, r *http.Request) (*websocket.Conn, error) {
@@ -48,16 +53,36 @@ func (h *WebSocketHandler) HandleMessages(ctx context.Context) {
 		select {
 		case msg := <-h.BroadcastChan:
 			for client := range h.Clients {
-				err := client.WriteJSON(msg)
-				if err != nil {
-					fmt.Println(err)
-					h.CloseConnection(client)
-				}
+				h.wg.Add(1)
+				go func(client *websocket.Conn) {
+					defer h.wg.Done()
+					err := client.WriteJSON(msg)
+					if err != nil {
+						slog.Error("Error on websocket client", "error", err, "client", client)
+						h.CloseConnection(client)
+					}
+				}(client)
 			}
 		case <-ctx.Done():
 			slog.Info("web socket context done, closing web socket handler", "error", ctx.Err())
 			return
 		}
-
 	}
+}
+
+func (h *WebSocketHandler) closeClients() {
+	for client, isConnected := range h.Clients {
+		if isConnected {
+			err := client.Close()
+			if err != nil {
+				slog.Error("Error closing web socket client connection", "error", err, "client", client)
+			}
+		}
+	}
+	fmt.Println("All clients closed")
+}
+
+func (h *WebSocketHandler) Stop() {
+	h.wg.Wait()
+	h.closeClients()
 }
