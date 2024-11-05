@@ -5,12 +5,12 @@
     "topics": [
         "mimir/testWrite4"
     ],
-    "condition": "",
+    "condition": "COUNT($(mimir/testWrite4))[0 11 20] > 10",
     "actions": [
         {
             "Name": "print test",
             "Type": "print",
-            "Message": "test action"
+            "Message": "count > 10"
         }
     ]
 }

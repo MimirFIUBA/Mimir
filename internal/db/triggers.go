@@ -261,8 +261,6 @@ func saveTriggerFile(triggerData *Trigger) error {
 
 	fileName := triggerData.Filename
 
-	fmt.Println("SAVING FILE ", fileName)
-
 	return os.WriteFile(fileName, jsonString, os.ModePerm)
 }
 

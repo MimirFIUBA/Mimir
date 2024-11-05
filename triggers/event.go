@@ -33,13 +33,12 @@ func NilEvent() *Event {
 	return &Event{Id: uuid.Nil.String()}
 }
 
-// NewFloatEvent is just an empty event with only float data
-func NewFloatEvent(data float64) *Event {
+func NewAggregateFunctionEvent(value float64) *Event {
 	return &Event{
 		Id:        uuid.New().String(),
 		Timestamp: time.Now(),
 		Type:      STATISTIC_CALCULATION,
-		Data:      data,
+		Value:     value,
 	}
 }
 
