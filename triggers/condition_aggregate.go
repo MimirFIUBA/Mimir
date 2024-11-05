@@ -38,7 +38,7 @@ func (c *AggregateCondition) Evaluate(event Event) bool {
 
 	result := c.AggregateFunction(c)
 
-	return c.Condition.Evaluate(*NewFloatEvent(result))
+	return c.Condition.Evaluate(*NewAggregateFunctionEvent(result))
 }
 
 func (c *AggregateCondition) cleanBuffer() {
