@@ -1,6 +1,6 @@
 {
     "name": "test",
-    "active": true,
+    "active": false,
     "topics": [
         "mimir/testWrite4"
     ],

@@ -2,60 +2,46 @@ package triggers
 
 import (
 	"fmt"
-	"reflect"
 	"time"
 )
 
 // Condición de promedio (Average)
-type AverageCondition struct {
-	EventBuffer []Event
-	Condition   Condition
-	MinSize     int
-	MaxSize     int
-	eventId     string
-	senderId    string
-	end         int
-	start       int
-	eventCount  int
-	timeFrame   time.Duration
+type AggregateCondition struct {
+	EventBuffer       []Event
+	Condition         Condition
+	MinSize           int
+	MaxSize           int
+	AggregateFunction func(*AggregateCondition) float64
+	eventId           string
+	senderId          string
+	end               int
+	start             int
+	eventCount        int
+	timeFrame         time.Duration
 }
 
-func NewAverageCondition(minSize, maxSize int, timeFrame time.Duration) *AverageCondition {
-	return &AverageCondition{make([]Event, maxSize), nil, minSize, maxSize, "", "", 0, 0, 0, timeFrame}
+func NewAggregateCondition(minSize, maxSize int, timeFrame time.Duration) *AggregateCondition {
+	return &AggregateCondition{
+		EventBuffer: make([]Event, maxSize),
+		MinSize:     minSize,
+		MaxSize:     maxSize,
+		timeFrame:   timeFrame,
+	}
 }
 
-func (c *AverageCondition) Evaluate(event Event) bool {
+func (c *AggregateCondition) Evaluate(event Event) bool {
 	c.SetEvent(event)
 	c.cleanBuffer()
 	if c.eventCount < c.MinSize {
 		return false
 	}
 
-	avg := c.calculateAverage()
+	result := c.AggregateFunction(c)
 
-	return c.Condition.Evaluate(*NewFloatEvent(avg))
+	return c.Condition.Evaluate(*NewFloatEvent(result))
 }
 
-func (c *AverageCondition) calculateAverage() float64 {
-	var sum float64
-	for i := range c.eventCount {
-		event := c.EventBuffer[(c.start+i)%c.MaxSize]
-		data := event.Data
-		switch data := data.(type) {
-		case int:
-			sum += float64(data)
-		case float64:
-			sum += data
-		default:
-			panic(fmt.Sprintf("unsupported type: %s", reflect.TypeOf(data)))
-		}
-	}
-
-	avg := sum / float64(c.eventCount)
-	return avg
-}
-
-func (c *AverageCondition) cleanBuffer() {
+func (c *AggregateCondition) cleanBuffer() {
 	currentTime := time.Now()
 	currentEvent := c.EventBuffer[c.start]
 	for currentTime.Sub(currentEvent.Timestamp) > c.timeFrame && c.eventCount > 0 {
@@ -65,7 +51,7 @@ func (c *AverageCondition) cleanBuffer() {
 	}
 }
 
-func (c *AverageCondition) SetEvent(e Event) {
+func (c *AggregateCondition) SetEvent(e Event) {
 	if e.MatchesCondition(c) {
 		c.EventBuffer[c.end] = e
 		c.end = (c.end + 1) % c.MaxSize
@@ -78,26 +64,26 @@ func (c *AverageCondition) SetEvent(e Event) {
 	}
 }
 
-func (c *AverageCondition) GetEventId() string {
+func (c *AggregateCondition) GetEventId() string {
 	return c.eventId
 }
 
-func (c *AverageCondition) SetEventId(id string) {
+func (c *AggregateCondition) SetEventId(id string) {
 	c.eventId = id
 }
 
-func (c *AverageCondition) GetSenderId() string {
+func (c *AggregateCondition) GetSenderId() string {
 	return c.senderId
 }
 
-func (c *AverageCondition) SetSenderId(id string) {
+func (c *AggregateCondition) SetSenderId(id string) {
 	c.senderId = id
 }
 
-func (c *AverageCondition) SetCondition(condition Condition) {
+func (c *AggregateCondition) SetCondition(condition Condition) {
 	c.Condition = condition
 }
 
-func (c *AverageCondition) String() string {
-	return fmt.Sprintf("AVG(%s)[%d, %d, %d] %v", c.senderId, c.MinSize, c.MaxSize, c.timeFrame, c.Condition)
+func (c *AggregateCondition) String() string {
+	return fmt.Sprintf("AGGR(%s)[%d, %d, %d] %v", c.senderId, c.MinSize, c.MaxSize, c.timeFrame, c.Condition)
 }

@@ -31,6 +31,10 @@ const (
 	OR_STRING      = "OR"
 	AND_STRING     = "AND"
 	AVERAGE_STRING = "AVG"
+	COUNT_STRING   = "COUNT"
+	MIN_STRING     = "MIN"
+	MAX_STRING     = "MAX"
+	SUM_STRING     = "SUM"
 	VALUE_STRING   = "VALUE"
 )
 
@@ -95,6 +99,18 @@ func Tokenize(input string) []Token {
 			i += 2
 		case strings.HasPrefix(input[i:], AVERAGE_STRING):
 			tokens = append(tokens, Token{Type: TOKEN_FUNC, Value: AVERAGE_STRING})
+			i += 3
+		case strings.HasPrefix(input[i:], MIN_STRING):
+			tokens = append(tokens, Token{Type: TOKEN_FUNC, Value: MIN_STRING})
+			i += 3
+		case strings.HasPrefix(input[i:], MAX_STRING):
+			tokens = append(tokens, Token{Type: TOKEN_FUNC, Value: MAX_STRING})
+			i += 3
+		case strings.HasPrefix(input[i:], COUNT_STRING):
+			tokens = append(tokens, Token{Type: TOKEN_FUNC, Value: COUNT_STRING})
+			i += 5
+		case strings.HasPrefix(input[i:], SUM_STRING):
+			tokens = append(tokens, Token{Type: TOKEN_FUNC, Value: SUM_STRING})
 			i += 3
 		case strings.HasPrefix(input[i:], VALUE_STRING):
 			tokens = append(tokens, Token{Type: TOKEN_FUNC, Value: VALUE_STRING})
@@ -219,7 +235,15 @@ func parseFunction(state *ParserState) (Condition, error) {
 	case VALUE_STRING:
 		return parseReceiveValue(state)
 	case AVERAGE_STRING:
-		return parseAverageCondition(state)
+		return parseAggregateCondition(state, calculateAverage)
+	case MIN_STRING:
+		return parseAggregateCondition(state, calculateMin)
+	case MAX_STRING:
+		return parseAggregateCondition(state, calculateMax)
+	case COUNT_STRING:
+		return parseAggregateCondition(state, calculateCount)
+	case SUM_STRING:
+		return parseAggregateCondition(state, calculateSum)
 	default:
 		return nil, fmt.Errorf("%s is not a valid function", token.Value)
 	}
@@ -240,7 +264,7 @@ func parseReceiveValue(state *ParserState) (Condition, error) {
 	return receiveValueCondition, nil
 }
 
-func parseAverageCondition(state *ParserState) (Condition, error) {
+func parseAggregateCondition(state *ParserState, aggregateFunction func(c *AggregateCondition) float64) (Condition, error) {
 	state.Advance()
 	params, err := parseParameters(state)
 	if err != nil {
@@ -259,8 +283,9 @@ func parseAverageCondition(state *ParserState) (Condition, error) {
 		return nil, err
 	}
 
-	avgCondition := buildAverageCondition(params, metadata, condition)
-	return avgCondition, nil
+	aggrCondition := buildAggregateCondition(params, metadata, condition)
+	aggrCondition.AggregateFunction = aggregateFunction
+	return aggrCondition, nil
 }
 
 func parseConditionForExpression(state *ParserState) (Condition, error) {
@@ -325,7 +350,7 @@ func parseMetadata(state *ParserState) ([]string, error) {
 	return params, nil
 }
 
-func buildAverageCondition(parameters []Token, metadata []string, condition Condition) Condition {
+func buildAggregateCondition(parameters []Token, metadata []string, condition Condition) *AggregateCondition {
 	minAmount, err := strconv.Atoi(metadata[0])
 	if err != nil {
 		minAmount = AVG_COND_MIN_AMOUNT_DEFAULT
@@ -344,7 +369,7 @@ func buildAverageCondition(parameters []Token, metadata []string, condition Cond
 	//TODO: we should always expect one param
 	senderId := parameters[0]
 
-	avgCondition := NewAverageCondition(minAmount, maxAmount, time.Duration(timeFrame)*time.Second)
+	avgCondition := NewAggregateCondition(minAmount, maxAmount, time.Duration(timeFrame)*time.Second)
 	avgCondition.SetSenderId(senderId.getValue())
 	avgCondition.SetCondition(condition)
 	return avgCondition

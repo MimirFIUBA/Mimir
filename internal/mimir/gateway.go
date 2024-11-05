@@ -115,7 +115,6 @@ func (g *Gateway) trySubscribeToTopics(ctx context.Context, topics []string) err
 			if lastError != nil {
 				return fmt.Errorf("couldn't subscribe to topic %q: %w", topic, lastError)
 			}
-			fmt.Println("end try subscribe")
 			return nil
 		})
 	}
@@ -127,7 +126,7 @@ func (g *Gateway) trySubscribeToTopics(ctx context.Context, topics []string) err
 
 func onMessageReceived(ch MessageChannel) mqtt.MessageHandler {
 	return func(c mqtt.Client, m mqtt.Message) {
-		fmt.Println("Received message: ", m)
+		fmt.Println("Received message from: ", m.Topic())
 		msg := handlers.Message{Topic: m.Topic(), Payload: m.Payload()}
 		ch <- msg
 		m.Ack() //TODO: check if the ack is necessary
