@@ -12,12 +12,14 @@ const (
 	SCHEDULER_ACTIVE EventType = iota
 	NEW_READING
 	STATISTIC_CALCULATION
+	CHANNEL_MESSAGE_SENT
 )
 
 type Event struct {
 	Name      string
 	Timestamp time.Time
 	Data      interface{}
+	Value     interface{}
 	Id        string
 	SenderId  string
 	Type      EventType

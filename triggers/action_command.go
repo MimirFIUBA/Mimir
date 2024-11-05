@@ -9,6 +9,7 @@ import (
 type CommandAction struct {
 	Command     string
 	CommandArgs string
+	NextAction  Action
 }
 
 func (a *CommandAction) Execute(event Event) {
@@ -18,4 +19,8 @@ func (a *CommandAction) Execute(event Event) {
 		log.Fatal(err)
 	}
 	fmt.Printf("%s\n", out)
+
+	if a.NextAction != nil {
+		a.NextAction.Execute(event)
+	}
 }

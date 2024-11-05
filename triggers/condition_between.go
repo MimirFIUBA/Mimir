@@ -28,7 +28,7 @@ func (c *BetweenCondition) Evaluate(event Event) bool {
 
 func (c *BetweenCondition) SetEvent(event Event) {
 	if event.MatchesCondition(c) {
-		c.CurrentValue = event.Data
+		c.CurrentValue = event.Value
 	}
 }
 

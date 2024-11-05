@@ -10,7 +10,7 @@
     "actions": [
         {
             "Name": "timeout alert testWrite3",
-            "Type": "alert",
+            "Type": "mqttMessage",
             "Message": "{testWrite3} timeout update"
         }
     ],
