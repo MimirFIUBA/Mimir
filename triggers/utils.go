@@ -74,7 +74,7 @@ func calculateCount(c *AggregateCondition) float64 {
 func calculateMin(c *AggregateCondition) float64 {
 	var min float64
 	firstEvent := c.EventBuffer[c.start]
-	switch data := firstEvent.Data.(type) {
+	switch data := firstEvent.Value.(type) {
 	case int:
 		min = float64(data)
 	case float64:
@@ -85,7 +85,7 @@ func calculateMin(c *AggregateCondition) float64 {
 
 	for i := range c.eventCount {
 		event := c.EventBuffer[(c.start+i)%c.MaxSize]
-		data := event.Data
+		data := event.Value
 		switch data := data.(type) {
 		case int:
 			if min > float64(data) {
@@ -106,7 +106,7 @@ func calculateMin(c *AggregateCondition) float64 {
 func calculateMax(c *AggregateCondition) float64 {
 	var max float64
 	firstEvent := c.EventBuffer[c.start]
-	switch data := firstEvent.Data.(type) {
+	switch data := firstEvent.Value.(type) {
 	case int:
 		max = float64(data)
 	case float64:
@@ -117,7 +117,7 @@ func calculateMax(c *AggregateCondition) float64 {
 
 	for i := range c.eventCount {
 		event := c.EventBuffer[(c.start+i)%c.MaxSize]
-		data := event.Data
+		data := event.Value
 		switch data := data.(type) {
 		case int:
 			if max < float64(data) {
@@ -139,7 +139,7 @@ func calculateSum(c *AggregateCondition) float64 {
 	var sum float64
 	for i := range c.eventCount {
 		event := c.EventBuffer[(c.start+i)%c.MaxSize]
-		data := event.Data
+		data := event.Value
 		switch data := data.(type) {
 		case int:
 			sum += float64(data)
