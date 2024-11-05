@@ -2,8 +2,6 @@ package config
 
 import (
 	"encoding/json"
-	"fmt"
-	"log"
 	"log/slog"
 	"mimir/internal/consts"
 	"mimir/internal/db"
@@ -24,21 +22,22 @@ func BuildHandlers(mimirEngine *mimir.MimirEngine) {
 		slog.Info("building handler", "file", v)
 		byteValue, err := os.ReadFile(v)
 		if err != nil {
-			log.Fatal(err)
-			return
+			slog.Error("error building handler", "file", v, "error", err)
+			continue
 		}
 		var jsonMap map[string]interface{}
 		json.Unmarshal(byteValue, &jsonMap)
 
 		topic, ok := jsonMap["topic"].(string)
 		if !ok {
-			panic("bad configuration")
+			slog.Error("error building handler", "file", v, "error", "could not convert topic to string")
+			continue
 		}
 
 		processor, err := handlers.JsonToHandler(jsonMap)
 		if err != nil {
-			fmt.Println(err)
-			panic("bad configuration")
+			slog.Error("error building handler", "file", v, "error", err)
+			continue
 		}
 
 		processor.SetReadingsChannel(mimirEngine.ReadingChannel)

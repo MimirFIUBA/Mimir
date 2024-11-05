@@ -89,6 +89,7 @@ func (e *MimirEngine) processReadings(ctx context.Context, wg *sync.WaitGroup) {
 	for {
 		select {
 		case reading := <-e.ReadingChannel:
+			slog.Info("new reading", "value", reading.Value)
 			wg.Add(1)
 			go func() {
 				defer wg.Done()

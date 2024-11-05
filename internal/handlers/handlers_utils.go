@@ -93,17 +93,18 @@ func JsonMapToByteConfiguration(jsonMap map[string]interface{}) (*BytesConfigura
 		return nil, WrongFormatError{"endianness"}
 	}
 
+	var sizeValue int
 	sizeInterface, exists := jsonMap["size"]
-	if !exists {
-		return nil, RequiredFieldError{"size"}
-	}
-	sizeValue, ok := sizeInterface.(float64)
-	if !ok {
-		return nil, WrongFormatError{"size"}
+	if exists {
+		floatSizeValue, ok := sizeInterface.(float64)
+		if !ok {
+			return nil, WrongFormatError{"size"}
+		}
+		sizeValue = int(floatSizeValue)
 	}
 	//TODO: validate that size is an int (not float)
 
-	return NewBytesConfiguration(dataTypeValue, byteOrder, int(sizeValue)), nil
+	return NewBytesConfiguration(dataTypeValue, byteOrder, sizeValue), nil
 }
 
 func jsonMapToBytesHandler(jsonMap map[string]interface{}) (MessageHandler, error) {

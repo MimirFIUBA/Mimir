@@ -20,7 +20,7 @@ type mqttGenerator struct {
 	c      chan int
 }
 
-func (g mqttGenerator) generateIntData(n int, id int) {
+func (g mqttGenerator) GenerateIntData(n int, id int) {
 	for i := 1; i <= n; i++ {
 		message := fmt.Sprintf(`{"sensorId": %d, "data": %d, "time": "%s"}`, id, rand.IntN(100), time.Now())
 		token := g.client.Publish(g.topic, 0, false, message)
@@ -33,7 +33,7 @@ func (g mqttGenerator) generateIntData(n int, id int) {
 	g.c <- 0
 }
 
-func (g mqttGenerator) generateFloatData(n int, id string, mps int, multiplier float64, offset float64) {
+func (g mqttGenerator) GenerateFloatData(n int, id string, mps int, multiplier float64, offset float64) {
 	for i := 1; i <= n; i++ {
 		message := fmt.Sprintf(`{"id": "%s", "data": %.2f, "time": "%s"}`, id, rand.Float64()*multiplier+offset, time.Now())
 		token := g.client.Publish(g.topic, 0, false, message)
@@ -46,7 +46,7 @@ func (g mqttGenerator) generateFloatData(n int, id string, mps int, multiplier f
 	g.c <- 0
 }
 
-func (g mqttGenerator) GenerateBytes(id string, numbers []uint8) {
+func (g mqttGenerator) GenerateBytes(id string, numbers ...uint8) {
 	buf := new(bytes.Buffer)
 	for _, n := range numbers {
 		err := binary.Write(buf, binary.BigEndian, n)
@@ -82,14 +82,15 @@ func main() {
 	c := make(chan int)
 
 	generator := mqttGenerator{"mimir/testWrite4", client, c}
-	go generator.generateFloatData(100, "1", 1, 50, 50)
+	// go generator.generateFloatData(100, "1", 1, 50, 50)
+	go generator.GenerateBytes("1", 0, 0, 0, 4, 64, 0, 0, 0)
 
 	// message := fmt.Sprintf(`{"id": "%s", "data": %.2f, "time": "%s"}`, "0", 15.0, time.Now())
 	// token := client.Publish("mimir/esp32/waterTemp", 0, false, message)
 	// token.Wait()
 
-	// message = fmt.Sprintf(`{"id": "%s", "data": %.2f, "time": "%s"}`, "0", 9.0, time.Now())
-	// token = client.Publish("mimir/esp32/waterTemp", 0, false, message)
+	// message = fmt.Sprintf(`{"id": "%s", "data": %.2f, "time": "%s"}`, "0", 9.0, time.Now()
+
 	// token.Wait()
 
 	// message = fmt.Sprintf(`{"id": "%s", "data": %.2f, "time": "%s"}`, "0", 11.0, time.Now())

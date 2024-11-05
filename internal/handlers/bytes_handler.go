@@ -3,6 +3,7 @@ package handlers
 import (
 	"bytes"
 	"encoding/binary"
+	"fmt"
 	"math"
 	"mimir/internal/consts"
 	"mimir/internal/models"
@@ -57,8 +58,9 @@ func (p *BytesHandler) HandleMessage(msg Message) error {
 	}
 
 	i := 0
-	for _, configuration := range p.BytesConfigurations {
-		dataBytes := msg.Payload[i : configuration.Size+i]
+	for n, configuration := range p.BytesConfigurations {
+		bytesToRead := configuration.Size
+		dataBytes := msg.Payload[i : bytesToRead+i]
 		var data interface{}
 		switch configuration.DataType {
 		case "id":
@@ -76,9 +78,14 @@ func (p *BytesHandler) HandleMessage(msg Message) error {
 				panic("Fail to read bool")
 			}
 			data = value
+		case "size":
+			nextSize := configuration.Endianness.Uint32(dataBytes)
+			p.BytesConfigurations[n+1].Size = int(nextSize)
+		default:
+			return fmt.Errorf("wrong data type for bytes configuration")
 		}
 
-		if sensorId != "" && configuration.DataType != "id" {
+		if (sensorId != "" && configuration.DataType != "id") || configuration.DataType != "size" {
 			sensorReading := models.SensorReading{SensorID: sensorId, Value: data, Time: time.Now(), Topic: msg.Topic}
 			p.ReadingsChannel <- sensorReading
 		}
