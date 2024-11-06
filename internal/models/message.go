@@ -17,3 +17,12 @@ type Message struct {
 	CreatedDate       time.Time   `json:"createdDate" bson:"createdDate"`
 	AdditionalDetails interface{} `json:"additionalDetails,omitempty" bson:"additionalDetails,omitempty"`
 }
+
+type MqttOutgoingMessage struct {
+	Topic   string
+	Message string
+}
+
+func NewMqttOutgoingMessage(topic, message string) *MqttOutgoingMessage {
+	return &MqttOutgoingMessage{topic, message}
+}

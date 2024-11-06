@@ -32,7 +32,7 @@ type MimirEngine struct {
 func NewMimirEngine() *MimirEngine {
 	topicChannel := make(chan []string)
 	readingsChannel := make(chan models.SensorReading, 50)
-	outgoingMessagesChannel := make(chan string)
+	outgoingMessagesChannel := make(chan models.MqttOutgoingMessage)
 	webSocketMessageChannel := make(chan string)
 	msgChannel := make(MessageChannel)
 

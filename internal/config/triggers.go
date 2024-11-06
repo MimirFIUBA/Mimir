@@ -146,8 +146,7 @@ func ToTriggerAction(a db.Action) triggers.Action {
 		action.Name = a.Name
 		triggerAction = action
 	case "mqttMessage":
-		action := mimir.Mimir.ActionFactory.NewSendMQTTMessageAction(a.Message)
-		action.Message = a.Message
+		action := mimir.Mimir.ActionFactory.NewSendMQTTMessageAction(a.Topic, a.Message)
 		triggerAction = action
 	case "webSocket":
 		action := mimir.Mimir.ActionFactory.NewSendWebSocketMessageAction(a.Message)

@@ -41,6 +41,7 @@ type Action struct {
 	Name          string `json:"name" bson:"name"`
 	Type          string `json:"type" bson:"type"`
 	Message       string `json:"message,omitempty" bson:"message,omitempty"`
+	Topic         string `json:"topic,omitempty" bson:"topic,omitempty"`
 	Command       string `json:"command,omitempty" bson:"command,omitempty"`
 	CommandArgs   string `json:"args,omitempty" bson:"args,omitempty"`
 	TriggerName   string `json:"triggerName,omitempty" bson:"triggerName,omitempty"`

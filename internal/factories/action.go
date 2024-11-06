@@ -2,6 +2,7 @@ package factories
 
 import (
 	"log/slog"
+	"mimir/internal/consts"
 	"mimir/internal/db"
 	"mimir/internal/models"
 	"mimir/triggers"
@@ -9,7 +10,7 @@ import (
 )
 
 type ActionFactory struct {
-	outgoingMessageChannel chan string
+	outgoingMessageChannel chan models.MqttOutgoingMessage
 	wsMessageChannel       chan string
 }
 
@@ -21,18 +22,18 @@ const (
 	WS_ACTION
 )
 
-func NewActionFactory(mqttMsgChan, wsMsgChan chan string) *ActionFactory {
+func NewActionFactory(mqttMsgChan chan models.MqttOutgoingMessage, wsMsgChan chan string) *ActionFactory {
 	return &ActionFactory{mqttMsgChan, wsMsgChan}
 }
 
-func (f *ActionFactory) NewSendMQTTMessageAction(message string) *triggers.SendMessageThroughChannel {
-	return &triggers.SendMessageThroughChannel{
-		Message:                 message,
+func (f *ActionFactory) NewSendMQTTMessageAction(topic, message string) *triggers.SendMessageThroughChannel[models.MqttOutgoingMessage] {
+	return &triggers.SendMessageThroughChannel[models.MqttOutgoingMessage]{
+		Message:                 *models.NewMqttOutgoingMessage(topic, message),
 		OutgoingMessagesChannel: f.outgoingMessageChannel}
 }
 
-func (f *ActionFactory) NewSendWebSocketMessageAction(message string) *triggers.SendMessageThroughChannel {
-	return &triggers.SendMessageThroughChannel{
+func (f *ActionFactory) NewSendWebSocketMessageAction(message string) *triggers.SendMessageThroughChannel[string] {
+	return &triggers.SendMessageThroughChannel[string]{
 		Message:                 message,
 		OutgoingMessagesChannel: f.wsMessageChannel}
 }
@@ -70,7 +71,7 @@ func (f *ActionFactory) NewCommandAction(command string, args string) *triggers.
 func (f *ActionFactory) NewAlertMessageAction(message string) *triggers.ExecuteFunctionAction {
 	params := map[string]interface{}{"message": message}
 	actionWS := f.NewSendWebSocketMessageAction(message)
-	actionMqtt := f.NewSendMQTTMessageAction(message)
+	actionMqtt := f.NewSendMQTTMessageAction(consts.MQTT_ALERT_TOPIC, message)
 	actionMqtt.NextAction = actionWS
 	actionCreateMessage := &triggers.ExecuteFunctionAction{
 		Func: func(event triggers.Event, params map[string]interface{}) triggers.Event {

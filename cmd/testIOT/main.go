@@ -43,7 +43,8 @@ func onMessageReceived(client mqtt.Client, message mqtt.Message) {
 }
 
 func getTopics() []string {
-	topics := []string{consts.MQTT_ALERT_TOPIC}
+	// topics := []string{consts.MQTT_ALERT_TOPIC}
+	topics := []string{"mimir/testCustomTopic"}
 	return topics
 }
 

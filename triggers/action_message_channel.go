@@ -6,18 +6,20 @@ import (
 	"github.com/google/uuid"
 )
 
-type SendMessageThroughChannel struct {
-	MessageContructor       func(Event) string
-	Message                 string
-	OutgoingMessagesChannel chan string
+type SendMessageThroughChannel[T any] struct {
+	MessageContructor       func(Event) T
+	Message                 T
+	OutgoingMessagesChannel chan T
 	NextAction              Action
 }
 
-func NewSendMessageThroughChannel(channel chan string) *SendMessageThroughChannel {
-	return &SendMessageThroughChannel{}
+func NewSendMessageThroughChannel[T any](channel chan T) *SendMessageThroughChannel[T] {
+	return &SendMessageThroughChannel[T]{
+		OutgoingMessagesChannel: channel,
+	}
 }
 
-func (action *SendMessageThroughChannel) Execute(event Event) {
+func (action *SendMessageThroughChannel[T]) Execute(event Event) {
 	if action.MessageContructor != nil {
 		action.OutgoingMessagesChannel <- action.MessageContructor(event)
 	} else {

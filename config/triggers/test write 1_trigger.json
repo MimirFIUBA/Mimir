@@ -1,6 +1,6 @@
 {
     "name": "test id",
-    "active": false,
+    "active": true,
     "type": "event",
     "topics": [
         "mimir/testWrite4"
@@ -9,8 +9,9 @@
     "actions": [
         {
             "Name": "print test",
-            "Type": "alert",
-            "Message": "test action"
+            "Type": "mqttMessage",
+            "Message": "test custom topic",
+            "Topic": "mimir/testCustomTopic"
         }
     ]
 }
