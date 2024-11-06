@@ -1,15 +1,19 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"fmt"
+	"io"
 	"log/slog"
 	"mimir/internal/api"
 	"mimir/internal/config"
 	"mimir/internal/db"
 	"mimir/internal/mimir"
+	"net"
 	"os"
 	"os/signal"
+	"strings"
 	"sync"
 	"syscall"
 
@@ -47,16 +51,63 @@ func loadStoredData(e *mimir.MimirEngine) {
 	config.BuildInitialConfiguration(e)
 }
 
-func gracefulShutdown(cancel context.CancelFunc, wg *sync.WaitGroup, e *mimir.MimirEngine) {
-	slog.Info("closing application")
+func reloadTriggers(mimirEngine *mimir.MimirEngine) {
+	fmt.Println("Reload triggers")
+	config.BuildTriggers(mimirEngine)
+}
 
-	cancel()
-	wg.Wait()
-	e.Close()
-	fmt.Println("Waiting for all processes to finsih")
-	slog.Info("close successful")
+func reloadHandlers(mimirEngine *mimir.MimirEngine) {
+	fmt.Println("Reload handlers")
+	config.BuildHandlers(mimirEngine)
+}
 
-	fmt.Println("Mimir is out of duty, bye!")
+func processCommand(command string, mimirEngine *mimir.MimirEngine) {
+	switch command {
+	case "reloadTriggers":
+		reloadTriggers(mimirEngine)
+	case "reloadHandlers":
+		reloadHandlers(mimirEngine)
+	default:
+		fmt.Println("bad command")
+	}
+}
+
+func cli(mimirEngine *mimir.MimirEngine) {
+	// Escuchar en el puerto 8080 para conexiones TCP
+	listener, err := net.Listen("tcp", ":8082")
+	if err != nil {
+		fmt.Println("Error al crear el servidor TCP:", err)
+		return
+	}
+	defer listener.Close()
+	fmt.Println("Servidor TCP escuchando en el puerto 8082")
+
+	for {
+		// Aceptar conexiones entrantes
+		conn, err := listener.Accept()
+		if err != nil {
+			fmt.Println("Error al aceptar conexión:", err)
+			continue
+		}
+
+		// Manejar cada conexión en una goroutine
+		go func(c net.Conn) {
+			defer c.Close()
+			reader := bufio.NewReader(c)
+			for {
+				input, err := reader.ReadString('\n')
+				if err != nil {
+					if err == io.EOF {
+						break
+					}
+					fmt.Println("Error al leer comando:", err)
+					return
+				}
+				command := strings.TrimSpace(input)
+				processCommand(command, mimirEngine)
+			}
+		}(conn)
+	}
 }
 
 func main() {
@@ -96,6 +147,8 @@ func main() {
 	fmt.Println("API STARTED")
 
 	fmt.Println("Everything up and running")
+
+	go cli(mimirEngine)
 
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
