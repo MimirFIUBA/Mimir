@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"mimir/internal/models"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -39,7 +40,7 @@ func (g *GroupsManager) IdExists(id string) bool {
 }
 
 func (g *GroupsManager) CreateGroup(group *models.Group) error {
-	group, err := Database.insertGroup(group)
+	group, err := Database.InsertGroup(group)
 	if err != nil {
 		return err
 	}
@@ -62,7 +63,13 @@ func (g *GroupsManager) UpdateGroup(group *models.Group) (*models.Group, error) 
 	}
 
 	oldGroup.Update(group)
-	return group, nil
+
+	_, err = Database.UpdateGroup(oldGroup)
+	if err != nil {
+		return nil, err
+	}
+
+	return oldGroup, nil
 }
 
 func (g *GroupsManager) DeleteGroup(id string) error {
@@ -89,10 +96,17 @@ func (g *GroupsManager) AddNodeToGroupById(id string, node *models.Node) error {
 		return nil
 	}
 
-	return oldGroup.AddNode(node)
+	err = oldGroup.AddNode(node)
+	if err != nil {
+		return err
+	}
+
+	_, err = Database.UpdateGroup(oldGroup)
+
+	return err
 }
 
-func (d *DatabaseManager) insertGroup(group *models.Group) (*models.Group, error) {
+func (d *DatabaseManager) InsertGroup(group *models.Group) (*models.Group, error) {
 	mongoClient := d.getMongoClient()
 	if mongoClient != nil {
 		groupsCollection := mongoClient.Database(MONGO_DB_MIMIR).Collection(GROUPS_COLLECTION)
@@ -107,6 +121,24 @@ func (d *DatabaseManager) insertGroup(group *models.Group) (*models.Group, error
 			return nil, fmt.Errorf("error converting id for group")
 		}
 		group.ID = groupId
+	}
+	return group, nil
+}
+
+func (d *DatabaseManager) UpdateGroup(group *models.Group) (*models.Group, error) {
+	mongoClient := d.getMongoClient()
+	if mongoClient != nil {
+		groupsCollection := mongoClient.Database(MONGO_DB_MIMIR).Collection(GROUPS_COLLECTION)
+		objectId, err := primitive.ObjectIDFromHex(group.GetId())
+		if err != nil {
+			return nil, err
+		}
+		update := bson.D{{Key: "$set", Value: group}}
+		_, err = groupsCollection.UpdateByID(context.TODO(), objectId, update)
+		if err != nil {
+			fmt.Println("error updating group ", err)
+			return nil, err
+		}
 	}
 	return group, nil
 }

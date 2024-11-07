@@ -25,7 +25,7 @@ func (g *Group) Update(updatedGroup *Group) {
 }
 
 func (g *Group) GetId() string {
-	return g.ID.String()
+	return g.ID.Hex()
 }
 
 func (g *Group) AddNode(node *Node) error {

@@ -39,5 +39,5 @@ func (n *Node) AddSensor(sensor *Sensor) error {
 }
 
 func (n *Node) GetId() string {
-	return n.ID.String()
+	return n.ID.Hex()
 }

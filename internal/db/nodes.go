@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"mimir/internal/models"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -62,6 +63,12 @@ func (n *NodesManager) UpdateNode(node *models.Node) (*models.Node, error) {
 	}
 
 	oldNode.Update(node)
+
+	_, err = Database.UpdateNode(oldNode)
+	if err != nil {
+		return nil, err
+	}
+
 	return oldNode, nil
 }
 
@@ -90,7 +97,15 @@ func (n *NodesManager) AddSensorToNodeById(id string, sensor *models.Sensor) err
 		return nil
 	}
 
-	return oldNode.AddSensor(sensor)
+	err = oldNode.AddSensor(sensor)
+
+	if err != nil {
+		return err
+	}
+
+	_, err = Database.UpdateNode(oldNode)
+
+	return err
 }
 
 func (n *NodesManager) AddNode(node *models.Node) {
@@ -113,5 +128,23 @@ func (d *DatabaseManager) insertNode(node *models.Node) (*models.Node, error) {
 		node.ID = nodeId
 	}
 
+	return node, nil
+}
+
+func (d *DatabaseManager) UpdateNode(node *models.Node) (*models.Node, error) {
+	mongoClient := d.getMongoClient()
+	if mongoClient != nil {
+		nodesCollection := mongoClient.Database(MONGO_DB_MIMIR).Collection(NODES_COLLECTION)
+		objectId, err := primitive.ObjectIDFromHex(node.GetId())
+		if err != nil {
+			return nil, err
+		}
+		update := bson.D{{Key: "$set", Value: node}}
+		_, err = nodesCollection.UpdateByID(context.TODO(), objectId, update)
+		if err != nil {
+			fmt.Println("error updating node ", err)
+			return nil, err
+		}
+	}
 	return node, nil
 }
