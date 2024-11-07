@@ -40,6 +40,8 @@ var (
 		sync.Mutex{},
 	}
 
+	UserVariables = new(sync.Map)
+
 	Database = DatabaseManager{}
 )
 

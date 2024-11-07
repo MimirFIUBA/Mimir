@@ -142,6 +142,9 @@ func main() {
 	loadStoredData(mimirEngine)
 
 	db.Run(ctx, &wg)
+
+	db.AddUserVariable("test", &db.UserVariable{Value: db.UserString("this is a custom text")})
+
 	fmt.Println("DB RUNNING")
 	api.Start(ctx, mimirEngine)
 	fmt.Println("API STARTED")

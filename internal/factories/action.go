@@ -1,11 +1,14 @@
 package factories
 
 import (
+	"bytes"
+	"fmt"
 	"log/slog"
 	"mimir/internal/consts"
 	"mimir/internal/db"
 	"mimir/internal/models"
 	"mimir/triggers"
+	"regexp"
 	"time"
 )
 
@@ -27,8 +30,37 @@ func NewActionFactory(mqttMsgChan chan models.MqttOutgoingMessage, wsMsgChan cha
 }
 
 func (f *ActionFactory) NewSendMQTTMessageAction(topic, message string) *triggers.SendMessageThroughChannel[models.MqttOutgoingMessage] {
+	var msgConstructor = func(event triggers.Event) models.MqttOutgoingMessage {
+		var buffer bytes.Buffer
+		re := regexp.MustCompile(`{{(.*?)}}`)
+
+		lastIndex := 0
+		for _, match := range re.FindAllStringSubmatchIndex(message, -1) {
+			// Agregar la parte del mensaje sin reemplazar
+			buffer.WriteString(message[lastIndex:match[0]])
+
+			// Obtener el nombre de la variable
+			variableName := message[match[2]:match[3]]
+			// Reemplazar con el valor de la variable si existe
+			userVariable, exists := db.GetUserVariable(variableName)
+			if exists {
+				userVariableStringer, ok := userVariable.Value.(fmt.Stringer)
+				if ok {
+					buffer.WriteString(userVariableStringer.String())
+				}
+			} else {
+				buffer.WriteString("{{" + variableName + "}}") // Deja el placeholder si no existe
+			}
+
+			lastIndex = match[1]
+		}
+		buffer.WriteString(message[lastIndex:]) // Añadir el resto del mensaje
+		return *models.NewMqttOutgoingMessage(topic, buffer.String())
+	}
+
 	return &triggers.SendMessageThroughChannel[models.MqttOutgoingMessage]{
 		Message:                 *models.NewMqttOutgoingMessage(topic, message),
+		MessageContructor:       msgConstructor,
 		OutgoingMessagesChannel: f.outgoingMessageChannel}
 }
 
