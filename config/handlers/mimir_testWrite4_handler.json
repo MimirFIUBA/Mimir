@@ -1,16 +1,16 @@
 {
     "name": "test write 4",
     "topic": "mimir/testWrite4",
-    "type": "bytes",
+    "type": "json",
     "configurations": [
         {
-            "size": 4,
-            "dataType": "size",
-            "endianness": "bigEndian"
-        },
-        {
-            "dataType": "float",
-            "endianness": "bigEndian"
+            "valuePath":"data",
+            "data": [
+                {
+                    "name": "messageId",
+                    "path": "id"
+                }
+            ]
         }
     ]
 }

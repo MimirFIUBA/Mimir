@@ -215,6 +215,45 @@ func JsonMapToJsonConfiguration(jsonMap map[string]interface{}) (*JSONValueConfi
 		configuration.ValuePath = path
 	}
 
+	additionalData, exists := jsonMap["data"]
+	if exists {
+		var data []JSONDataConfiguration
+		additionalData, ok := additionalData.([]interface{})
+		if !ok {
+			return nil, WrongFormatError{"additional data"}
+		}
+
+		for _, dataConfiguration := range additionalData {
+			dataConfiguration, ok := dataConfiguration.(map[string]interface{})
+			if !ok {
+				return nil, WrongFormatError{"data configuration"}
+			}
+
+			nameInterface, exits := dataConfiguration["name"]
+			if !exits {
+				return nil, RequiredFieldError{"name"}
+			}
+
+			name, ok := nameInterface.(string)
+			if !ok {
+				return nil, WrongFormatError{"additional data name is not a string"}
+			}
+
+			pathInterface, exits := dataConfiguration["path"]
+			if !exits {
+				return nil, RequiredFieldError{"path"}
+			}
+
+			path, ok := pathInterface.(string)
+			if !ok {
+				return nil, WrongFormatError{"additional data path is not a string"}
+			}
+
+			data = append(data, JSONDataConfiguration{Name: name, Path: path})
+		}
+		configuration.DataConfigurations = data
+	}
+
 	return configuration, nil
 
 }

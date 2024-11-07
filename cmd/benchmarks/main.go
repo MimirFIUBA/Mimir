@@ -11,6 +11,7 @@ import (
 	"time"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
+	"github.com/google/uuid"
 	"github.com/gookit/ini/v2"
 )
 
@@ -69,47 +70,41 @@ func (g mqttGenerator) GenerateBytes(id string, numbers ...uint8) {
 
 }
 
+func onMessageReceived(client mqtt.Client, message mqtt.Message) {
+	fmt.Printf("Received message: %s from topic: %s\n", message.Payload(), message.Topic())
+
+	elapsedTime := time.Since(LastMessageTime)
+	fmt.Println("Elapsed time:", elapsedTime)
+}
+
+var LastMessageTime time.Time
+
 func main() {
 	config.LoadIni()
 	opts := mqtt.NewClientOptions()
 	opts.AddBroker(ini.String(consts.MQTT_BROKER_CONFIG_NAME))
 
+	c := make(chan string)
+	fmt.Println("creating new client")
 	client := mqtt.NewClient(opts)
 	if token := client.Connect(); token.Wait() && token.Error() != nil {
 		panic(fmt.Sprintf("Error connecting to MQTT broker: %s", token.Error()))
 	}
+	fmt.Println("client connected")
 
-	c := make(chan int)
+	if token := client.Subscribe("mimir/benchmark-alert", 0, onMessageReceived); token.Wait() && token.Error() != nil {
+		panic(fmt.Sprintf("Error subscribing to topic: %s", token.Error()))
+	}
+	fmt.Println("subscribed to topic")
 
-	generator := mqttGenerator{"mimir/testWrite4", client, c}
-	go generator.GenerateFloatData(100, "1", 1, 50, 50)
-	// go generator.GenerateBytes("1", 0, 0, 0, 4, 63, 0, 0, 0)
-
-	// message := fmt.Sprintf(`{"id": "%s", "data": %.2f, "time": "%s"}`, "0", 15.0, time.Now())
-	// token := client.Publish("mimir/esp32/waterTemp", 0, false, message)
-	// token.Wait()
-
-	// message = fmt.Sprintf(`{"id": "%s", "data": %.2f, "time": "%s"}`, "0", 9.0, time.Now()
-
-	// token.Wait()}
-
-	// message = fmt.Sprintf(`{"id": "%s", "data": %.2f, "time": "%s"}`, "0", 11.0, time.Now())
-	// token = client.Publish("mimir/esp32/waterTemp", 0, false, message)
-	// token.Wait()
-
-	// message = fmt.Sprintf(`{"id": "%s", "data": %.2f, "time": "%s"}`, "0", 55.0, time.Now())
-	// token = client.Publish("mimir/esp32/waterTemp", 0, false, message)
-	// token.Wait()
-
-	// numbers := []uint8{65, 1, 50, 65, 35, 51, 51}
-	// go generator.generateBytes("1", numbers)
+	multiplier := 50.0
+	offset := 50.0
+	message := fmt.Sprintf(`{"value": %.2f, "id": "%s"}`, rand.Float64()*multiplier+offset, uuid.New())
+	token := client.Publish("mimir/benchmark-test", 0, false, message)
+	token.Wait()
+	LastMessageTime = time.Now()
+	fmt.Println("message sent")
 	<-c
-	// generatorTemp := mqttGenerator{consts.TopicTemp, client, c}
-	// generatorPH := mqttGenerator{consts.TopicPH, client, c}
-
-	// go generatorTemp.generateIntData(10, 2)
-	// go generatorPH.generateFloatData(10, 1)
-	// _, _ = <-c, <-c
 
 	client.Disconnect(250)
 }

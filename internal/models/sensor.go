@@ -20,15 +20,6 @@ type Sensor struct {
 	triggerList []triggers.Trigger
 }
 
-type SensorReading struct {
-	SensorID string      `json:"sensorId"`
-	Topic    string      `json:"topic"`
-	Value    SensorValue `json:"value"`
-	Time     time.Time   `json:"time"`
-}
-
-type SensorValue interface{}
-
 func NewSensor(name string) *Sensor {
 	return &Sensor{Name: name}
 }

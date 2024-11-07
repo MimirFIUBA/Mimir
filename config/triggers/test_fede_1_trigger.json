@@ -5,12 +5,12 @@
     "topics": [
         "mimir/testWrite4"
     ],
-    "condition": "COUNT($(mimir/testWrite4))[0 11 20] > 10",
+    "condition": "AVG($(mimir/testWrite4))[5 10 20] > 50",
     "actions": [
         {
             "name": "print test",
             "type": "alert",
-            "message": "count > 10"
+            "message": "TEMP TOO HIGH"
         }
     ]
 }

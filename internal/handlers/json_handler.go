@@ -21,12 +21,18 @@ type JSONHandler struct {
 }
 
 type JSONValueConfiguration struct {
-	IdPosition string `json:"idPosition,omitempty"`
-	ValuePath  string `json:"path,omitempty"`
+	IdPosition         string                  `json:"idPosition,omitempty"`
+	ValuePath          string                  `json:"valuePath,omitempty"`
+	DataConfigurations []JSONDataConfiguration `json:"dataConfigurations"`
 }
 
-func NewJSONValueConfiguration(idPath, valuePath string) *JSONValueConfiguration {
-	return &JSONValueConfiguration{idPath, valuePath}
+type JSONDataConfiguration struct {
+	Name string `json:"name"`
+	Path string `json:"path"`
+}
+
+func NewJSONValueConfiguration(idPath, valuePath string, dataConfigurations []JSONDataConfiguration) *JSONValueConfiguration {
+	return &JSONValueConfiguration{idPath, valuePath, dataConfigurations}
 }
 
 func NewJSONHandler() *JSONHandler {
@@ -52,7 +58,7 @@ func (p *JSONHandler) HandleMessage(msg Message) error {
 			break
 		}
 		if err != nil {
-			panic(err)
+			return fmt.Errorf("error decoding json")
 		}
 	}
 
@@ -78,11 +84,33 @@ func (p *JSONHandler) HandleMessage(msg Message) error {
 		if !ok {
 			return ValueNotFoundError{configuration.ValuePath}
 		}
+		var additionalData map[string]interface{}
+		if configuration.DataConfigurations != nil && len(configuration.DataConfigurations) > 0 {
+			additionalData = getAdditionalData(jsonMap, configuration.DataConfigurations)
+		}
 
-		sensorReading := models.SensorReading{SensorID: sensorId, Value: valueInterface, Time: time.Now(), Topic: msg.Topic}
+		sensorReading := models.SensorReading{
+			SensorID: sensorId,
+			Value:    valueInterface,
+			Time:     time.Now(),
+			Topic:    msg.Topic,
+			Data:     additionalData,
+		}
 		p.ReadingsChannel <- sensorReading
 	}
 	return nil
+}
+
+func getAdditionalData(jsonMap map[string]interface{}, dataConfigurations []JSONDataConfiguration) map[string]interface{} {
+	additionalData := make(map[string]interface{})
+	for _, configuration := range dataConfigurations {
+		value, ok := utils.GetValueFromJSON(jsonMap, configuration.Path)
+		if !ok {
+			continue
+		}
+		additionalData[configuration.Name] = value
+	}
+	return additionalData
 }
 
 func (p *JSONHandler) GetConfigFilename() string {
