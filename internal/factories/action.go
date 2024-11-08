@@ -8,7 +8,9 @@ import (
 	"mimir/internal/db"
 	"mimir/internal/models"
 	"mimir/triggers"
+	"reflect"
 	"regexp"
+	"strings"
 	"time"
 )
 
@@ -25,6 +27,11 @@ const (
 	WS_ACTION
 )
 
+const (
+	USER_VARIABLE_PREFIX = "$userVariable"
+	EVENT_PREFIX         = "$event"
+)
+
 func NewActionFactory(mqttMsgChan chan models.MqttOutgoingMessage, wsMsgChan chan string) *ActionFactory {
 	return &ActionFactory{mqttMsgChan, wsMsgChan}
 }
@@ -36,25 +43,24 @@ func (f *ActionFactory) NewSendMQTTMessageAction(topic, message string) *trigger
 
 		lastIndex := 0
 		for _, match := range re.FindAllStringSubmatchIndex(message, -1) {
-			// Agregar la parte del mensaje sin reemplazar
 			buffer.WriteString(message[lastIndex:match[0]])
 
-			// Obtener el nombre de la variable
 			variableName := message[match[2]:match[3]]
-			// Reemplazar con el valor de la variable si existe
-			userVariable, exists := db.GetUserVariable(variableName)
-			if exists {
-				userVariableStringer, ok := userVariable.Value.(fmt.Stringer)
-				if ok {
-					buffer.WriteString(userVariableStringer.String())
-				}
-			} else {
-				buffer.WriteString("{{" + variableName + "}}") // Deja el placeholder si no existe
-			}
 
+			switch {
+			case strings.HasPrefix(variableName, "$userVariable."):
+				variableValue := getUserVariable(variableName)
+				buffer.WriteString(variableValue)
+			case strings.HasPrefix(variableName, "$event"):
+				variableValue, err := getEventVariable(variableName, event)
+				if err != nil {
+					slog.Error("error writing value from event to message", "error", err, "variable name", variableName, "event", event)
+				}
+				buffer.WriteString(variableValue)
+			}
 			lastIndex = match[1]
 		}
-		buffer.WriteString(message[lastIndex:]) // Añadir el resto del mensaje
+		buffer.WriteString(message[lastIndex:])
 		return *models.NewMqttOutgoingMessage(topic, buffer.String())
 	}
 
@@ -135,4 +141,61 @@ func (f *ActionFactory) NewAlertMessageAction(message string) *triggers.ExecuteF
 		NextAction: actionMqtt,
 	}
 	return actionCreateMessage
+}
+
+func getUserVariable(variableName string) string {
+	variableName = variableName[14:]
+	userVariable, exists := db.GetUserVariable(variableName)
+	if exists {
+		return fmt.Sprintf("%v", userVariable.Value)
+	} else {
+		return fmt.Sprintf("{{%s}}", variableName)
+	}
+}
+
+func getEventVariable(variableName string, event triggers.Event) (string, error) {
+	parts := strings.Split(variableName[len("$event."):], ".")
+
+	// Usa reflección para acceder a los campos del evento
+	var currentValue interface{} = event
+	for _, part := range parts {
+		if part == "reading" {
+			dataMap, ok := event.Data.(map[string]interface{})
+			if !ok {
+				return "", fmt.Errorf("event data is not a map")
+			}
+			reading, ok := dataMap["reading"]
+			if !ok {
+				return "", fmt.Errorf("event data has no reading")
+			}
+			currentValue = reading
+			continue
+		}
+
+		val := reflect.ValueOf(currentValue)
+
+		if val.Kind() == reflect.Ptr {
+			val = val.Elem()
+		}
+
+		if val.Kind() == reflect.Struct {
+			field := val.FieldByName(part)
+			if !field.IsValid() {
+				return "", fmt.Errorf("field %s not found in event", part)
+			}
+			currentValue = field.Interface()
+
+		} else if val.Kind() == reflect.Map {
+			key := reflect.ValueOf(part)
+			field := val.MapIndex(key)
+			if !field.IsValid() {
+				return "", fmt.Errorf("key %s not found in map", part)
+			}
+			currentValue = field.Interface()
+		} else {
+			return "", fmt.Errorf("invalid type encountered in path: %s", part)
+		}
+	}
+
+	return fmt.Sprintf("%v", currentValue), nil
 }

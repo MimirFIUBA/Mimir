@@ -1,6 +1,9 @@
 package triggers
 
-import "fmt"
+import (
+	"fmt"
+	"sync"
+)
 
 type TrueCondition struct{}
 
@@ -34,6 +37,7 @@ type CompareCondition struct {
 	eventId        string
 	senderId       string
 	hasTestValue   bool
+	mutex          sync.Mutex
 }
 
 func NewCompareCondition(operator string, referenceValue interface{}) *CompareCondition {
@@ -63,6 +67,8 @@ func (c *CompareCondition) SetSenderId(id string) {
 func (c *CompareCondition) Evaluate(event Event) bool {
 	c.SetEvent(event)
 	if c.hasTestValue {
+		c.mutex.Lock()
+		defer c.mutex.Unlock()
 		switch rightValue := c.ReferenceValue.(type) {
 		case int:
 			testValue := c.TestValue.(int)
@@ -82,8 +88,10 @@ func (c *CompareCondition) Evaluate(event Event) bool {
 
 func (c *CompareCondition) SetEvent(event Event) {
 	if event.MatchesCondition(c) {
+		c.mutex.Lock()
 		c.hasTestValue = true
 		c.TestValue = event.Value
+		c.mutex.Unlock()
 	}
 }
 

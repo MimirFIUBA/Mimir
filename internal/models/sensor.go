@@ -59,6 +59,7 @@ func (s *Sensor) NotifyAll() {
 	for _, trigger := range s.triggerList {
 		reading := s.Data[len(s.Data)-1]
 		data := make(map[string]interface{})
+		data["reading"] = reading
 
 		event := triggers.Event{
 			Name:      "new reading event",
@@ -67,7 +68,7 @@ func (s *Sensor) NotifyAll() {
 			Value:     reading.Value,
 			SenderId:  reading.Topic,
 		}
-		trigger.Update(event) //TODO: need to send the last value
+		go trigger.Update(event)
 	}
 }
 
