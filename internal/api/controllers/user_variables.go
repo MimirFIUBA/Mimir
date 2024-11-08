@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"encoding/json"
-	"fmt"
 	"mimir/internal/api/middlewares"
 	"mimir/internal/api/responses"
 	"mimir/internal/db"
@@ -16,7 +15,6 @@ func GetUserVariables(w http.ResponseWriter, r *http.Request) {
 	items := make(map[string]interface{})
 
 	db.UserVariables.Range(func(key any, value any) bool {
-		fmt.Println(key, value)
 		name, ok := key.(string)
 		if ok {
 			stringValue, ok := value.(*db.UserVariable)

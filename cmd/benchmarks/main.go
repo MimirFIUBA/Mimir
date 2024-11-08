@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"log"
 	"math/rand"
@@ -13,6 +14,18 @@ import (
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/google/uuid"
 	"github.com/gookit/ini/v2"
+)
+
+var (
+	messageCountFlag int
+	sleepTime        int
+)
+
+var (
+	// Almacena el tiempo de envío de cada mensaje por ID
+	sendTimestamps sync.Map
+	responseTimes  []time.Duration
+	c              = make(chan struct{})
 )
 
 // Estructura del mensaje de envío
@@ -27,14 +40,11 @@ type ResponseMessage struct {
 	OriginalMessageID string `json:"originalMessageId"`
 }
 
-var (
-	// Almacena el tiempo de envío de cada mensaje por ID
-	sendTimestamps sync.Map
-	responseTimes  []time.Duration
-	c              = make(chan struct{})
-)
-
 func main() {
+	flag.IntVar(&messageCountFlag, "count", 1, "ammount of messages that will be send")
+	flag.IntVar(&sleepTime, "time", 1000, "time between messages sent in miliseconds")
+	flag.Parse()
+
 	// Configuración del cliente MQTT
 	config.LoadIni()
 	opts := mqtt.NewClientOptions()
@@ -59,14 +69,16 @@ func main() {
 		handleResponse(msg)
 	})
 
-	// Enviar mensajes y calcular el tiempo de respuesta
-	messageAmmount := 5
-	sendMessages(client, "mimir/benchmark-test", messageAmmount)
+	fmt.Printf("Sending %d messages\n", messageCountFlag)
 
-	for range messageAmmount {
+	// Enviar mensajes y calcular el tiempo de respuesta
+	go sendMessages(client, "mimir/benchmark-test", messageCountFlag)
+
+	for range messageCountFlag {
 		<-c
 	}
 
+	calculateAverage(responseTimes)
 	fmt.Println("Done")
 
 }
@@ -77,7 +89,7 @@ func sendMessages(client mqtt.Client, topic string, count int) {
 		// Genera un ID único para cada mensaje
 		id := uuid.New().String()
 		message := SendMessage{
-			Value: rand.Float64() * 100, // Valor aleatorio
+			Value: rand.Float64()*100 + 50, // Valor aleatorio
 			ID:    id,
 		}
 
@@ -96,12 +108,13 @@ func sendMessages(client mqtt.Client, topic string, count int) {
 		token.Wait()
 
 		log.Printf("Mensaje enviado: %s", payload)
-		time.Sleep(1 * time.Second) // Intervalo entre envíos (opcional)
+		time.Sleep(time.Duration(sleepTime) * time.Millisecond) // Intervalo entre envíos (opcional)
 	}
 }
 
 // Maneja los mensajes de respuesta recibidos y calcula el tiempo de respuesta
 func handleResponse(msg mqtt.Message) {
+	now := time.Now()
 	var response ResponseMessage
 	if err := json.Unmarshal(msg.Payload(), &response); err != nil {
 		log.Printf("Error al parsear el mensaje de respuesta: %v", err)
@@ -111,16 +124,27 @@ func handleResponse(msg mqtt.Message) {
 	// Obtiene el timestamp de envío correspondiente al mensaje original
 	if startTime, ok := sendTimestamps.Load(response.OriginalMessageID); ok {
 		sendTime := startTime.(time.Time)
-		elapsedTime := time.Since(sendTime)
+		elapsedTime := now.Sub(sendTime)
 		responseTimes = append(responseTimes, elapsedTime)
 		log.Printf("Tiempo de respuesta para ID %s: %d", response.OriginalMessageID, elapsedTime)
 		fmt.Println("Elapsed time:", elapsedTime)
 
 		// Remueve el ID del mapa una vez calculado
-		sendTimestamps.Delete(response.OriginalMessageID)
+		// sendTimestamps.Delete(response.OriginalMessageID)
 	} else {
 		log.Printf("ID de mensaje %s no encontrado en sendTimestamps", response.OriginalMessageID)
 	}
 
 	c <- struct{}{}
+}
+
+func calculateAverage(responseTimes []time.Duration) {
+	var sum time.Duration = 0
+	for _, responseTime := range responseTimes {
+		sum += responseTime
+	}
+
+	avg := sum / time.Duration(len(responseTimes))
+	fmt.Println("Average response time: ", avg)
+
 }
