@@ -95,6 +95,7 @@ func (n *NodesManager) AddSensorToNodeById(id string, sensor *models.Sensor) err
 
 func (n *NodesManager) AddNode(node *models.Node) {
 	n.nodes = append(n.nodes, *node)
+	GroupsData.AddNodeToGroupById(node.GroupID, node)
 }
 
 func (d *DatabaseManager) insertNode(node *models.Node) (*models.Node, error) {
