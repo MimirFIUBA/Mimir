@@ -2,12 +2,14 @@ package controllers
 
 import (
 	"encoding/json"
+	"fmt"
 	"mimir/internal/api/middlewares"
 	"mimir/internal/api/responses"
 	"mimir/internal/db"
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func GetUserVariables(w http.ResponseWriter, r *http.Request) {
@@ -75,11 +77,16 @@ func CreateUserVariable(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	db.AddUserVariable(newVariable.Name, newVariable)
+	userVariable, err := db.AddUserVariable(newVariable.Name, newVariable, true)
+	if err != nil {
+		logger.Error("Error inserting variable to database", "error", err.Error())
+		responses.SendErrorResponse(w, http.StatusInternalServerError, responses.InternalErrorCodes.ResponseError)
+		return
+	}
 	err = responses.SendJSONResponse(w, http.StatusCreated, responses.ItemsResponse{
 		Code:    0,
 		Message: "The new variable was created",
-		Items:   newVariable,
+		Items:   userVariable,
 	})
 	if err != nil {
 		logger.Error("Error sending response", "error", err.Error())
@@ -91,6 +98,7 @@ func CreateUserVariable(w http.ResponseWriter, r *http.Request) {
 func UpdateUserVariable(w http.ResponseWriter, r *http.Request) {
 	logger := middlewares.ContextWithLogger(r.Context())
 
+	id := mux.Vars(r)["id"]
 	var newVariable *db.UserVariable
 	err := json.NewDecoder(r.Body).Decode(&newVariable)
 	if err != nil {
@@ -98,27 +106,54 @@ func UpdateUserVariable(w http.ResponseWriter, r *http.Request) {
 		responses.SendErrorResponse(w, http.StatusBadRequest, responses.GroupErrorCodes.InvalidSchema)
 		return
 	}
-
-	db.AddUserVariable(newVariable.Name, newVariable)
-	err = responses.SendJSONResponse(w, http.StatusCreated, responses.ItemsResponse{
-		Code:    0,
-		Message: "The new variable was created",
-		Items:   newVariable,
-	})
+	newVariable.Id, err = primitive.ObjectIDFromHex(id)
 	if err != nil {
-		logger.Error("Error sending response", "error", err.Error())
-		responses.SendErrorResponse(w, http.StatusInternalServerError, responses.InternalErrorCodes.ResponseError)
+		logger.Error("Error decoding new variable", "body", r.Body, "error", err.Error())
+		responses.SendErrorResponse(w, http.StatusBadRequest, responses.GroupErrorCodes.InvalidSchema)
 		return
 	}
+
+	existingVariable, exists := db.GetUserVariableById(id)
+	fmt.Println("**** existingVariable", existingVariable)
+	if exists {
+		userVariable, err := db.UpdateUserVariable(existingVariable.Name, newVariable, true)
+		if err != nil {
+			logger.Error("Error updating variable", "error", err.Error())
+			responses.SendErrorResponse(w, http.StatusInternalServerError, responses.InternalErrorCodes.ResponseError)
+			return
+		}
+		err = responses.SendJSONResponse(w, http.StatusCreated, responses.ItemsResponse{
+			Code:    0,
+			Message: "Variable updated successfully",
+			Items:   userVariable,
+		})
+		if err != nil {
+			logger.Error("Error sending response", "error", err.Error())
+			responses.SendErrorResponse(w, http.StatusInternalServerError, responses.InternalErrorCodes.ResponseError)
+			return
+		}
+	} else {
+		err = responses.SendJSONResponse(w, http.StatusNotFound, responses.ItemsResponse{
+			Code:    0,
+			Message: "Variable could not be found",
+			Items:   nil,
+		})
+		if err != nil {
+			logger.Error("Error sending response", "error", err.Error())
+			responses.SendErrorResponse(w, http.StatusInternalServerError, responses.InternalErrorCodes.ResponseError)
+			return
+		}
+
+	}
+
 }
 
 func DeleteUserVariable(w http.ResponseWriter, r *http.Request) {
 	logger := middlewares.ContextWithLogger(r.Context())
 
-	name := mux.Vars(r)["id"]
-	userVariable := db.DeleteUserVariable(name)
+	id := mux.Vars(r)["id"]
+	userVariable, err := db.DeleteUserVariable(id)
 
-	var err error
 	if userVariable == nil {
 		err = responses.SendJSONResponse(w, http.StatusNotFound, responses.ItemsResponse{
 			Code:    0,
@@ -126,11 +161,13 @@ func DeleteUserVariable(w http.ResponseWriter, r *http.Request) {
 			Items:   nil,
 		})
 	} else {
-		err = responses.SendJSONResponse(w, http.StatusOK, responses.ItemsResponse{
-			Code:    0,
-			Message: "User variable deleted succesfuly",
-			Items:   userVariable,
-		})
+		if err == nil {
+			err = responses.SendJSONResponse(w, http.StatusOK, responses.ItemsResponse{
+				Code:    0,
+				Message: "User variable deleted succesfuly",
+				Items:   userVariable,
+			})
+		}
 	}
 
 	if err != nil {

@@ -8,4 +8,5 @@ const (
 	TRIGGERS_COLLECTION   = "triggers"
 	PROCESSORS_COLLECTION = "processors"
 	MESSAGES_COLLECTION   = "messages"
+	VARIABLES_COLLECTION  = "variables"
 )

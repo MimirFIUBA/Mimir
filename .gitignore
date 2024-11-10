@@ -31,7 +31,8 @@ mqtt/data
 mqtt/log
 
 # Configuration files
-config
+/config
+!/internal/config
 
 # PersonalTestFiles
 examplesSetup
