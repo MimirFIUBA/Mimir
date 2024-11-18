@@ -81,7 +81,7 @@ func main() {
 
 	c := make(chan int)
 
-	generator := mqttGenerator{"mimir/testWrite4", client, c}
+	generator := mqttGenerator{"mimir/benchmark-test", client, c}
 	go generator.GenerateFloatData(100, "1", 1, 50, 50)
 	// go generator.GenerateBytes("1", 0, 0, 0, 4, 63, 0, 0, 0)
 

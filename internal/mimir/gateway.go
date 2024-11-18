@@ -43,10 +43,8 @@ func NewGateway(readingsChannel chan models.SensorReading, msgs MessageChannel, 
 	client := mqtt.NewClient(mqttOptions)
 	deadlineCtx, cancel := context.WithTimeout(context.Background(), opts.Timeout)
 	defer cancel()
-	if err := tryConnectToBroker(deadlineCtx, client); err != nil {
-		return nil, fmt.Errorf("couldn't connect to broker: client %s: %w", opts.ID, deadlineCtx.Err())
-	}
-	return &Gateway{
+
+	gateway := &Gateway{
 		id:           opts.ID,
 		client:       client,
 		readingsChan: readingsChannel,
@@ -57,7 +55,12 @@ func NewGateway(readingsChannel chan models.SensorReading, msgs MessageChannel, 
 		qos:          opts.QoS,
 		topics:       new(sync.Map),
 		msgs:         msgs,
-	}, nil
+	}
+
+	if err := tryConnectToBroker(deadlineCtx, client); err != nil {
+		return gateway, fmt.Errorf("couldn't connect to broker: client %s: %w", opts.ID, deadlineCtx.Err())
+	}
+	return gateway, nil
 }
 
 func (g *Gateway) Start(topics <-chan []string, ctx context.Context, wg *sync.WaitGroup) {

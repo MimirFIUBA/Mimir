@@ -16,7 +16,7 @@ import (
 type MimirEngine struct {
 	ReadingChannel chan models.SensorReading
 	TopicChannel   chan []string
-	WsChannel      chan string
+	WsChannel      chan models.WSOutgoingMessage
 	ActionFactory  *factories.ActionFactory
 	TriggerFactory *factories.TriggerFactory
 	MsgProcessor   *MessageProcessor
@@ -33,7 +33,7 @@ func NewMimirEngine() *MimirEngine {
 	topicChannel := make(chan []string)
 	readingsChannel := make(chan models.SensorReading, 50)
 	outgoingMessagesChannel := make(chan models.MqttOutgoingMessage)
-	webSocketMessageChannel := make(chan string)
+	webSocketMessageChannel := make(chan models.WSOutgoingMessage)
 	msgChannel := make(MessageChannel)
 
 	opts := GatewayOptions{

@@ -10,7 +10,7 @@ import (
 )
 
 type GroupsManager struct {
-	groups    []models.Group
+	groups    []*models.Group
 	idCounter int
 }
 
@@ -19,14 +19,14 @@ func (g *GroupsManager) GetNewId() int {
 	return g.idCounter
 }
 
-func (g *GroupsManager) GetGroups() []models.Group {
+func (g *GroupsManager) GetGroups() []*models.Group {
 	return g.groups
 }
 
 func (g *GroupsManager) GetGroupById(id string) (*models.Group, error) {
 	for index, group := range g.groups {
 		if group.GetId() == id {
-			return &g.groups[index], nil
+			return g.groups[index], nil
 		}
 	}
 
@@ -50,7 +50,7 @@ func (g *GroupsManager) CreateGroup(group *models.Group) error {
 }
 
 func (g *GroupsManager) AddGroup(group *models.Group) error {
-	g.groups = append(g.groups, *group)
+	g.groups = append(g.groups, group)
 
 	return nil
 }

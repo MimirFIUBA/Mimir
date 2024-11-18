@@ -2,9 +2,9 @@ package websocket
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 	"mimir/internal/api/responses"
+	"mimir/internal/models"
 	"net/http"
 	"sync"
 
@@ -12,7 +12,7 @@ import (
 )
 
 type WebSocketHandler struct {
-	BroadcastChan chan string
+	BroadcastChan chan models.WSOutgoingMessage
 	Clients       map[*websocket.Conn]bool
 	Upgrader      websocket.Upgrader
 	wg            sync.WaitGroup
@@ -44,7 +44,7 @@ func (h *WebSocketHandler) CloseConnection(client *websocket.Conn) {
 }
 
 func (h *WebSocketHandler) BroadcastMessage(msg responses.WSMessage) {
-	h.BroadcastChan <- fmt.Sprintf("%#v", msg)
+	// h.BroadcastChan <- fmt.Sprintf("%#v", msg)
 }
 
 // HandleWebSocketMessages listens to the broadcastChan and sends the message received from it to all clients.
@@ -56,7 +56,8 @@ func (h *WebSocketHandler) HandleMessages(ctx context.Context) {
 				h.wg.Add(1)
 				go func(client *websocket.Conn) {
 					defer h.wg.Done()
-					err := client.WriteJSON(msg)
+					// err := client.WriteJSON(msg)
+					err := client.WriteMessage(websocket.TextMessage, []byte(msg.Message))
 					if err != nil {
 						slog.Error("Error on websocket client", "error", err, "client", client)
 						h.CloseConnection(client)

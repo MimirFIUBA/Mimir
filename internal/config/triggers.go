@@ -150,7 +150,6 @@ func ToTriggerAction(a db.Action) triggers.Action {
 		triggerAction = action
 	case "webSocket":
 		action := mimir.Mimir.ActionFactory.NewSendWebSocketMessageAction(a.Message)
-		action.Message = a.Message
 		triggerAction = action
 	case "command":
 		triggerAction = mimir.Mimir.ActionFactory.NewCommandAction(a.Command, a.CommandArgs)

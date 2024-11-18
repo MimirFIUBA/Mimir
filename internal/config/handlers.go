@@ -17,7 +17,7 @@ import (
 func BuildHandlers(mimirEngine *mimir.MimirEngine) {
 	dir := ini.String(consts.HANDLERS_DIR_CONFIG_NAME)
 	files := utils.ListFilesWithSuffix(dir, "*"+consts.HANDLERS_FILE_SUFFIX)
-	sensors := make([]models.Sensor, 0)
+	sensors := make([]*models.Sensor, 0)
 	for _, v := range files {
 		slog.Info("building handler", "file", v)
 		byteValue, err := os.ReadFile(v)
@@ -44,9 +44,21 @@ func BuildHandlers(mimirEngine *mimir.MimirEngine) {
 		mimir.Mimir.MsgProcessor.RegisterHandler(topic, processor)
 		sensor := models.NewSensor(topic)
 		sensor.Topic = topic
+		setNodeId(sensor, jsonMap)
 		mimirEngine.RegisterSensor(sensor)
-		sensors = append(sensors, *sensor)
+		sensors = append(sensors, sensor)
 	}
 
 	db.SensorsData.LoadSensors(sensors)
+}
+
+func setNodeId(sensor *models.Sensor, jsonMap map[string]interface{}) {
+	nodeIdInterface, exists := jsonMap["nodeId"]
+	if exists {
+		nodeId, ok := nodeIdInterface.(string)
+		if !ok {
+			slog.Error("error building handler", "error", "node id is not a string")
+		}
+		sensor.NodeID = nodeId
+	}
 }

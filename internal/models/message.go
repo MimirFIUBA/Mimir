@@ -26,3 +26,8 @@ type MqttOutgoingMessage struct {
 func NewMqttOutgoingMessage(topic, message string) *MqttOutgoingMessage {
 	return &MqttOutgoingMessage{topic, message}
 }
+
+type WSOutgoingMessage struct {
+	Type    string
+	Message string
+}

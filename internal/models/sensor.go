@@ -9,15 +9,16 @@ import (
 )
 
 type Sensor struct {
-	ID          primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
-	Name        string             `json:"name" bson:"name"`
-	DataName    string             `json:"dataName" bson:"data_name"`
-	Topic       string             `json:"topic" bson:"topic"`
-	NodeID      string             `json:"nodeId" bson:"node_id"`
-	Description string             `json:"description" bson:"description"`
-	IsActive    bool               `json:"isActive" bson:"is_active"`
-	Data        []SensorReading    `json:"data" bson:"data, omitempty"`
-	triggerList []triggers.Trigger
+	ID                primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
+	Name              string             `json:"name" bson:"name"`
+	DataName          string             `json:"dataName" bson:"data_name"`
+	Topic             string             `json:"topic" bson:"topic"`
+	NodeID            string             `json:"nodeId" bson:"node_id"`
+	Description       string             `json:"description" bson:"description"`
+	IsActive          bool               `json:"isActive" bson:"is_active"`
+	Data              []SensorReading    `json:"data" bson:"data, omitempty"`
+	LastSensedReading *SensorReading     `json:"lastSensedReading" bson:"lastSensedReading"`
+	triggerList       []triggers.Trigger
 }
 
 func NewSensor(name string) *Sensor {
@@ -26,6 +27,7 @@ func NewSensor(name string) *Sensor {
 
 func (s *Sensor) AddReading(reading SensorReading) {
 	s.Data = append(s.Data, reading)
+	s.LastSensedReading = &reading
 	s.NotifyAll()
 }
 
@@ -57,7 +59,7 @@ func (s *Sensor) Deregister(trigger triggers.Trigger) {
 
 func (s *Sensor) NotifyAll() {
 	for _, trigger := range s.triggerList {
-		reading := s.Data[len(s.Data)-1]
+		reading := s.LastSensedReading
 		data := make(map[string]interface{})
 		data["reading"] = reading
 

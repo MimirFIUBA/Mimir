@@ -11,7 +11,7 @@ type Group struct {
 	Name        string             `json:"name" bson:"name"`
 	Description string             `json:"description" bson:"description"`
 	Type        string             `json:"type" bson:"type"`
-	Nodes       []Node             `json:"nodes" bson:"nodes,omitempty"`
+	Nodes       []*Node            `json:"nodes,omitempty" bson:"nodes,omitempty"`
 }
 
 func NewGroup(name string) *Group {
@@ -35,6 +35,6 @@ func (g *Group) AddNode(node *Node) error {
 		}
 	}
 
-	g.Nodes = append(g.Nodes, *node)
+	g.Nodes = append(g.Nodes, node)
 	return nil
 }

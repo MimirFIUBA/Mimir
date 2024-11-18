@@ -11,7 +11,7 @@ type Node struct {
 	Name        string             `json:"name" bson:"name"`
 	Description string             `json:"description" bson:"description"`
 	GroupID     string             `json:"groupId" bson:"group_id"`
-	Sensors     []Sensor           `json:"sensors" bson:"sensors, omitempty"`
+	Sensors     []*Sensor          `json:"sensors,omitempty" bson:"sensors, omitempty"`
 }
 
 func NewNode(name string) *Node {
@@ -31,7 +31,7 @@ func (n *Node) AddSensor(sensor *Sensor) error {
 		}
 	}
 
-	n.Sensors = append(n.Sensors, *sensor)
+	n.Sensors = append(n.Sensors, sensor)
 
 	sensor.Topic = "mimir/" + n.Name + "/" + sensor.DataName
 

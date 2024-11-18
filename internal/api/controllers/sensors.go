@@ -14,11 +14,40 @@ import (
 func GetSensors(w http.ResponseWriter, r *http.Request) {
 	logger := middlewares.ContextWithLogger(r.Context())
 	sensors := db.SensorsData.GetSensors()
+	nodes := db.NodesData.GetNodes()
+	groups := db.GroupsData.GetGroups()
+
+	items := make([]responses.SensorResponse, 0)
+
+	groupsMap := make(map[string]*responses.GroupResponse)
+
+	for _, group := range groups {
+		groupsMap[group.GetId()] = responses.NewGroupResponse(*group)
+	}
+
+	nodesMap := make(map[string]*responses.NodeResponse)
+
+	for _, node := range nodes {
+		nodesMap[node.GetId()] = responses.NewNodeResponse(*node)
+	}
+
+	for _, sensor := range sensors {
+		sensorResponse := responses.NewSensorResponse(*sensor)
+		nodeForSensor, exists := nodesMap[sensor.NodeID]
+		if exists {
+			groupForNode, exists := groupsMap[nodeForSensor.GroupID]
+			if exists {
+				nodeForSensor.Group = *groupForNode
+			}
+			sensorResponse.Node = *nodeForSensor
+		}
+		items = append(items, *sensorResponse)
+	}
 
 	err := responses.SendJSONResponse(w, http.StatusOK, responses.ItemsResponse{
 		Code:    0,
 		Message: "All selected sensors information was returned",
-		Items:   sensors,
+		Items:   items,
 	})
 	if err != nil {
 		logger.Error("Error sending response", "error", err.Error())

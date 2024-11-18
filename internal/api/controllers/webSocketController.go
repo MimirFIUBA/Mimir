@@ -5,12 +5,13 @@ import (
 	"log/slog"
 	"mimir/internal/api/responses"
 	websocket "mimir/internal/api/webSocket"
+	"mimir/internal/models"
 	"net/http"
 )
 
 var WSHandler = websocket.NewHandler()
 
-func SetWebSocketBroadcastChan(broadcastChan chan string) {
+func SetWebSocketBroadcastChan(broadcastChan chan models.WSOutgoingMessage) {
 	WSHandler.BroadcastChan = broadcastChan
 }
 

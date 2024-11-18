@@ -33,6 +33,7 @@ func GetGroupById(w http.ResponseWriter, r *http.Request) {
 	// TODO(#20) - Validate Query Params
 	id := mux.Vars(r)["id"]
 	group, err := db.GroupsData.GetGroupById(id)
+
 	if err != nil {
 		logger.Error("Error searching for group", "group_id", id, "error", err.Error())
 		responses.SendErrorResponse(w, http.StatusNotFound, responses.GroupErrorCodes.NotFound)

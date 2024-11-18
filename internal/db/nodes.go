@@ -10,7 +10,7 @@ import (
 )
 
 type NodesManager struct {
-	nodes     []models.Node
+	nodes     []*models.Node
 	idCounter int
 }
 
@@ -19,18 +19,29 @@ func (n *NodesManager) GetNewId() int {
 	return n.idCounter
 }
 
-func (n *NodesManager) GetNodes() []models.Node {
+func (n *NodesManager) GetNodes() []*models.Node {
 	return n.nodes
 }
 
 func (n *NodesManager) GetNodeById(id string) (*models.Node, error) {
 	for index, node := range n.nodes {
 		if node.GetId() == id {
-			return &n.nodes[index], nil
+			return n.nodes[index], nil
 		}
 	}
 
 	return nil, fmt.Errorf("node %s not found", id)
+}
+
+func (n *NodesManager) GetNodesByGroupId(groupId string) []*models.Node {
+	nodes := make([]*models.Node, 0)
+	for _, node := range n.nodes {
+		if node.GroupID == groupId {
+			nodes = append(nodes, node)
+		}
+	}
+
+	return nodes
 }
 
 func (n *NodesManager) IdExists(id string) bool {
@@ -46,7 +57,7 @@ func (n *NodesManager) CreateNode(node *models.Node) error {
 		return err
 	}
 
-	n.nodes = append(n.nodes, *node)
+	n.nodes = append(n.nodes, node)
 	err = GroupsData.AddNodeToGroupById(node.GroupID, node)
 	if err != nil {
 		return err
@@ -68,7 +79,7 @@ func (n *NodesManager) UpdateNode(node *models.Node) (*models.Node, error) {
 func (n *NodesManager) DeleteNode(id string) error {
 	nodeIndex := -1
 	for i := range n.nodes {
-		node := &n.nodes[i]
+		node := n.nodes[i]
 		if node.GetId() == id {
 			nodeIndex = i
 			break
@@ -85,16 +96,16 @@ func (n *NodesManager) DeleteNode(id string) error {
 }
 
 func (n *NodesManager) AddSensorToNodeById(id string, sensor *models.Sensor) error {
-	oldNode, err := n.GetNodeById(id)
+	node, err := n.GetNodeById(id)
 	if err != nil {
 		return nil
 	}
 
-	return oldNode.AddSensor(sensor)
+	return node.AddSensor(sensor)
 }
 
 func (n *NodesManager) AddNode(node *models.Node) {
-	n.nodes = append(n.nodes, *node)
+	n.nodes = append(n.nodes, node)
 	GroupsData.AddNodeToGroupById(node.GroupID, node)
 }
 
