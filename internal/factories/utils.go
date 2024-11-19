@@ -2,6 +2,7 @@ package factories
 
 import (
 	"bytes"
+	"encoding/json"
 	"log/slog"
 	"mimir/internal/models"
 	"mimir/triggers"
@@ -43,7 +44,7 @@ func newWSMessageBuilder(msgType, message string) func(triggers.Event) models.WS
 		var buffer bytes.Buffer
 		re := regexp.MustCompile(`{{(.*?)}}`)
 
-		prefix := "{\"type\":\"" + msgType + "\", \"data\":"
+		prefix := "{\"type\":\"" + msgType + "\", \"payload\":"
 		suffix := "}"
 
 		lastIndex := 0
@@ -68,4 +69,29 @@ func newWSMessageBuilder(msgType, message string) func(triggers.Event) models.WS
 		buffer.WriteString(message[lastIndex:])
 		return models.WSOutgoingMessage{Type: msgType, Message: prefix + buffer.String() + suffix}
 	}
+}
+
+func newUpdateMessageBuilder() func(triggers.Event) models.WSOutgoingMessage {
+	return func(event triggers.Event) models.WSOutgoingMessage {
+		message := UpdateMessage{
+			SensorId: event.SenderId,
+			Value:    event.Value,
+		}
+
+		payload, err := json.Marshal(message)
+		if err != nil {
+			slog.Error("error creating message for reading update", "error", err)
+			return models.WSOutgoingMessage{Type: "update", Message: ""}
+		}
+
+		prefix := "{\"type\":\"update\", \"payload\":"
+		suffix := "}"
+
+		return models.WSOutgoingMessage{Type: "update", Message: prefix + string(payload) + suffix}
+	}
+}
+
+type UpdateMessage struct {
+	SensorId string `json:"sensorId"`
+	Value    any    `json:"value"`
 }

@@ -2,15 +2,17 @@ package factories
 
 import (
 	"fmt"
+	"mimir/internal/consts"
 	"mimir/triggers"
 	"time"
 )
 
 type TriggerFactory struct {
+	actionFactory *ActionFactory
 }
 
-func NewTriggerFactory() *TriggerFactory {
-	return &TriggerFactory{}
+func NewTriggerFactory(actionFactory *ActionFactory) *TriggerFactory {
+	return &TriggerFactory{actionFactory}
 }
 
 type TriggerOptions struct {
@@ -33,4 +35,20 @@ func (f *TriggerFactory) BuildTrigger(opts TriggerOptions) (triggers.Trigger, er
 	default:
 		return nil, fmt.Errorf("wrong trigger type")
 	}
+}
+
+func (f *TriggerFactory) BuildNewReadingNotificationTrigger() (triggers.Trigger, error) {
+	trigger, err := f.BuildTrigger(TriggerOptions{
+		Name:        "update",
+		Frequency:   consts.TRIGGER_UPDATE_NOTIFICATION_FREQUENCY,
+		TriggerType: triggers.FREQUENCY_TRIGGER,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	action := f.actionFactory.NewWebSocketUpdateMessageAction("{\"type\":\"update\"}")
+	trigger.AddAction(action, triggers.TriggerOptions{})
+
+	return trigger, nil
 }

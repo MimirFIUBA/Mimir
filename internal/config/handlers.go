@@ -45,6 +45,13 @@ func BuildHandlers(mimirEngine *mimir.MimirEngine) {
 		sensor := models.NewSensor(topic)
 		sensor.Topic = topic
 		setNodeId(sensor, jsonMap)
+		trigger, err := mimirEngine.TriggerFactory.BuildNewReadingNotificationTrigger()
+		if err != nil {
+			slog.Error("error creating update notification trigger", "error", err)
+		} else {
+			trigger.Activate()
+			sensor.Register(trigger)
+		}
 		mimirEngine.RegisterSensor(sensor)
 		sensors = append(sensors, sensor)
 	}

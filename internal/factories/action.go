@@ -38,13 +38,23 @@ func (f *ActionFactory) NewSendMQTTMessageAction(topic, message string) *trigger
 	return &triggers.SendMessageThroughChannel[models.MqttOutgoingMessage]{
 		Message:                 *models.NewMqttOutgoingMessage(topic, message),
 		MessageContructor:       newMqttMessageBuilder(topic, message),
-		OutgoingMessagesChannel: f.outgoingMessageChannel}
+		OutgoingMessagesChannel: f.outgoingMessageChannel,
+	}
 }
 
 func (f *ActionFactory) NewSendWebSocketMessageAction(message string) *triggers.SendMessageThroughChannel[models.WSOutgoingMessage] {
 	return &triggers.SendMessageThroughChannel[models.WSOutgoingMessage]{
 		Message:                 models.WSOutgoingMessage{Message: message},
-		OutgoingMessagesChannel: f.wsMessageChannel}
+		OutgoingMessagesChannel: f.wsMessageChannel,
+	}
+}
+
+func (f *ActionFactory) NewWebSocketUpdateMessageAction(message string) *triggers.SendMessageThroughChannel[models.WSOutgoingMessage] {
+	return &triggers.SendMessageThroughChannel[models.WSOutgoingMessage]{
+		Message:                 models.WSOutgoingMessage{Type: "update", Message: message},
+		MessageContructor:       newUpdateMessageBuilder(),
+		OutgoingMessagesChannel: f.wsMessageChannel,
+	}
 }
 
 func (f *ActionFactory) NewChangeTriggerStatus(triggerName string, status bool) *triggers.ExecuteFunctionAction {

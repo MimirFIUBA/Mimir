@@ -55,12 +55,14 @@ func NewMimirEngine() *MimirEngine {
 		slog.Error("Fail to create scheduler", "error", err)
 	}
 
+	actionFactory := factories.NewActionFactory(outgoingMessagesChannel, webSocketMessageChannel)
+
 	engine := MimirEngine{
 		ReadingChannel: readingsChannel,
 		TopicChannel:   topicChannel,
 		WsChannel:      webSocketMessageChannel,
-		ActionFactory:  factories.NewActionFactory(outgoingMessagesChannel, webSocketMessageChannel),
-		TriggerFactory: factories.NewTriggerFactory(),
+		ActionFactory:  actionFactory,
+		TriggerFactory: factories.NewTriggerFactory(actionFactory),
 		MsgProcessor:   NewMessageProcessor(msgChannel),
 		gateway:        gateway,
 		publisher:      NewPublisher(gateway.GetClient(), outgoingMessagesChannel),
