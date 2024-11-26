@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"encoding/json"
+	"io"
 	"mimir/internal/api/middlewares"
 	"mimir/internal/api/responses"
 	"mimir/internal/db"
@@ -83,16 +84,9 @@ func GetSensorById(w http.ResponseWriter, r *http.Request) {
 func CreateSensor(w http.ResponseWriter, r *http.Request) {
 	logger := middlewares.ContextWithLogger(r.Context())
 
-	var newSensor *models.Sensor
-	err := json.NewDecoder(r.Body).Decode(&newSensor)
-	if err != nil {
-		logger.Error("Error decoding new sensor", "body", r.Body, "error", err.Error())
-		responses.SendErrorResponse(w, http.StatusBadRequest, responses.SensorErrorCodes.InvalidSchema)
-		return
-	}
+	newSensor, _ := CreateSensorInternal(w, r)
 
-	_ = db.SensorsData.CreateSensor(newSensor)
-	err = responses.SendJSONResponse(w, http.StatusCreated, responses.ItemsResponse{
+	err := responses.SendJSONResponse(w, http.StatusCreated, responses.ItemsResponse{
 		Code:    0,
 		Message: "The new sensor was created",
 		Items:   newSensor,
@@ -100,8 +94,33 @@ func CreateSensor(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Error("Error sending response", "error", err.Error())
 		responses.SendErrorResponse(w, http.StatusInternalServerError, responses.InternalErrorCodes.ResponseError)
-		return
 	}
+}
+
+func CreateSensorInternal(w http.ResponseWriter, r *http.Request) (*models.Sensor, string) {
+	logger := middlewares.ContextWithLogger(r.Context())
+
+	bytedata, err := io.ReadAll(r.Body)
+	bodyString := string(bytedata)
+
+	if err != nil {
+		logger.Error("Error decoding new sensorHandler", "body", r.Body, "error", err.Error())
+		responses.SendErrorResponse(w, http.StatusBadRequest, responses.SensorErrorCodes.InvalidSchema)
+		return nil, ""
+	}
+
+	var newSensor *models.Sensor
+	err = json.Unmarshal([]byte(bodyString), &newSensor)
+
+	if err != nil {
+		logger.Error("Error decoding new sensor", "body", r.Body, "error", err.Error())
+		responses.SendErrorResponse(w, http.StatusBadRequest, responses.SensorErrorCodes.InvalidSchema)
+		return nil, ""
+	}
+
+	_ = db.SensorsData.CreateSensor(newSensor)
+
+	return newSensor, bodyString
 }
 
 func UpdateSensor(w http.ResponseWriter, r *http.Request) {

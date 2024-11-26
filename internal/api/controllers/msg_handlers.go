@@ -7,7 +7,6 @@ import (
 	"mimir/internal/db"
 	"mimir/internal/handlers"
 	"mimir/internal/mimir"
-	"mimir/internal/models"
 	"mimir/internal/utils"
 	"net/http"
 	"strings"
@@ -38,16 +37,21 @@ func GetHandler(w http.ResponseWriter, r *http.Request) {
 func CreateHandler(w http.ResponseWriter, r *http.Request) {
 	logger := middlewares.ContextWithLogger(r.Context())
 
+	sensor, bodyString := CreateSensorInternal(w, r)
+	if sensor == nil || bodyString == "" {
+		return
+	}
+
 	var requestBody responses.Handler
-	err := utils.DecodeJsonToMap(r.Body, &requestBody)
+	err := json.Unmarshal([]byte(bodyString), &requestBody)
 	if err != nil {
-		logger.Error("Error updating processor", "body", r.Body, "error", err)
+		logger.Error("Error creating new processor", "body", r.Body, "error", err)
 		responses.SendErrorResponse(w, http.StatusBadRequest, responses.ProcessorErrorCodes.InvalidSchema)
 	}
 
-	_, exists := mimir.Mimir.MsgProcessor.GetHandler(requestBody.Topic)
+	_, exists := mimir.Mimir.MsgProcessor.GetHandler(sensor.Topic)
 	if exists {
-		logger.Error("Error creating new processor", "body", r.Body, "error", "processor for topic "+requestBody.Topic+" already exists")
+		logger.Error("Error creating new processor", "body", r.Body, "error", "processor for topic "+sensor.Topic+" already exists")
 		responses.SendErrorResponse(w, http.StatusBadRequest, responses.ProcessorErrorCodes.AlreadyExists)
 		return
 	}
@@ -55,14 +59,14 @@ func CreateHandler(w http.ResponseWriter, r *http.Request) {
 	var messageHandler handlers.MessageHandler
 	switch requestBody.HandlerType {
 	case "json":
-		jsonHandler, err := createJSONHandler(requestBody)
+		jsonHandler, err := createJSONHandler(requestBody, sensor.Topic)
 		if err != nil {
 			logger.Error("Error creating new processor", "body", r.Body, "error", err)
 			responses.SendErrorResponse(w, http.StatusBadRequest, responses.ProcessorErrorCodes.InvalidSchema)
 		}
 		messageHandler = jsonHandler
 	case "bytes":
-		bytesHandler, err := createBytesHandler(requestBody)
+		bytesHandler, err := createBytesHandler(requestBody, sensor.Topic)
 		if err != nil {
 			logger.Error("Error creating new processor", "body", r.Body, "error", err)
 			responses.SendErrorResponse(w, http.StatusBadRequest, responses.ProcessorErrorCodes.InvalidSchema)
@@ -70,14 +74,9 @@ func CreateHandler(w http.ResponseWriter, r *http.Request) {
 		messageHandler = bytesHandler
 	}
 
-	sensor, err := db.SensorsData.GetSensorByTopic(requestBody.Topic)
-	if err != nil {
-		sensor = models.NewSensor(requestBody.Topic)
-		sensor.Topic = requestBody.Topic
-	}
 	MimirEngine.RegisterSensor(sensor)
 
-	mimir.Mimir.MsgProcessor.RegisterHandler(requestBody.Topic, messageHandler)
+	mimir.Mimir.MsgProcessor.RegisterHandler(sensor.Topic, messageHandler)
 
 	db.Database.SaveHandler(messageHandler)
 
@@ -144,10 +143,10 @@ func DeleteHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // TODO: pasar esto a un handler factory con el reading channel para sacarlo de mimir engine
-func createJSONHandler(requestBody responses.Handler) (*handlers.JSONHandler, error) {
+func createJSONHandler(requestBody responses.Handler, topic string) (*handlers.JSONHandler, error) {
 	jsonHandler := &handlers.JSONHandler{
 		Name:            requestBody.Name,
-		Topic:           requestBody.Topic,
+		Topic:           topic,
 		Type:            requestBody.HandlerType,
 		ReadingsChannel: MimirEngine.ReadingChannel}
 	for _, configurationInterface := range requestBody.Configurations {
@@ -164,10 +163,10 @@ func createJSONHandler(requestBody responses.Handler) (*handlers.JSONHandler, er
 }
 
 // TODO: pasar esto a un handler factory con el reading channel para sacarlo de mimir engine
-func createBytesHandler(requestBody responses.Handler) (*handlers.BytesHandler, error) {
+func createBytesHandler(requestBody responses.Handler, topic string) (*handlers.BytesHandler, error) {
 	bytesHandler := &handlers.BytesHandler{
 		Name:            requestBody.Name,
-		Topic:           requestBody.Topic,
+		Topic:           topic,
 		Type:            requestBody.HandlerType,
 		ReadingsChannel: MimirEngine.ReadingChannel}
 	for _, configurationInterface := range requestBody.Configurations {
