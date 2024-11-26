@@ -12,12 +12,12 @@ import (
 )
 
 type BytesHandler struct {
-	SensorId            string
-	Name                string
-	Topic               string
-	Type                string
-	BytesConfigurations []BytesConfiguration
-	ReadingsChannel     chan models.SensorReading
+	SensorId            string                    `json:"sensorId,omitempty"`
+	Name                string                    `json:"name"`
+	Topic               string                    `json:"topic"`
+	Type                string                    `json:"type"`
+	BytesConfigurations []BytesConfiguration      `json:"configurations"`
+	ReadingsChannel     chan models.SensorReading `json:"-"`
 }
 
 func NewBytesHandler() *BytesHandler {
@@ -25,9 +25,9 @@ func NewBytesHandler() *BytesHandler {
 }
 
 type BytesConfiguration struct {
-	DataType   string
-	Endianness binary.ByteOrder
-	Size       int //size in bytes
+	DataType   string           `json:"dataType"`
+	Endianness binary.ByteOrder `json:"endianness"`
+	Size       int              `json:"size"` //size in bytes
 }
 
 func NewBytesConfiguration(dataType string, endianess binary.ByteOrder, size int) *BytesConfiguration {

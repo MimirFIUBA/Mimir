@@ -51,18 +51,19 @@ func (s *SensorsManager) IdExists(id string) bool {
 func (s *SensorsManager) CreateSensor(sensor *models.Sensor) error {
 	// TODO(#20) - Add Body validation
 
-	sensor, err := Database.insertTopic(sensor)
+	err := NodesData.AddSensorToNodeById(sensor.NodeID, sensor)
+	if err != nil {
+		slog.Error("error adding sensor to node", "error", err, "topic", sensor)
+		return err
+	}
+
+	sensor, err = Database.insertTopic(sensor)
 	if err != nil {
 		slog.Error("error inserting topic", "error", err, "topic", sensor)
 		return err
 	}
 
 	s.sensors = append(s.sensors, sensor)
-	err = NodesData.AddSensorToNodeById(sensor.NodeID, sensor)
-	if err != nil {
-		slog.Error("error adding sensor to node", "error", err, "topic", sensor)
-		return err
-	}
 	return nil
 }
 
