@@ -5,10 +5,18 @@ type Handler struct {
 	Topic          string        `json:"topic"`
 	HandlerType    string        `json:"type"`
 	SensorId       string        `json:"sensorId,omitempty"`
+	NodeId         string        `json:"nodeId,omitempty"`
 	Configurations []interface{} `json:"configurations,omitempty"`
 }
 
 type JsonConfiguration struct {
+	IdPosition     string                            `json:"idPosition"`
+	Path           string                            `json:"path"`
+	AdditionalData []JsonAdditionalDataConfiguration `json:"additionalData"`
+}
+
+type JsonAdditionalDataConfiguration struct {
+	Name string `json:"name"`
 	Path string `json:"path"`
 }
 

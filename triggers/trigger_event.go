@@ -20,7 +20,9 @@ func (t *EventTrigger) Update(event Event) {
 	if t.IsActive && t.Condition.Evaluate(event) {
 		if !t.isScheduled || event.Type == SCHEDULER_ACTIVE {
 			for _, action := range t.Actions {
-				action.Execute(event)
+				if action != nil {
+					action.Execute(event)
+				}
 			}
 		}
 	}

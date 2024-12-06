@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"encoding/json"
-	"fmt"
 	"mimir/internal/api/middlewares"
 	"mimir/internal/api/responses"
 	"mimir/internal/db"
@@ -14,16 +13,19 @@ import (
 
 func GetUserVariables(w http.ResponseWriter, r *http.Request) {
 	logger := middlewares.ContextWithLogger(r.Context())
-	items := make(map[string]interface{})
+	var items []db.UserVariable
 
 	db.UserVariables.Range(func(key any, value any) bool {
-		name, ok := key.(string)
+		// name, ok := key.(string)
+		// if ok {
+		stringValue, ok := value.(*db.UserVariable)
 		if ok {
-			stringValue, ok := value.(*db.UserVariable)
-			if ok {
-				items[name] = stringValue
-			}
+			items = append(items, *stringValue)
 		}
+		// if ok {
+		// 	items[name] = stringValue
+		// }
+		// }
 		return true
 	})
 
@@ -114,7 +116,6 @@ func UpdateUserVariable(w http.ResponseWriter, r *http.Request) {
 	}
 
 	existingVariable, exists := db.GetUserVariableById(id)
-	fmt.Println("**** existingVariable", existingVariable)
 	if exists {
 		userVariable, err := db.UpdateUserVariable(existingVariable.Name, newVariable, true)
 		if err != nil {

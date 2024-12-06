@@ -10,6 +10,7 @@ import (
 	"mimir/internal/models"
 	"mimir/internal/utils"
 	"os"
+	"reflect"
 
 	"github.com/gookit/ini/v2"
 )
@@ -44,7 +45,7 @@ func BuildHandlers(mimirEngine *mimir.MimirEngine) {
 		mimir.Mimir.MsgProcessor.RegisterHandler(topic, processor)
 		sensor := models.NewSensor(topic)
 		sensor.Topic = topic
-		setNodeId(sensor, jsonMap)
+		setSensorAttributes(sensor, jsonMap)
 		trigger, err := mimirEngine.TriggerFactory.BuildNewReadingNotificationTrigger()
 		if err != nil {
 			slog.Error("error creating update notification trigger", "error", err)
@@ -52,20 +53,30 @@ func BuildHandlers(mimirEngine *mimir.MimirEngine) {
 			trigger.Activate()
 			sensor.Register(trigger)
 		}
-		mimirEngine.RegisterSensor(sensor)
 		sensors = append(sensors, sensor)
 	}
 
 	db.SensorsData.LoadSensors(sensors)
+	for _, sensor := range sensors {
+		mimirEngine.RegisterSensor(sensor)
+	}
 }
 
-func setNodeId(sensor *models.Sensor, jsonMap map[string]interface{}) {
-	nodeIdInterface, exists := jsonMap["nodeId"]
+func setSensorAttributes(sensor *models.Sensor, jsonMap map[string]interface{}) {
+	setSensorAttribute(sensor, "NodeID", "nodeId", jsonMap)
+	setSensorAttribute(sensor, "DataName", "dataName", jsonMap)
+	setSensorAttribute(sensor, "Unit", "unit", jsonMap)
+}
+
+func setSensorAttribute(sensor *models.Sensor, propertyName, jsonKey string, jsonMap map[string]interface{}) {
+	valueInterface, exists := jsonMap[jsonKey]
 	if exists {
-		nodeId, ok := nodeIdInterface.(string)
+		value, ok := valueInterface.(string)
 		if !ok {
-			slog.Error("error building handler", "error", "node id is not a string")
+			slog.Error("error building handler", "error", "attribute "+jsonKey+" is not a string")
+			return
 		}
-		sensor.NodeID = nodeId
+		reflect.ValueOf(sensor).Elem().FieldByName(propertyName).SetString(value)
+		// sensor.NodeID = nodeId
 	}
 }

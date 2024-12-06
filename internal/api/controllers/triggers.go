@@ -14,9 +14,14 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func GetTriggers(w http.ResponseWriter, _ *http.Request) {
-
-	triggers := db.Database.GetTriggers()
+func GetTriggers(w http.ResponseWriter, r *http.Request) {
+	logger := middlewares.ContextWithLogger(r.Context())
+	triggers, err := db.Database.GetAllTriggers()
+	if err != nil {
+		logger.Error("error getting all triggers", "error", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(triggers)
@@ -61,11 +66,16 @@ func CreateTrigger(w http.ResponseWriter, r *http.Request) {
 
 	trigger, err := config.BuildTrigger(*newTrigger, MimirEngine)
 	if err != nil {
-		//TODO: En general aca falla cuando hay una bad condition, hay que agregar esos detalles
+		if err.Error() == "condition does not compile" {
+			logger.Error("Error creating trigger", "body", r.Body, "error", err)
+			responses.SendErrorResponse(w, http.StatusBadRequest, responses.TriggerErrorCodes.ConditionDoesNotCompile)
+			return
+		}
 		logger.Error("Error creating trigger", "body", r.Body, "error", err)
-		responses.SendErrorResponse(w, http.StatusInternalServerError, responses.InternalErrorCodes.UnexpectedError)
+		responses.SendErrorResponse(w, http.StatusInternalServerError, responses.TriggerErrorCodes.UpdateFailed)
 		return
 	}
+
 	db.RegisterTrigger(trigger, newTrigger.Topics)
 
 	w.WriteHeader(http.StatusCreated)
@@ -116,8 +126,8 @@ func DeleteTrigger(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = responses.SendJSONResponse(w, http.StatusNoContent, responses.MessageResponse{
-		Code:    0,
+	err = responses.SendJSONResponse(w, http.StatusOK, responses.MessageResponse{
+		Code:    200,
 		Message: "The trigger was deleted",
 	})
 	if err != nil {

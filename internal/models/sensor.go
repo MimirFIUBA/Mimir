@@ -2,6 +2,7 @@ package models
 
 import (
 	"fmt"
+	"log/slog"
 	"mimir/triggers"
 	"slices"
 	"time"
@@ -13,12 +14,14 @@ type Sensor struct {
 	ID                primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
 	Name              string             `json:"name" bson:"name"`
 	DataName          string             `json:"dataName" bson:"data_name"`
+	DataLabel         string             `json:"dataLabel" bson:"data_label"`
+	Unit              string             `json:"unit" bson:"unit"`
 	Topic             string             `json:"topic" bson:"topic"`
 	NodeID            string             `json:"nodeId" bson:"node_id"`
 	Description       string             `json:"description" bson:"description"`
 	IsActive          bool               `json:"isActive" bson:"is_active"`
 	Data              []SensorReading    `json:"data" bson:"data, omitempty"`
-	LastSensedReading *SensorReading     `json:"lastSensedReading" bson:"lastSensedReading"`
+	LastSensedReading SensorReading      `json:"lastSensedReading" bson:"lastSensedReading"`
 	triggerList       []triggers.Trigger
 }
 
@@ -28,8 +31,8 @@ func NewSensor(name string) *Sensor {
 
 func (s *Sensor) AddReading(reading SensorReading) {
 	s.Data = append(s.Data, reading)
-	fmt.Println("**** LastSensedReading: ", reading)
-	s.LastSensedReading = &reading
+	s.LastSensedReading = reading
+	fmt.Println("")
 	s.NotifyAll()
 }
 
@@ -72,7 +75,14 @@ func (s *Sensor) NotifyAll() {
 			Value:     reading.Value,
 			SenderId:  reading.Topic,
 		}
-		go trigger.Update(event)
+		go func() {
+			defer func() {
+				if r := recover(); r != nil {
+					slog.Error("error with trigger update", "error", r)
+				}
+			}()
+			trigger.Update(event)
+		}()
 	}
 }
 

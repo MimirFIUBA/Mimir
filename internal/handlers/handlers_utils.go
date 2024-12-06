@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/binary"
 	"fmt"
+	"log/slog"
 )
 
 func JsonToHandler(jsonMap map[string]interface{}) (MessageHandler, error) {
@@ -215,47 +216,55 @@ func JsonMapToJsonConfiguration(jsonMap map[string]interface{}) (*JSONValueConfi
 		configuration.ValuePath = path
 	}
 
-	additionalData, exists := jsonMap["data"]
+	additionalData, exists := jsonMap["additionalData"]
 	if exists {
-		var data []JSONDataConfiguration
-		additionalData, ok := additionalData.([]interface{})
-		if !ok {
+		switch additionalData := additionalData.(type) {
+		case []interface{}:
+			data, err := buildAdditionalData(additionalData)
+			if err != nil {
+				slog.Error("Error building additional data")
+			}
+			configuration.DataConfigurations = data
+		case nil:
+			slog.Warn("Additional data is nil")
+		default:
 			return nil, WrongFormatError{"additional data"}
 		}
-
-		for _, dataConfiguration := range additionalData {
-			dataConfiguration, ok := dataConfiguration.(map[string]interface{})
-			if !ok {
-				return nil, WrongFormatError{"data configuration"}
-			}
-
-			nameInterface, exits := dataConfiguration["name"]
-			if !exits {
-				return nil, RequiredFieldError{"name"}
-			}
-
-			name, ok := nameInterface.(string)
-			if !ok {
-				return nil, WrongFormatError{"additional data name is not a string"}
-			}
-
-			pathInterface, exits := dataConfiguration["path"]
-			if !exits {
-				return nil, RequiredFieldError{"path"}
-			}
-
-			path, ok := pathInterface.(string)
-			if !ok {
-				return nil, WrongFormatError{"additional data path is not a string"}
-			}
-
-			data = append(data, JSONDataConfiguration{Name: name, Path: path})
-		}
-		configuration.DataConfigurations = data
 	}
-
 	return configuration, nil
 
+}
+
+func buildAdditionalData(additionalData []interface{}) ([]JSONDataConfiguration, error) {
+	var data []JSONDataConfiguration
+	for _, dataConfiguration := range additionalData {
+		dataConfiguration, ok := dataConfiguration.(map[string]interface{})
+		if !ok {
+			return nil, WrongFormatError{"data configuration"}
+		}
+
+		nameInterface, exits := dataConfiguration["name"]
+		if !exits {
+			return nil, RequiredFieldError{"name"}
+		}
+
+		name, ok := nameInterface.(string)
+		if !ok {
+			return nil, WrongFormatError{"additional data name is not a string"}
+		}
+
+		pathInterface, exits := dataConfiguration["path"]
+		if !exits {
+			return nil, RequiredFieldError{"path"}
+		}
+
+		path, ok := pathInterface.(string)
+		if !ok {
+			return nil, WrongFormatError{"additional data path is not a string"}
+		}
+		data = append(data, JSONDataConfiguration{Name: name, Path: path})
+	}
+	return data, nil
 }
 
 func jsonToXMLHandler() (MessageHandler, error) {

@@ -1,12 +1,10 @@
 package db
 
 import (
-	"context"
 	"fmt"
 	"log/slog"
 	"mimir/internal/models"
 
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -22,6 +20,14 @@ func (s *SensorsManager) GetNewId() int {
 
 func (s *SensorsManager) GetSensors() []*models.Sensor {
 	return s.sensors
+}
+
+func (s *SensorsManager) GetSensorsMap() map[string]*models.Sensor {
+	sensorsMap := make(map[string]*models.Sensor)
+	for _, sensor := range s.sensors {
+		sensorsMap[sensor.Topic] = sensor
+	}
+	return sensorsMap
 }
 
 func (s *SensorsManager) GetSensorById(id string) (*models.Sensor, error) {
@@ -48,22 +54,22 @@ func (s *SensorsManager) IdExists(id string) bool {
 	return err == nil
 }
 
-func (s *SensorsManager) CreateSensor(sensor *models.Sensor) error {
+func (s *SensorsManager) CreateSensor(sensor *models.Sensor) (*models.Sensor, error) {
 	// TODO(#20) - Add Body validation
 
 	sensor, err := Database.insertTopic(sensor)
 	if err != nil {
 		slog.Error("error inserting topic", "error", err, "topic", sensor)
-		return err
+		return nil, err
 	}
 
 	s.sensors = append(s.sensors, sensor)
 	err = NodesData.AddSensorToNodeById(sensor.NodeID, sensor)
 	if err != nil {
 		slog.Error("error adding sensor to node", "error", err, "topic", sensor)
-		return err
+		return nil, err
 	}
-	return nil
+	return sensor, nil
 }
 
 func (s *SensorsManager) UpdateSensor(sensor *models.Sensor, id string) (*models.Sensor, error) {
@@ -100,20 +106,11 @@ func (s *SensorsManager) DeleteSensor(id string) error {
 	return nil
 }
 
-func buildTopicFilter(sensors []*models.Sensor) bson.D {
-	values := bson.A{}
-	for _, sensor := range sensors {
-		values = append(values, sensor.Topic)
-	}
-
-	return bson.D{{Key: "topic", Value: bson.D{{Key: "$in", Value: values}}}}
-}
-
 func (s *SensorsManager) LoadSensors(sensors []*models.Sensor) {
 	existingSensorsMap := make(map[string]*models.Sensor)
 	if len(sensors) > 0 {
 		filter := buildTopicFilter(sensors)
-		results, err := Database.findTopics(filter)
+		results, err := Database.FindTopics(filter)
 		if err != nil {
 			slog.Error("fail to find topics", "sensors", sensors)
 			return
@@ -122,85 +119,47 @@ func (s *SensorsManager) LoadSensors(sensors []*models.Sensor) {
 		for _, result := range results {
 			existingSensorsMap[result.Topic] = &result
 		}
-	}
 
-	var sensorsToInsert []interface{}
-	for _, sensor := range sensors {
-		s.sensors = append(s.sensors, sensor)
-		existingSensor, exists := existingSensorsMap[sensor.Topic]
-		if !exists {
-			sensorsToInsert = append(sensorsToInsert, sensor)
-			NodesData.AddSensorToNodeById(sensor.NodeID, sensor)
-		} else {
-			NodesData.AddSensorToNodeById(sensor.NodeID, existingSensor)
+		var sensorsToInsert []interface{}
+		var sensorsToReactivate []*models.Sensor
+		for _, sensor := range sensors {
+			s.sensors = append(s.sensors, sensor)
+			existingSensor, exists := existingSensorsMap[sensor.Topic]
+			if !exists {
+				sensorsToInsert = append(sensorsToInsert, sensor)
+				NodesData.AddSensorToNodeById(sensor.NodeID, sensor)
+			} else {
+				sensor.ID = existingSensor.ID
+				sensorsToReactivate = append(sensorsToReactivate, sensor)
+				NodesData.AddSensorToNodeById(sensor.NodeID, sensor)
+			}
 		}
+		insertAndUpdateTopicIds(sensorsToInsert)
+		activateTopics(sensorsToReactivate)
 	}
+}
 
+func insertAndUpdateTopicIds(sensorsToInsert []interface{}) {
 	if len(sensorsToInsert) > 0 {
-		Database.insertTopics(sensorsToInsert)
-	}
-}
-
-func (d *DatabaseManager) insertTopic(topic *models.Sensor) (*models.Sensor, error) {
-	mongoClient := d.getMongoClient()
-	if mongoClient != nil {
-		topicsCollection := mongoClient.Database(MONGO_DB_MIMIR).Collection(TOPICS_COLLECTION)
-		result, err := topicsCollection.InsertOne(context.TODO(), topic)
-		if err != nil {
-			return nil, err
-		}
-
-		topicId, ok := result.InsertedID.(primitive.ObjectID)
-		if !ok {
-			return nil, fmt.Errorf("error converting id for node")
-		}
-		topic.ID = topicId
-	}
-
-	return topic, nil
-}
-
-func (d *DatabaseManager) insertTopics(topics []interface{}) {
-	mongoClient := d.getMongoClient()
-	if mongoClient != nil {
-		topicsCollection := mongoClient.Database(MONGO_DB_MIMIR).Collection(TOPICS_COLLECTION)
-		_, err := topicsCollection.InsertMany(context.TODO(), topics)
-		if err != nil {
-			slog.Error("fail to insert topics", "topcis", topics)
-			return
+		insertedIds := Database.insertTopics(sensorsToInsert)
+		for i, id := range insertedIds {
+			objectId, ok := id.(primitive.ObjectID)
+			if ok {
+				insertedSensor, ok := sensorsToInsert[i].(*models.Sensor)
+				if ok {
+					insertedSensor.ID = objectId
+				}
+			}
 		}
 	}
 }
 
-func (d *DatabaseManager) DeactivateTopics(sensors []*models.Sensor) {
-	filter := buildTopicFilter(sensors)
-	update := bson.D{{Key: "$set", Value: bson.D{{Key: "is_active", Value: false}}}}
-	mongoClient := d.getMongoClient()
-	if mongoClient != nil {
-		topicsCollection := mongoClient.Database(MONGO_DB_MIMIR).Collection(TOPICS_COLLECTION)
-		_, err := topicsCollection.UpdateMany(context.TODO(), filter, update)
-		if err != nil {
-			slog.Error("fail to update topics", "topcis", sensors)
-			return
-		}
+func activateTopics(sensorsToActivate []*models.Sensor) {
+	if len(sensorsToActivate) > 0 {
+		Database.ActivateTopics(sensorsToActivate)
 	}
 }
 
-func (d *DatabaseManager) findTopics(filter primitive.D) ([]models.Sensor, error) {
-	var results []models.Sensor
-	mongoClient := d.getMongoClient()
-	if mongoClient != nil {
-		topicsCollection := mongoClient.Database(MONGO_DB_MIMIR).Collection(TOPICS_COLLECTION)
-		cursor, err := topicsCollection.Find(context.TODO(), filter)
-		if err != nil {
-			return nil, err
-		} else {
-			defer cursor.Close(context.TODO())
-		}
+func GetHandlerForTopic(topic string) {
 
-		if err = cursor.All(context.TODO(), &results); err != nil {
-			return nil, err
-		}
-	}
-	return results, nil
 }

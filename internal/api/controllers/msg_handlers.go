@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"encoding/json"
+	"fmt"
 	"mimir/internal/api/middlewares"
 	"mimir/internal/api/responses"
 	"mimir/internal/db"
@@ -127,20 +128,31 @@ func UpdateHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func DeleteHandler(w http.ResponseWriter, r *http.Request) {
+	logger := middlewares.ContextWithLogger(r.Context())
 	vars := mux.Vars(r)
 	id := vars["id"]
 
 	topic := strings.ReplaceAll(id, ".", "/")
 	processor, exists := mimir.Mimir.MsgProcessor.GetHandler(topic)
 	if !exists {
-		w.WriteHeader(http.StatusNotFound)
+		logger.Error("Error updating processor", "body", r.Body, "error", "processor for topic "+topic+" does not exist")
+		responses.SendErrorResponse(w, http.StatusNotFound, responses.ProcessorErrorCodes.NotFound)
 		return
 	}
 
 	db.Database.DeleteHandler(processor)
 	mimir.Mimir.MsgProcessor.RemoveHandler(topic)
 
-	w.WriteHeader(http.StatusOK)
+	err := responses.SendJSONResponse(w, http.StatusOK, responses.ItemsResponse{
+		Code:    0,
+		Message: "Handler was deleted",
+		Items:   processor,
+	})
+	if err != nil {
+		logger.Error("Error sending response", "error", err.Error())
+		responses.SendErrorResponse(w, http.StatusInternalServerError, responses.InternalErrorCodes.ResponseError)
+		return
+	}
 }
 
 // TODO: pasar esto a un handler factory con el reading channel para sacarlo de mimir engine
@@ -150,6 +162,7 @@ func createJSONHandler(requestBody responses.Handler) (*handlers.JSONHandler, er
 		Topic:           requestBody.Topic,
 		Type:            requestBody.HandlerType,
 		ReadingsChannel: MimirEngine.ReadingChannel}
+	fmt.Println("Body: ", requestBody)
 	for _, configurationInterface := range requestBody.Configurations {
 		jsonConfigurationMap, ok := configurationInterface.(map[string]interface{})
 		if ok {

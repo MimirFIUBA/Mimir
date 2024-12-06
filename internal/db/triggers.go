@@ -41,6 +41,7 @@ type Action struct {
 	Name          string `json:"name" bson:"name"`
 	Type          string `json:"type" bson:"type"`
 	Message       string `json:"message,omitempty" bson:"message,omitempty"`
+	MqttMessage   string `json:"mqttMessage,omitempty" bson:"mqttMessage,omitempty"`
 	Topic         string `json:"topic,omitempty" bson:"topic,omitempty"`
 	Command       string `json:"command,omitempty" bson:"command,omitempty"`
 	CommandArgs   string `json:"args,omitempty" bson:"args,omitempty"`
@@ -56,12 +57,29 @@ func (t *Trigger) BuildFileName(suffix string) string {
 	return ini.String(consts.TRIGGERS_DIR_CONFIG_NAME) + "/" + filename + consts.TRIGGERS_FILE_SUFFIX
 }
 
-func (d *DatabaseManager) GetTriggers() []triggers.Trigger {
-	var triggerList []triggers.Trigger
-	for _, sensor := range SensorsData.sensors {
-		triggerList = append(triggerList, sensor.GetTriggers()...)
+func (d *DatabaseManager) GetAllTriggers() ([]Trigger, error) {
+	return d.GetTriggers(bson.D{{}})
+}
+
+func (d *DatabaseManager) GetTriggers(filter bson.D) ([]Trigger, error) {
+	var triggerList []Trigger
+	mongoClient := d.getMongoClient()
+	if mongoClient != nil {
+		triggersCollection := mongoClient.Database(MONGO_DB_MIMIR).Collection(TRIGGERS_COLLECTION)
+
+		cursor, err := triggersCollection.Find(context.TODO(), filter)
+		if err != nil {
+			defer cursor.Close(context.TODO())
+			if err == mongo.ErrNoDocuments {
+				return nil, nil
+			}
+			return nil, err
+		}
+		if err = cursor.All(context.TODO(), &triggerList); err != nil {
+			return nil, err
+		}
 	}
-	return triggerList
+	return triggerList, nil
 }
 
 func (d *DatabaseManager) GetTrigger(id string) (*Trigger, error) {

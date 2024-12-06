@@ -21,9 +21,9 @@ type JSONHandler struct {
 }
 
 type JSONValueConfiguration struct {
-	IdPosition         string                  `json:"idPosition,omitempty"`
-	ValuePath          string                  `json:"valuePath,omitempty"`
-	DataConfigurations []JSONDataConfiguration `json:"dataConfigurations"`
+	IdPosition         string                  `json:"idPath,omitempty"`
+	ValuePath          string                  `json:"path,omitempty"`
+	DataConfigurations []JSONDataConfiguration `json:"additionalData"`
 }
 
 type JSONDataConfiguration struct {

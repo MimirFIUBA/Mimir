@@ -13,6 +13,8 @@ func CreateRouter() *mux.Router {
 	AddHandlersRoutes(router)
 	AddTriggersRoutes(router)
 	AddUserVariablesRoutes(router)
+	AddMessagesRoutes(router)
+
 	AddWebSocketRoutes(router)
 
 	return router

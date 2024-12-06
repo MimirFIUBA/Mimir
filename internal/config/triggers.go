@@ -50,7 +50,7 @@ func BuildTriggers(mimirEngine *mimir.MimirEngine) error {
 				triggersByFilename[filename] = trigger
 				topicsByFilename[filename] = triggerData.Topics
 			} else {
-				slog.Error("Error creating trigger", "error", err)
+				slog.Error("Error creating trigger "+filename, "error", err)
 			}
 		}
 
@@ -107,7 +107,7 @@ func BuildTrigger(t db.Trigger, mimirEngine *mimir.MimirEngine) (triggers.Trigge
 	}
 	err = trigger.UpdateCondition(string(t.Condition))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("condition does not compile")
 	}
 	BuildActions(t, trigger)
 	trigger.SetScheduled(t.Scheduled)
@@ -156,7 +156,7 @@ func ToTriggerAction(a db.Action) triggers.Action {
 	case "triggerStatus":
 		triggerAction = mimir.Mimir.ActionFactory.NewChangeTriggerStatus(a.TriggerName, a.TriggerStatus)
 	case "alert":
-		triggerAction = mimir.Mimir.ActionFactory.NewAlertMessageAction(a.Message)
+		triggerAction = mimir.Mimir.ActionFactory.NewAlertMessageAction(a.Message, a.MqttMessage)
 	default:
 		//TODO see if returning nil is fine or we need some error here
 		slog.Warn("action type not recognized while creating trigger action", "type", a.Type)

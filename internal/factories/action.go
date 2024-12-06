@@ -87,12 +87,15 @@ func (f *ActionFactory) NewCommandAction(command string, args string) *triggers.
 	return &triggers.CommandAction{Command: command, CommandArgs: args}
 }
 
-func (f *ActionFactory) NewAlertMessageAction(message string) *triggers.ExecuteFunctionAction {
+func (f *ActionFactory) NewAlertMessageAction(message, mqttMessage string) *triggers.ExecuteFunctionAction {
 	params := map[string]interface{}{"message": message}
 	actionWS := f.NewSendWebSocketMessageAction(message)
 	actionWS.MessageContructor = newWSMessageBuilder("alert", message)
-	actionMqtt := f.NewSendMQTTMessageAction(consts.MQTT_ALERT_TOPIC, message)
-	actionMqtt.NextAction = actionWS
+	if mqttMessage != "" {
+		actionMqtt := f.NewSendMQTTMessageAction(consts.MQTT_ALERT_TOPIC, message)
+		actionWS.NextAction = actionMqtt
+	}
+
 	actionCreateMessage := &triggers.ExecuteFunctionAction{
 		Func: func(event triggers.Event, params map[string]interface{}) triggers.Event {
 
@@ -120,7 +123,7 @@ func (f *ActionFactory) NewAlertMessageAction(message string) *triggers.ExecuteF
 			return event
 		},
 		Params:     params,
-		NextAction: actionMqtt,
+		NextAction: actionWS,
 	}
 	return actionCreateMessage
 }

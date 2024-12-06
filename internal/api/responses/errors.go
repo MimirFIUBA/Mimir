@@ -70,15 +70,19 @@ var ProcessorErrorCodes = struct {
 
 // SensorErrorCodes groups error codes related to sensors
 var TriggerErrorCodes = struct {
-	NotFound      ErrorCode
-	InvalidSchema ErrorCode
-	UpdateFailed  ErrorCode
-	DeleteFailed  ErrorCode
-	AlreadyExists ErrorCode
+	NotFound                ErrorCode
+	InvalidSchema           ErrorCode
+	CreationFailed          ErrorCode
+	UpdateFailed            ErrorCode
+	DeleteFailed            ErrorCode
+	AlreadyExists           ErrorCode
+	ConditionDoesNotCompile ErrorCode
 }{
-	NotFound:      ErrorCode{Code: 6001, Message: "Trigger not found"},
-	InvalidSchema: ErrorCode{Code: 6002, Message: "Trigger invalid schema"},
-	UpdateFailed:  ErrorCode{Code: 6003, Message: "Trigger update failed"},
-	DeleteFailed:  ErrorCode{Code: 6004, Message: "Trigger delete failed"},
-	AlreadyExists: ErrorCode{Code: 6005, Message: "Trigger already exists"},
+	NotFound:                ErrorCode{Code: 6001, Message: "Trigger not found"},
+	InvalidSchema:           ErrorCode{Code: 6002, Message: "Trigger invalid schema"},
+	CreationFailed:          ErrorCode{Code: 6003, Message: "Trigger creation failed"},
+	UpdateFailed:            ErrorCode{Code: 6004, Message: "Trigger update failed"},
+	DeleteFailed:            ErrorCode{Code: 6005, Message: "Trigger delete failed"},
+	AlreadyExists:           ErrorCode{Code: 6006, Message: "Trigger already exists"},
+	ConditionDoesNotCompile: ErrorCode{Code: 6007, Message: "Condition does not compile"},
 }

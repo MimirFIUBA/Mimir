@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/binary"
+	"flag"
 	"fmt"
 	"log"
 	"math/rand/v2"
@@ -14,62 +15,22 @@ import (
 	"github.com/gookit/ini/v2"
 )
 
+var (
+	topic        string
+	messageCount int
+)
+
 type mqttGenerator struct {
 	topic  string
 	client mqtt.Client
 	c      chan int
 }
 
-func (g mqttGenerator) GenerateIntData(n int, id int) {
-	for i := 1; i <= n; i++ {
-		message := fmt.Sprintf(`{"sensorId": %d, "data": %d, "time": "%s"}`, id, rand.IntN(100), time.Now())
-		token := g.client.Publish(g.topic, 0, false, message)
-		token.Wait()
-
-		fmt.Printf("Published topic %s: %s\n", g.topic, message)
-		time.Sleep(1 * time.Second)
-	}
-
-	g.c <- 0
-}
-
-func (g mqttGenerator) GenerateFloatData(n int, id string, mps int, multiplier float64, offset float64) {
-	for i := 1; i <= n; i++ {
-		message := fmt.Sprintf(`{"id": "%s", "data": %.2f, "time": "%s"}`, id, rand.Float64()*multiplier+offset, time.Now())
-		token := g.client.Publish(g.topic, 0, false, message)
-		token.Wait()
-
-		fmt.Printf("Published topic %s: %s\n", g.topic, message)
-		time.Sleep(time.Duration(1000/mps) * time.Millisecond)
-	}
-
-	g.c <- 0
-}
-
-func (g mqttGenerator) GenerateBytes(id string, numbers ...uint8) {
-	buf := new(bytes.Buffer)
-	for _, n := range numbers {
-		err := binary.Write(buf, binary.BigEndian, n)
-		if err != nil {
-			log.Fatalf("Failed to encode int: %v", err)
-		}
-	}
-
-	payload := buf.Bytes()
-
-	token := g.client.Publish(g.topic, 0, false, payload)
-	token.Wait()
-	if token.Error() != nil {
-		log.Printf("Failed to publish message: %v\n", token.Error())
-	}
-
-	fmt.Printf("Published topic %s: %08b\n", g.topic, payload)
-
-	g.c <- 0
-
-}
-
 func main() {
+	flag.StringVar(&topic, "topic", "mimir/test", "name of topic")
+	flag.IntVar(&messageCount, "count", 1, "ammount of messages that will be send")
+	flag.Parse()
+
 	config.LoadIni()
 	opts := mqtt.NewClientOptions()
 	opts.AddBroker(ini.String(consts.MQTT_BROKER_CONFIG_NAME))
@@ -81,8 +42,10 @@ func main() {
 
 	c := make(chan int)
 
-	generator := mqttGenerator{"mimir/benchmark-test", client, c}
-	go generator.GenerateFloatData(100, "1", 1, 50, 50)
+	generator := mqttGenerator{topic, client, c}
+	fmt.Println(messageCount)
+	fmt.Println(topic)
+	go generator.GenerateFloatData(messageCount, "1", 1, 50, 50)
 	// go generator.GenerateBytes("1", 0, 0, 0, 4, 63, 0, 0, 0)
 
 	// message := fmt.Sprintf(`{"id": "%s", "data": %.2f, "time": "%s"}`, "0", 15.0, time.Now())
@@ -112,4 +75,57 @@ func main() {
 	// _, _ = <-c, <-c
 
 	client.Disconnect(250)
+}
+
+func (g mqttGenerator) GenerateIntData(n int, id int) {
+	for i := 1; i <= n; i++ {
+		message := fmt.Sprintf(`{"sensorId": %d, "data": %d, "time": "%s"}`, id, rand.IntN(100), time.Now())
+		token := g.client.Publish(g.topic, 0, false, message)
+		token.Wait()
+
+		fmt.Printf("Published topic %s: %s\n", g.topic, message)
+		if i < n {
+			time.Sleep(1 * time.Second)
+		}
+	}
+
+	g.c <- 0
+}
+
+func (g mqttGenerator) GenerateFloatData(n int, id string, mps int, multiplier float64, offset float64) {
+	for i := 1; i <= n; i++ {
+		message := fmt.Sprintf(`{"id": "%s", "data": %.2f, "time": "%s"}`, id, rand.Float64()*multiplier+offset, time.Now())
+		token := g.client.Publish(g.topic, 0, false, message)
+		token.Wait()
+
+		fmt.Printf("Published topic %s: %s\n", g.topic, message)
+		if i < n {
+			time.Sleep(time.Duration(1000/mps) * time.Millisecond)
+		}
+	}
+
+	g.c <- 0
+}
+
+func (g mqttGenerator) GenerateBytes(id string, numbers ...uint8) {
+	buf := new(bytes.Buffer)
+	for _, n := range numbers {
+		err := binary.Write(buf, binary.BigEndian, n)
+		if err != nil {
+			log.Fatalf("Failed to encode int: %v", err)
+		}
+	}
+
+	payload := buf.Bytes()
+
+	token := g.client.Publish(g.topic, 0, false, payload)
+	token.Wait()
+	if token.Error() != nil {
+		log.Printf("Failed to publish message: %v\n", token.Error())
+	}
+
+	fmt.Printf("Published topic %s: %08b\n", g.topic, payload)
+
+	g.c <- 0
+
 }

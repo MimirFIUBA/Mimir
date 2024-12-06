@@ -1,6 +1,10 @@
 package models
 
-import "time"
+import (
+	"time"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
+)
 
 type MessageType string
 
@@ -10,12 +14,12 @@ const (
 )
 
 type Message struct {
-	Id                string      `json:"id,omitempty" bson:"_id,omitempty"`
-	Body              string      `json:"body" bson:"body"`
-	Type              MessageType `json:"type" bson:"type"`
-	IsRead            bool        `json:"read" bson:"read"`
-	CreatedDate       time.Time   `json:"createdDate" bson:"createdDate"`
-	AdditionalDetails interface{} `json:"additionalDetails,omitempty" bson:"additionalDetails,omitempty"`
+	Id                primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
+	Body              string             `json:"body" bson:"body,omitempty"`
+	Type              MessageType        `json:"type" bson:"type,omitempty"`
+	IsRead            bool               `json:"read" bson:"read,omitempty"`
+	CreatedDate       time.Time          `json:"createdDate" bson:"createdDate,omitempty"`
+	AdditionalDetails interface{}        `json:"additionalDetails,omitempty" bson:"additionalDetails,omitempty"`
 }
 
 type MqttOutgoingMessage struct {
